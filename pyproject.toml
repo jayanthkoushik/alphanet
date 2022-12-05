@@ -1,11 +1,21 @@
 [tool.poetry]
-name = "project_TEMPLATE"
-description = "description_TEMPLATE"
-authors = ["author_TEMPLATE <email_TEMPLATE>"]
+name = "alphanet"
+description = "Code for AlphaNet paper"
+authors = ["Jayanth Koushik <mail@jkoushik.me>"]
 version = "0.0.0"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.8"
+corgy = { version = "^5.0", extras = ["colors", "toml"] }
+torch = "^1.13.0"
+torchvision = "^0.14.0"
+tqdm = "^4.64.1"
+matplotlib = "^3.6.2"
+seaborn = "^0.12.1"
+typing-extensions = "^4.4.0"
+pandas = "^1.5.2"
+pytorch-ignite = "^0.4.10"
+tensorboard = "^2.11.0"
 
 [tool.poetry.extras]
 
