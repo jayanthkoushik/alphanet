@@ -1,0 +1,70 @@
+[tool.poetry]
+name = "project_TEMPLATE"
+description = "description_TEMPLATE"
+authors = ["author_TEMPLATE <email_TEMPLATE>"]
+version = "0.0.0"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.extras]
+
+[tool.poetry.dev-dependencies]
+pre-commit = "^2.0"
+black = "^22.0"
+isort = "^5.1"
+pylint = "^2.14"
+mypy = ">=0.9"
+pydocstyle = "^6.1"
+
+[tool.black]
+line_length = 88
+skip_magic_trailing_comma = true
+
+[tool.isort]
+profile = "black"
+line_length = 88
+combine_as_imports = true
+force_alphabetical_sort_within_sections = true
+
+[tool.pylint.FORMAT]
+max-line-length = 88
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = """
+  fixme,
+  duplicate-code,
+  missing-docstring,
+  invalid-name,
+  ungrouped-imports,
+  wrong-import-order,
+  wrong-import-position,
+  import-outside-toplevel,
+  unused-argument,
+  no-member,
+  protected-access,
+  attribute-defined-outside-init,
+  too-few-public-methods,
+  too-many-public-methods,
+  too-many-ancestors,
+  too-many-instance-attributes,
+  too-many-arguments,
+  too-many-locals,
+  too-many-statements,
+  too-many-lines,
+  too-many-branches,
+  too-many-nested-blocks,
+  too-many-return-statements,
+  too-many-boolean-expressions,
+"""
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.pydocstyle]
+convention = "pep257"
+add_ignore = "D100,D101,D102,D103,D104,D105,D106,D107"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

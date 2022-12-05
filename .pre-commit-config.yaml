@@ -1,0 +1,45 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.0.1
+  hooks:
+  - id: end-of-file-fixer
+    name: fix eofs
+    exclude: "^\\.version$"
+  - id: mixed-line-ending
+    name: fix line endings
+  - id: trailing-whitespace
+    name: remove trailing whitespace
+
+- repo: local
+  hooks:
+  - id: black
+    name: blacken code
+    entry: poetry run black
+    language: system
+    types_or: [python, jupyter]
+  - id: isort
+    name: sort python imports
+    entry: poetry run isort
+    language: system
+    types: [python]
+  - id: pylint
+    name: lint python files
+    entry: poetry run pylint
+    language: system
+    types: [python]
+  - id: mypy
+    name: type check python files
+    entry: poetry run mypy .
+    language: system
+    types: [python]
+    pass_filenames: false
+  - id: pydocstyle
+    name: lint python docstrings
+    entry: poetry run pydocstyle
+    language: system
+    types: [python]
+  - id: nbstrip
+    name: remove metadata from notebooks
+    entry: poetry run jupyter nbconvert --inplace --ClearMetadataPreprocessor.enabled=True
+    language: system
+    types: [jupyter]
