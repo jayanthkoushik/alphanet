@@ -32,6 +32,9 @@ class TrainingConfig(Corgy):
         lr_sched_params={"step_size": 20, "gamma": 0.1},
     )
     train_epochs: Annotated[int, "number of epochs to train for"] = 20
+    min_epochs: Annotated[
+        int, "minimum number of epochs to use when selecting best model"
+    ] = 5
     train_batch_size: Annotated[int, "batch size for training"] = 64
     eval_batch_size: Annotated[
         Optional[int], "batch size for evaluation, overriding training batch size"
@@ -43,6 +46,11 @@ class TrainingConfig(Corgy):
         sampler_args=(KeyValuePairs(""), KeyValuePairs("r=0.5")),
     )
     tb_logs: Annotated[TBLogs, "tensorboard log directory"] = TBLogs()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if self.train_epochs < self.min_epochs:
+            raise ValueError("`train_epochs` should be less than `min_epochs`")
 
 
 class EpochData(Corgy):
@@ -348,7 +356,7 @@ class TrainCmd(Corgy):
             # Load state from epoch with the best overall validation accuracy.
             if self.training.train_epochs > 0:
                 _best_epoch = max(
-                    range(self.training.train_epochs),
+                    range(self.training.min_epochs - 1, self.training.train_epochs),
                     key=lambda _i: train_result.epoch_data__seq[_i].val_metrics[
                         "accuracy"
                     ],
