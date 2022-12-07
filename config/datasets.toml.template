@@ -1,0 +1,7 @@
+[imagenetlt_resnext50_crt]
+split_files_dir = "data/ImageNetLT/splits"
+feature_files_dir = "data/ImageNetLT/features/resnext50_crt"
+classifier_file = "data/ImageNetLT/classifiers/resnext50_crt.pth"
+classifier_loader = "LinearClassifierLoader"
+baseline_eval_file = "data/ImageNetLT/baselines/resnext50_crt.pkl"
+label_names_file = "data/ImageNetLT/label_names.txt"

@@ -70,6 +70,7 @@ disable = """
 
 [tool.mypy]
 ignore_missing_imports = true
+disable_error_code = ["attr-defined"]
 
 [tool.pydocstyle]
 convention = "pep257"
