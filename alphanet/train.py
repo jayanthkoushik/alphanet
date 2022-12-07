@@ -29,9 +29,9 @@ class TrainingConfig(Corgy):
         optim_cls=torch.optim.AdamW,
         optim_params={"lr": 1e-3},
         lr_sched_cls=torch.optim.lr_scheduler.StepLR,
-        lr_sched_params={"step_size": 20, "gamma": 0.1},
+        lr_sched_params={"step_size": 10, "gamma": 0.1},
     )
-    train_epochs: Annotated[int, "number of epochs to train for"] = 20
+    train_epochs: Annotated[int, "number of epochs to train for"] = 25
     min_epochs: Annotated[
         int, "minimum number of epochs to use when selecting best model"
     ] = 5
@@ -43,7 +43,7 @@ class TrainingConfig(Corgy):
         SamplerBuilder, "arguments to build combined sampler"
     ] = SamplerBuilder(
         sampler_classes=(AllFewSampler, ClassBalancedBaseSampler),
-        sampler_args=(KeyValuePairs(""), KeyValuePairs("r=0.5")),
+        sampler_args=(KeyValuePairs(""), KeyValuePairs("r=0.1")),
     )
     tb_logs: Annotated[TBLogs, "tensorboard log directory"] = TBLogs()
 
