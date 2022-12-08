@@ -65,7 +65,6 @@ class CombinedClassifierLoader(_ClassifierLoader):
 
     def load(self, data_file, device=torch.device("cpu")):
         data = torch.load(str(data_file), map_location=device)
-        data_path = Path(data_file.name)
 
         _classifiers, _classifier_ws, _classifier_bs = [], [], []
         for _data_i in data:
@@ -74,7 +73,7 @@ class CombinedClassifierLoader(_ClassifierLoader):
             # If the path is not absolute, make it relative to this classifier's path.
             if not _classifier_i_path.is_absolute():
                 _classifier_i_path = str(
-                    (data_path.parent / _classifier_i_path).resolve()
+                    (data_file.parent / _classifier_i_path).resolve()
                 )
 
             _classifier_i = _loader_i.load(_classifier_i_path, device)
