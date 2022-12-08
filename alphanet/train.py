@@ -1,23 +1,22 @@
 import logging
 from collections import Counter, defaultdict
 from copy import deepcopy
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import ignite.contrib.handlers
 import ignite.engine
 import ignite.metrics
 import torch
 from corgy import Corgy
-from corgy.types import InputBinFile, KeyValuePairs, OutputBinFile
+from corgy.types import KeyValuePairs, OutputBinFile
 from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 from typing_extensions import Annotated
 
+from alphanet._dataset import NNsResult, SplitLTDataGroupInfo, SplitLTDataset
+from alphanet._samplers import AllFewSampler, ClassBalancedBaseSampler, SamplerBuilder
 from alphanet._utils import log_alphas, log_metrics, PTOpt, TBLogs
 from alphanet.alphanet import AlphaNet, AlphaNetClassifier
-from alphanet.dataset import SplitLTDataGroupInfo, SplitLTDataset
-from alphanet.nns import NNsResult
-from alphanet.samplers import AllFewSampler, ClassBalancedBaseSampler, SamplerBuilder
 
 logging.root.setLevel(logging.INFO)
 
@@ -25,6 +24,13 @@ DEFAULT_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class TrainingConfig(Corgy):
+    n_neighbors: Annotated[
+        int, "number of nearest neighbors to use (excluding self)"
+    ] = 5
+    nn_dist: Annotated[
+        Literal["euclidean", "cosine", "random"],
+        "distance metric for nearest neighbors",
+    ] = "euclidean"
     ptopt: Annotated[PTOpt, "optimization parameters"] = PTOpt(
         optim_cls=torch.optim.AdamW,
         optim_params={"lr": 1e-3},
@@ -89,11 +95,10 @@ class TrainResult(Corgy):
 
 
 class TrainCmd(Corgy):
-    dataset: Annotated[
-        SplitLTDataset, "name of dataset as defined in 'config/datasets.toml'"
-    ]
-    nns_file: Annotated[InputBinFile, "file with nearest neighbor results",]
     save_file: Annotated[Optional[OutputBinFile], "file to save training results"]
+    dataset: Annotated[
+        SplitLTDataset, "name of dataset as defined in 'config/datasets.toml'",
+    ]
     alphanet: Annotated[AlphaNet, "AlphaNet parameters"]
     training: Annotated[TrainingConfig, "training parameters"]
 
@@ -134,15 +139,12 @@ class TrainCmd(Corgy):
         ############################################################
 
         # Load nearest neighbor weights.
-        nns_result = NNsResult.from_dict(
-            torch.load(self.nns_file, map_location=DEFAULT_DEVICE)
+        nns_result = self.dataset.load_nns(
+            self.training.nn_dist,
+            self.training.n_neighbors,
+            DEFAULT_DEVICE,
+            generate=True,
         )
-
-        if nns_result.data_info.dataset_name != str(self.dataset):
-            raise RuntimeError(
-                f"nns generated for different dataset: "
-                f"'{nns_result.data_info.dataset_name}' (expected '{self.dataset}')"
-            )
 
         # `nns_result.nn_clf__per__fclass` contains the nearest neighbor classifiers
         # for each 'few' split class. Use `fclass_ordered__seq` to order them.

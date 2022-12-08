@@ -12,7 +12,7 @@ from torch import Tensor
 from torch.utils.data import TensorDataset
 from typing_extensions import Annotated
 
-from alphanet.dataset import SplitLTDataGroup
+from alphanet._dataset import SplitLTDataGroup
 
 
 class _SamplerMeta(type):
