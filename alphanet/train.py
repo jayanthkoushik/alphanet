@@ -256,7 +256,7 @@ class TrainCmd(Corgy):
 
         @train_engine.on(ignite.engine.Events.EPOCH_STARTED)
         def _(engine: ignite.engine.Engine):
-            if engine.state.epoch > 0:
+            if engine.state.epoch > 1:
                 logging.info(
                     "recreating training dataset with new 'base' split samples"
                 )
