@@ -176,7 +176,7 @@ class SplitLTDataset(str):
                 )
             logging.warning("nns file not found: generating results")
             self.nn_files_dir.mkdir(parents=True, exist_ok=True)
-            return NNsResult._generate(self, nn_dist, n_neighbors)
+            NNsResult._generate(self, nn_dist, n_neighbors)
 
         return NNsResult.from_dict(torch.load(_nns_file, map_location=device))
 
