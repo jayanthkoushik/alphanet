@@ -85,6 +85,23 @@ class TrainResult(Corgy):
     test_metrics: Dict[str, Any]
     test_acc__per__split: Dict[str, float]
 
+    def as_dict(self, recursive=False):
+        d = super().as_dict(recursive)
+        if recursive:
+            d["epoch_data__seq"] = [
+                _epoch_data.as_dict(recursive) for _epoch_data in self.epoch_data__seq
+            ]
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        o = super().from_dict(d)
+        o.epoch_data__seq = [
+            EpochData.from_dict(_epoch_data_dict)
+            for _epoch_data_dict in d["epoch_data__seq"]
+        ]
+        return o
+
     def load_alphanet_classifier(self) -> AlphaNetClassifier:
         self.alphanet.set_sources(self.alphanet_source__mat__seq)
         return AlphaNetClassifier(
