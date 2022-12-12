@@ -68,7 +68,7 @@ class EpochData(Corgy):
     max_alpha__vec: Tensor
     val_metrics: Dict[str, Any]
     val_acc__per__split: Dict[str, float]
-    alphanet_classifier_state_dict: Dict[str, Any]
+    alphanet_classifier_state_dict: Optional[Dict[str, Any]]
 
 
 class TrainResult(Corgy):
@@ -236,6 +236,7 @@ class TrainCmd(Corgy):
         train_result.fbclass_ordered_idx__vec = fbclass_ordered_idx__vec
         train_result.training_config = self.training
         train_result.epoch_data__seq = []
+        train_result.best_epoch = None
 
         train_engine = ignite.engine.create_supervised_trainer(
             alphanet_classifier, self.training.ptopt.optimizer, loss_fn, DEFAULT_DEVICE
@@ -273,9 +274,6 @@ class TrainCmd(Corgy):
         @train_engine.on(ignite.engine.Events.EPOCH_COMPLETED)
         def _(engine: ignite.engine.Engine):
             epoch_data = EpochData()
-            epoch_data.alphanet_classifier_state_dict = deepcopy(
-                alphanet_classifier.state_dict()
-            )
             epoch_data.mean_batch_loss__seq = engine.state.my_mean_batch_loss__seq
             epoch_data.n_train__per__class = Counter(
                 engine.state.dataloader.dataset.tensors[1].tolist()  # type: ignore
@@ -319,6 +317,27 @@ class TrainCmd(Corgy):
                 "validation",
                 engine.state.epoch,
             )
+
+            # Update best model.
+            # Note: `engine.state.epoch` starts at 1.
+            if engine.state.epoch >= self.training.min_epochs:
+                _best_val_acc = (
+                    -1
+                    if train_result.best_epoch is None
+                    else train_result.epoch_data__seq[
+                        train_result.best_epoch
+                    ].val_metrics["accuracy"]
+                )
+                if epoch_data.val_metrics["accuracy"] > _best_val_acc:
+                    logging.info(
+                        "epoch %d is new best with val accuracy: %.2g",
+                        engine.state.epoch,
+                        epoch_data.val_metrics["accuracy"],
+                    )
+                    train_result.best_epoch = engine.state.epoch - 1
+                    train_result.best_alphanet_classifier_state_dict = deepcopy(
+                        alphanet_classifier.state_dict()
+                    )
 
             # Add epoch data to `train_result`.
             train_result.epoch_data__seq.append(epoch_data)
@@ -374,24 +393,15 @@ class TrainCmd(Corgy):
         def _():
             # Load state from epoch with the best overall validation accuracy.
             if self.training.train_epochs > 0:
-                _best_epoch = max(
-                    range(self.training.min_epochs - 1, self.training.train_epochs),
-                    key=lambda _i: train_result.epoch_data__seq[_i].val_metrics[
-                        "accuracy"
-                    ],
-                )
-                logging.info("best epoch by overall accuracy: %d", _best_epoch)
-                train_result.best_epoch = _best_epoch
-                train_result.best_alphanet_classifier_state_dict = (
-                    train_result.epoch_data__seq[
-                        _best_epoch
-                    ].alphanet_classifier_state_dict
+                logging.info(
+                    "best epoch by overall val accuracy: %d",
+                    train_result.best_epoch + 1,
                 )
                 alphanet_classifier.load_state_dict(
                     train_result.best_alphanet_classifier_state_dict
                 )
             else:
-                train_result.best_epoch = None
+                assert train_result.best_epoch is None
                 train_result.best_alphanet_classifier_state_dict = deepcopy(
                     alphanet_classifier.state_dict()
                 )
