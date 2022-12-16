@@ -102,13 +102,15 @@ class TrainResult(Corgy):
         ]
         return o
 
-    def load_alphanet_classifier(self) -> AlphaNetClassifier:
+    def load_best_alphanet_classifier(self) -> AlphaNetClassifier:
         self.alphanet.set_sources(self.alphanet_source__mat__seq)
-        return AlphaNetClassifier(
+        alphanet_classifier = AlphaNetClassifier(
             self.alphanet,
             self.train_data_info.n_base_classes,
             self.fbclass_ordered_idx__vec,
         )
+        alphanet_classifier.load_state_dict(self.best_alphanet_classifier_state_dict)
+        return alphanet_classifier
 
 
 class TrainCmd(Corgy):
@@ -424,8 +426,3 @@ class TrainCmd(Corgy):
             torch.save(train_result.as_dict(recursive=True), self.save_file)
             self.save_file.close()
         return train_result
-
-
-if __name__ == "__main__":
-    cmd = TrainCmd.parse_from_cmdline()
-    cmd()
