@@ -4,11 +4,11 @@ from argparse import ArgumentParser
 
 from corgy import CorgyHelpFormatter
 
-from alphanet.plot import PlotPerClsAccVsSamples
+from alphanet.plot import PlotDeltaPerClassAccs, PlotPerClsAccVsSamples
 
 parser = ArgumentParser(formatter_class=CorgyHelpFormatter)
 sub_parsers = parser.add_subparsers(dest="cmd", required=True)
-for cmd_cls in [PlotPerClsAccVsSamples]:
+for cmd_cls in [PlotPerClsAccVsSamples, PlotDeltaPerClassAccs]:
     _sub_parser = sub_parsers.add_parser(
         cmd_cls.__name__, formatter_class=CorgyHelpFormatter
     )
