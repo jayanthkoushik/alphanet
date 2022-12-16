@@ -315,3 +315,63 @@ class PlotDeltaPerClassAccs(_PlotBase):
 
             _mean_overall_acc_delta = mean(overall_test_acc_deltas)
             _ax.axhline(y=_mean_overall_acc_delta, ls="--", color="k", zorder=-1)
+
+
+class PlotAlphaDist(_PlotBase):
+    def __call__(self):
+        df_rows = []
+        dataset_name = None
+        n_neighbors = None
+        nn_dist = None
+
+        for _id, (_res, _) in enumerate(self._iter_train_results()):
+            if _id == 0:
+                dataset_name = _res.train_data_info.dataset_name
+                n_neighbors = _res.training_config.n_neighbors
+                nn_dist = _res.training_config.nn_dist
+            elif _res.train_data_info.dataset_name != dataset_name:
+                raise ValueError("dataset not same for result files")
+            elif _res.training_config.n_neighbors != n_neighbors:
+                raise ValueError("n_neighbors not same for result files")
+            elif _res.training_config.nn_dist != nn_dist:
+                raise ValueError("nn_dist not same for result files")
+
+            _alphanet_classifier = _res.load_best_alphanet_classifier()
+            _alpha__mat = _alphanet_classifier.get_learned_alpha_vecs()
+            assert all(bool(_a0 == 1) for _a0 in _alpha__mat[:, 0])
+
+            for (_target, _source) in itertools.product(
+                range(_alpha__mat.shape[0]), range(1, _alpha__mat.shape[1])
+            ):
+                df_rows.append(
+                    {
+                        "ID": _id,
+                        "Target": _target,
+                        "Source": f"$\\alpha_{_source}$",
+                        "Alpha": _alpha__mat[_target, _source].item(),
+                    }
+                )
+
+        df = pd.DataFrame(df_rows)
+        logging.info("loaded data frame:\n%s", df)
+
+        self.plot.config()
+        g = sns.displot(
+            data=df,
+            x="Alpha",
+            hue="Source",
+            kind="kde",
+            legend=True,
+            palette=itertools.cycle(CUD_PALETTE[1:]),
+            facet_kws=dict(despine=False, legend_out=False),
+        )
+        g.ax.set_xticks([-1, 0, 1])
+        g.ax.set_xlabel("$\\alpha$")
+        g.ax.set_ylim(0, 1.01)
+        g.ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+        g.legend.set_title("")
+        g.despine(top=True, bottom=False, left=True, right=True, trim=True)
+        g.figure.set_size_inches(self.plot.get_size())
+        if self.plot.file is not None:
+            g.savefig(self.plot.file)
+            self.plot.file.close()
