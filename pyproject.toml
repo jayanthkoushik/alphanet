@@ -6,7 +6,7 @@ version = "0.0.0"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-corgy = { git = "https://github.com/jayanthkoushik/corgy.git", rev="0e8ac2f", extras = ["colors", "toml"] }
+corgy = { git = "https://github.com/jayanthkoushik/corgy.git", rev="889f11c", extras = ["colors", "toml"] }
 torch = "^1.13.0"
 torchvision = "^0.14.0"
 tqdm = "^4.64.1"

@@ -137,8 +137,8 @@ toml = ["tomli (>=2.0.1,<3.0.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/jayanthkoushik/corgy.git"
-reference = "0e8ac2f"
-resolved_reference = "0e8ac2f363d84ae563835793e393d4f076ae77df"
+reference = "889f11c"
+resolved_reference = "889f11cf754831d813322dd47ceef41cf889f7c5"
 
 [[package]]
 name = "crayons"
@@ -1036,7 +1036,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "daa5f4f529e44eec29211eb485415984be15bdc52920ae46e266c12818442e26"
+content-hash = "6cfa916eb242cd3107aa5c0aa562eb68aaafee25e86d932b0d405b1558f8b0d6"
 
 [metadata.files]
 absl-py = [
