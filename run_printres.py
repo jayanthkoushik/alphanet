@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from argparse import SUPPRESS
 from math import isnan
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -25,7 +26,7 @@ class Args(Corgy):
     exp_suffix: str = ""
 
 
-args = Args.parse_from_cmdline()
+args = Args.parse_from_cmdline(usage=SUPPRESS)
 table_rows: List[Dict[str, Any]] = []
 max_exp_name_len = 0
 seen_datasets = set()

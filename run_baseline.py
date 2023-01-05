@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from argparse import SUPPRESS
+
 from corgy import Corgy
 from corgy.types import OutputBinFile
 
@@ -15,7 +17,7 @@ class Args(Corgy):
     test_datagrp: str = "test"
 
 
-args = Args.parse_from_cmdline()
+args = Args.parse_from_cmdline(usage=SUPPRESS)
 train_cmd = TrainCmd(
     dataset=args.dataset,
     save_file=OutputBinFile(args.dataset.baseline_eval_file_path),
