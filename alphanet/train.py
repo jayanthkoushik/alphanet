@@ -52,9 +52,14 @@ class TrainingConfig(Corgy):
         sampler_args=(KeyValuePairs(""), KeyValuePairs("r=0.1")),
     )
     tb_logs: Annotated[TBLogs, "tensorboard log directory"] = TBLogs()
+    train_datagrp: str = "train"
+    val_datagrp: Optional[str] = "val"
+    test_datagrp: str = "test"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        if not self.val_datagrp:
+            self.val_datagrp = None
         if self.train_epochs < self.min_epochs:
             raise ValueError("`train_epochs` should be less than `min_epochs`")
 
@@ -66,14 +71,14 @@ class EpochData(Corgy):
     mean_alpha__vec: Tensor
     min_alpha__vec: Tensor
     max_alpha__vec: Tensor
-    val_metrics: Dict[str, Any]
-    val_acc__per__split: Dict[str, float]
+    val_metrics: Optional[Dict[str, Any]]
+    val_acc__per__split: Optional[Dict[str, float]]
     alphanet_classifier_state_dict: Optional[Dict[str, Any]]
 
 
 class TrainResult(Corgy):
     train_data_info: SplitLTDataGroupInfo
-    val_data_info: SplitLTDataGroupInfo
+    val_data_info: Optional[SplitLTDataGroupInfo]
     nn_info: NNsResult
     alphanet: AlphaNet
     alphanet_source__mat__seq: List[Tensor]
@@ -122,9 +127,13 @@ class TrainCmd(Corgy):
     training: Annotated[TrainingConfig, "training parameters"]
 
     def __call__(self) -> TrainResult:
-        orig_train_data = self.dataset.load_data("train")
-        orig_val_data = self.dataset.load_data("val")
-        orig_test_data = self.dataset.load_data("test")
+        orig_train_data = self.dataset.load_data(self.training.train_datagrp)
+        if (_val_datagrp := self.training.val_datagrp) is not None:
+            orig_val_data = self.dataset.load_data(_val_datagrp)
+        else:
+            logging.warning("no validation data")
+            orig_val_data = None
+        orig_test_data = self.dataset.load_data(self.training.test_datagrp)
         full_clf = self.dataset.load_classifier(DEFAULT_DEVICE)
 
         ############################################################
@@ -163,6 +172,7 @@ class TrainCmd(Corgy):
             self.training.n_neighbors,
             DEFAULT_DEVICE,
             generate=True,
+            datagrp=self.training.train_datagrp,
         )
 
         # `nns_result.nn_clf__per__fclass` contains the nearest neighbor classifiers
@@ -214,7 +224,7 @@ class TrainCmd(Corgy):
         ############################################################
 
         train_data_sampler = self.training.sampler_builder.build(orig_train_data)
-        val_data_loader, test_data_loader = [
+        _val_test_data_loaders = [
             DataLoader(
                 TensorDataset(
                     _orig_data.feat__mat, torch.tensor(_orig_data.label__seq)
@@ -223,7 +233,13 @@ class TrainCmd(Corgy):
                 shuffle=False,
             )
             for _orig_data in [orig_val_data, orig_test_data]
+            if _orig_data is not None
         ]
+        if orig_val_data is not None:
+            val_data_loader, test_data_loader = _val_test_data_loaders
+        else:
+            val_data_loader = None
+            test_data_loader = _val_test_data_loaders[0]
 
         def get_train_data_loader():
             _dataset = train_data_sampler.get_dataset()
@@ -231,7 +247,9 @@ class TrainCmd(Corgy):
 
         train_result = TrainResult()
         train_result.train_data_info = orig_train_data.info
-        train_result.val_data_info = orig_val_data.info
+        train_result.val_data_info = (
+            orig_val_data.info if orig_val_data is not None else None
+        )
         train_result.nn_info = nns_result
         train_result.alphanet = self.alphanet
         train_result.alphanet_source__mat__seq = fclass_nn_clf_w_ordered__seq
@@ -309,37 +327,41 @@ class TrainCmd(Corgy):
             ) = log_alphas(_alpha__mat, self.training.tb_logs, engine.state.epoch)
 
             # Log val metrics.
-            eval_engine.run(val_data_loader)
-            epoch_data.val_metrics = eval_engine.state.metrics
-            epoch_data.val_acc__per__split = eval_engine.state.my_accuracy__per__split
-            log_metrics(
-                epoch_data.val_metrics,
-                epoch_data.val_acc__per__split,
-                self.training.tb_logs,
-                "validation",
-                engine.state.epoch,
-            )
-
-            # Update best model.
-            # Note: `engine.state.epoch` starts at 1.
-            if engine.state.epoch >= self.training.min_epochs:
-                _best_val_acc = (
-                    -1
-                    if train_result.best_epoch is None
-                    else train_result.epoch_data__seq[
-                        train_result.best_epoch
-                    ].val_metrics["accuracy"]
+            if val_data_loader is not None:
+                eval_engine.run(val_data_loader)
+                epoch_data.val_metrics = eval_engine.state.metrics
+                epoch_data.val_acc__per__split = (
+                    eval_engine.state.my_accuracy__per__split
                 )
-                if epoch_data.val_metrics["accuracy"] > _best_val_acc:
-                    logging.info(
-                        "epoch %d is new best with val accuracy: %.2g",
-                        engine.state.epoch,
-                        epoch_data.val_metrics["accuracy"],
+                log_metrics(
+                    epoch_data.val_metrics,
+                    epoch_data.val_acc__per__split,  # type: ignore
+                    self.training.tb_logs,
+                    "validation",
+                    engine.state.epoch,
+                )
+                # Update best model.
+                # Note: `engine.state.epoch` starts at 1.
+                if engine.state.epoch >= self.training.min_epochs:
+                    _best_val_acc = (
+                        -1
+                        if train_result.best_epoch is None
+                        else train_result.epoch_data__seq[  # type: ignore
+                            train_result.best_epoch
+                        ].val_metrics["accuracy"]
                     )
-                    train_result.best_epoch = engine.state.epoch - 1
-                    train_result.best_alphanet_classifier_state_dict = deepcopy(
-                        alphanet_classifier.state_dict()
-                    )
+                    if epoch_data.val_metrics["accuracy"] > _best_val_acc:
+                        logging.info(
+                            "epoch %d is new best with val accuracy: %.2g",
+                            engine.state.epoch,
+                            epoch_data.val_metrics["accuracy"],
+                        )
+                        train_result.best_epoch = engine.state.epoch - 1
+                        train_result.best_alphanet_classifier_state_dict = deepcopy(
+                            alphanet_classifier.state_dict()
+                        )
+            else:
+                epoch_data.val_metrics = epoch_data.val_acc__per__split = None
 
             # Add epoch data to `train_result`.
             train_result.epoch_data__seq.append(epoch_data)
@@ -394,7 +416,7 @@ class TrainCmd(Corgy):
         @train_engine.on(ignite.engine.Events.COMPLETED)
         def _():
             # Load state from epoch with the best overall validation accuracy.
-            if self.training.train_epochs > 0:
+            if self.training.train_epochs > 0 and val_data_loader is not None:
                 logging.info(
                     "best epoch by overall val accuracy: %d",
                     train_result.best_epoch + 1,

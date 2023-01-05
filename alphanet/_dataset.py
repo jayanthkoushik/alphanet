@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
 from glob import glob
 from pathlib import Path
-from typing import Dict, List, Literal, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 import tomli
 import torch
@@ -128,6 +128,7 @@ class SplitLTDataset(str):
     nn_files_dir: Path
     baseline_eval_file_path: Path
     label_names_file_path: Optional[Path] = None
+    datagrps: Tuple[str, ...] = ("train", "val", "test")
 
     try:
         _configs = tomli.load(InputBinFile("config/datasets.toml"))
@@ -153,20 +154,36 @@ class SplitLTDataset(str):
             self.label_names_file_path = self._configs[config].get(
                 "label_names_file_path", None
             )
+            self.datagrps = self._configs[config].get(
+                "datagrps", ("train", "val", "test")
+            )
         except KeyError as e:
             raise ValueError(f"config '{config}' missing value for {e}") from None
         except Exception as e:
             raise ValueError(f"invalid config '{config}': {e}") from None
 
-    def load_data(self, datagrp: Literal["train", "val", "test"]):
+    def load_data(self, datagrp: str):
+        if datagrp not in self.datagrps:
+            raise ValueError(
+                f"unknown data group: {datagrp}: choose from: {self.datagrps}"
+            )
         return SplitLTDataGroup(self, datagrp)
 
     def load_classifier(self, device=torch.device("cpu")) -> torch.nn.Linear:
         return self.classifier_loader.load(self.classifier_file, device)
 
     def load_nns(
-        self, nn_dist: str, n_neighbors: int, device=torch.device("cpu"), generate=False
+        self,
+        nn_dist: str,
+        n_neighbors: int,
+        device=torch.device("cpu"),
+        generate=False,
+        datagrp="train",
     ):
+        if datagrp not in self.datagrps:
+            raise ValueError(
+                f"unknown data group: {datagrp}: choose from: {self.datagrps}"
+            )
         _nns_file = self.nn_files_dir / f"{nn_dist}_{n_neighbors}.pth"
         if not _nns_file.exists():
             if not generate:
@@ -175,7 +192,7 @@ class SplitLTDataset(str):
                 )
             logging.warning("nns file not found: generating results")
             self.nn_files_dir.mkdir(parents=True, exist_ok=True)
-            NNsResult._generate(self, nn_dist, n_neighbors)
+            NNsResult._generate(self, nn_dist, n_neighbors, datagrp)
 
         return NNsResult.from_dict(torch.load(_nns_file, map_location=device))
 
@@ -198,9 +215,7 @@ class SplitLTDataGroup:
     label_name__seq: Optional[List[str]] = None
     info: SplitLTDataGroupInfo
 
-    def __init__(
-        self, dataset: SplitLTDataset, datagrp: Literal["train", "val", "test"]
-    ):
+    def __init__(self, dataset: SplitLTDataset, datagrp: str):
         data_file_names = list(glob(str(dataset.feature_files_dir / f"{datagrp}*.pkl")))
         pbar = trange(
             len(data_file_names),
@@ -266,9 +281,9 @@ class NNsResult(Corgy):
 
     @classmethod
     def _generate(
-        cls, dataset: SplitLTDataset, nn_dist: str, n_neighbors: int
+        cls, dataset: SplitLTDataset, nn_dist: str, n_neighbors: int, datagrp: str
     ) -> "NNsResult":
-        train_data = dataset.load_data("train")
+        train_data = dataset.load_data(datagrp)
         nns_result = NNsResult()
         nns_result.n_neighbors = n_neighbors
         nns_result.nn_dist = nn_dist

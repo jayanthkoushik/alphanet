@@ -402,7 +402,7 @@ class PlotTemplateDeltas(BasePlotCmd):
         )
 
         # Load projections of test samples.
-        test_data = dataset.load_data("test")
+        test_data = dataset.load_data(alphanet_res.training_config.test_datagrp)
         test_proj__mat = test_data.feat__mat
 
         # Normalize the templates and projections.
@@ -657,7 +657,7 @@ class PlotTemplateDeltas(BasePlotCmd):
 def get_per_class_test_accs(res: TrainResult, batch_size: int, return_preds=False):
     alphanet_classifier = res.load_best_alphanet_classifier()
     dataset = SplitLTDataset(res.train_data_info.dataset_name)
-    test_datagrp = dataset.load_data("test")
+    test_datagrp = dataset.load_data(res.training_config.test_datagrp)
     test_data_loader = DataLoader(
         TensorDataset(test_datagrp.feat__mat, torch.tensor(test_datagrp.label__seq)),
         batch_size,
