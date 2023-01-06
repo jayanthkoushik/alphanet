@@ -276,6 +276,7 @@ class PlotAlphaDist(_BaseMultiFilePlotCmd, BasePlotCmd):
                 raise ValueError("nn_dist not same for result files")
 
             _alphanet_classifier = _res.load_best_alphanet_classifier()
+            _alphanet_classifier = _alphanet_classifier.to(DEFAULT_DEVICE).eval()
             _alpha__mat = _alphanet_classifier.get_learned_alpha_vecs()
             assert all(bool(_a0 == 1) for _a0 in _alpha__mat[:, 0])
 
@@ -341,6 +342,7 @@ class PlotTemplateDeltas(BasePlotCmd):
         )
 
         _alphanet_classifier = alphanet_res.load_best_alphanet_classifier()
+        _alphanet_classifier = _alphanet_classifier.to(DEFAULT_DEVICE).eval()
         alphanet_template__mat = _alphanet_classifier.get_trained_templates()
 
         _baseline_clf = dataset.load_classifier(DEFAULT_DEVICE)
@@ -656,6 +658,7 @@ class PlotTemplateDeltas(BasePlotCmd):
 
 def get_per_class_test_accs(res: TrainResult, batch_size: int, return_preds=False):
     alphanet_classifier = res.load_best_alphanet_classifier()
+    alphanet_classifier = alphanet_classifier.to(DEFAULT_DEVICE).eval()
     dataset = SplitLTDataset(res.train_data_info.dataset_name)
     test_datagrp = dataset.load_data(res.training_config.test_datagrp)
     test_data_loader = DataLoader(
