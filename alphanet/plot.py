@@ -22,7 +22,7 @@ from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 
-from alphanet._dataset import SplitLTDataset
+from alphanet._dataset import SplitLTDataGroup, SplitLTDataset
 from alphanet._samplers import AllFewSampler, ClassBalancedBaseSampler
 from alphanet._utils import ContextPlot, CUD_PALETTE
 from alphanet.train import TrainResult
@@ -656,15 +656,16 @@ class PlotTemplateDeltas(BasePlotCmd):
                     )
 
 
-TEST_DATA_CACHE = {}
+TEST_DATA_CACHE: Dict[str, SplitLTDataGroup] = {}
 
 
 def get_per_class_test_accs(res: TrainResult, batch_size: int, return_preds=False):
     alphanet_classifier = res.load_best_alphanet_classifier()
     alphanet_classifier = alphanet_classifier.to(DEFAULT_DEVICE).eval()
     dataset = SplitLTDataset(res.train_data_info.dataset_name)
-    test_datagrp = TEST_DATA_CACHE.get(res.train_data_info.dataset_name, None)
-    if test_datagrp is None:
+    try:
+        test_datagrp = TEST_DATA_CACHE[res.train_data_info.dataset_name]
+    except KeyError:
         test_datagrp = dataset.load_data(res.training_config.test_datagrp)
         TEST_DATA_CACHE[res.train_data_info.dataset_name] = test_datagrp
     test_data_loader = DataLoader(

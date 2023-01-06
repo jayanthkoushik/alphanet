@@ -5,7 +5,7 @@ from argparse import ArgumentParser, SUPPRESS
 from corgy import CorgyHelpFormatter
 
 import alphanet.plot
-from alphanet.plot import BasePlotCmd, PlotPerClsAccVsSamples
+from alphanet.plot import BasePlotCmd
 
 parser = ArgumentParser(formatter_class=CorgyHelpFormatter, usage=SUPPRESS)
 sub_parsers = parser.add_subparsers(dest="cmd", required=True)

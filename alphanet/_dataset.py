@@ -285,7 +285,7 @@ class NNsResult(Corgy):
         dataset: SplitLTDataset,
         nn_dist: str,
         n_neighbors: int,
-        datagrp: Union[str, SplitLTDataGroup]
+        datagrp: Union[str, SplitLTDataGroup],
     ) -> "NNsResult":
         train_data = dataset.load_data(datagrp) if isinstance(datagrp, str) else datagrp
         nns_result = NNsResult()
