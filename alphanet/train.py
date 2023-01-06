@@ -172,7 +172,7 @@ class TrainCmd(Corgy):
             self.training.n_neighbors,
             DEFAULT_DEVICE,
             generate=True,
-            datagrp=self.training.train_datagrp,
+            datagrp=orig_train_data,
         )
 
         # `nns_result.nn_clf__per__fclass` contains the nearest neighbor classifiers
