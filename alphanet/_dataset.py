@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
 from glob import glob
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 import tomli
 import torch
@@ -178,9 +178,9 @@ class SplitLTDataset(str):
         n_neighbors: int,
         device=torch.device("cpu"),
         generate=False,
-        datagrp="train",
+        datagrp: Union[str, "SplitLTDataGroup"] = "train",
     ):
-        if datagrp not in self.datagrps:
+        if isinstance(datagrp, str) and datagrp not in self.datagrps:
             raise ValueError(
                 f"unknown data group: {datagrp}: choose from: {self.datagrps}"
             )
@@ -281,9 +281,13 @@ class NNsResult(Corgy):
 
     @classmethod
     def _generate(
-        cls, dataset: SplitLTDataset, nn_dist: str, n_neighbors: int, datagrp: str
+        cls,
+        dataset: SplitLTDataset,
+        nn_dist: str,
+        n_neighbors: int,
+        datagrp: Union[str, SplitLTDataGroup],
     ) -> "NNsResult":
-        train_data = dataset.load_data(datagrp)
+        train_data = dataset.load_data(datagrp) if isinstance(datagrp, str) else datagrp
         nns_result = NNsResult()
         nns_result.n_neighbors = n_neighbors
         nns_result.nn_dist = nn_dist

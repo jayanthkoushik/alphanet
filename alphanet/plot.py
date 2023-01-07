@@ -22,9 +22,9 @@ from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 
-from alphanet._dataset import SplitLTDataset
+from alphanet._dataset import SplitLTDataGroup, SplitLTDataset
 from alphanet._samplers import AllFewSampler, ClassBalancedBaseSampler
-from alphanet._utils import ContextPlot, CUD_PALETTE
+from alphanet._utils import ContextPlot, CUD_PALETTE, PlotParams
 from alphanet.train import TrainResult
 
 logging.root.setLevel(logging.INFO)
@@ -43,7 +43,7 @@ class _BaseMultiFilePlotCmd(Corgy):
     res_files_pattern: str = "**/*.pth"
     plot: ContextPlot
 
-    def _iter_train_results(self, include_baselines=False):
+    def _iter_train_results(self):
         dataset_names = set()
         for _res_sub_dir in self.res_sub_dirs or [""]:
             for _res_file in tqdm(
@@ -55,21 +55,14 @@ class _BaseMultiFilePlotCmd(Corgy):
                     torch.load(_res_file, map_location=DEFAULT_DEVICE)
                 )
                 dataset_names.add(res.train_data_info.dataset_name)
-                yield res, "AlphaNet"
-
-        for _dataset_name in dataset_names:
-            _dataset = SplitLTDataset(_dataset_name)
-            res = TrainResult.from_dict(
-                torch.load(
-                    _dataset.baseline_eval_file_path, map_location=DEFAULT_DEVICE
-                )
-            )
-            yield res, "Baseline"
+                yield res
 
 
 class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
     dataset: SplitLTDataset
     eval_batch_size: int = 1024
+    scatter: bool = False
+    plot_params: PlotParams
 
     def __call__(self):
         baseline_res = TrainResult.from_dict(
@@ -82,7 +75,10 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
         df_rows = []
         rhos = set()
         for _id, (_res, _res_type) in enumerate(
-            itertools.chain(self._iter_train_results(), [(baseline_res, "Baseline")])
+            itertools.chain(
+                ((_tres, "AlphaNet") for _tres in self._iter_train_results()),
+                [(baseline_res, "Baseline")],
+            )
         ):
             if _res.train_data_info.dataset_name != str(self.dataset):
                 raise ValueError("result file does not match input dataset")
@@ -94,7 +90,14 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
             ):
                 raise ValueError(f"bad sampler: {_res.training_config.sampler_builder}")
 
-            _acc__per__class, _ = get_per_class_test_accs(_res, self.eval_batch_size)
+            _acc__per__class = _res.test_acc__per__class
+            if _acc__per__class is None:
+                tqdm.write(
+                    f"generating per-class test accuracies for {_res_type.lower()} file"
+                )
+                _acc__per__class, _ = get_per_class_test_accs(
+                    _res, self.eval_batch_size
+                )
             assert set(_acc__per__class.keys()) == set(n_train_imgs__per__class.keys())
 
             if _res_type == "AlphaNet":
@@ -118,8 +121,8 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
         df = pd.DataFrame(df_rows)
         logging.info("loaded dataframe:\n%s", df)
 
-        self.plot.config()
         _hue_order = ["Baseline"] + [f"$\\rho={_rho}$" for _rho in sorted(rhos)]
+        self.plot.config()
         g = sns.lmplot(
             data=df,
             x="Train samples",
@@ -128,19 +131,15 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
             units="ID",
             hue_order=_hue_order,
             logx=True,
-            scatter=False,
+            scatter=self.scatter,
             legend=False,
             facet_kws=dict(despine=False, legend_out=False),
         )
-        g.ax.set_xscale("log")
-        g.ax.set_xlim(1, 1000)
-        g.ax.set_ylim(0, 1.01)
-        g.ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+        self.plot_params.set_params(g.ax)
         g.add_legend(title="", loc="upper left", bbox_to_anchor=(0.1, 1))
         g.figure.set_size_inches(self.plot.get_size())
         if self.plot.file is not None:
-            g.savefig(self.plot.file)
-            self.plot.file.close()
+            g.savefig(self.plot.file.name)
 
 
 class PlotDeltaPerClassAccs(_BaseMultiFilePlotCmd, BasePlotCmd):
@@ -153,9 +152,12 @@ class PlotDeltaPerClassAccs(_BaseMultiFilePlotCmd, BasePlotCmd):
                 self.dataset.baseline_eval_file_path, map_location=DEFAULT_DEVICE
             )
         )
-        baseline_test_acc__per__class, _ = get_per_class_test_accs(
-            baseline_res, self.eval_batch_size
-        )
+        baseline_test_acc__per__class = baseline_res.test_acc__per__class
+        if baseline_test_acc__per__class is None:
+            tqdm.write("generating per-class test accuracies for baseline")
+            baseline_test_acc__per__class, _ = get_per_class_test_accs(
+                baseline_res, self.eval_batch_size
+            )
 
         def _get_split_for_class(_class):
             nonlocal baseline_res
@@ -178,11 +180,16 @@ class PlotDeltaPerClassAccs(_BaseMultiFilePlotCmd, BasePlotCmd):
         overall_test_acc_deltas = set()
         test_acc_deltas__per__split = defaultdict(set)
 
-        for _id, (_res, _) in enumerate(self._iter_train_results()):
+        for _id, _res in enumerate(self._iter_train_results()):
             if _res.train_data_info.dataset_name != str(self.dataset):
                 raise ValueError("result file does not match input dataset")
 
-            _acc__per__class, _ = get_per_class_test_accs(_res, self.eval_batch_size)
+            _acc__per__class = _res.test_acc__per__class
+            if _acc__per__class is None:
+                tqdm.write("generating per-class test accuracies for file")
+                _acc__per__class, _ = get_per_class_test_accs(
+                    _res, self.eval_batch_size
+                )
             assert set(_acc__per__class.keys()) == set(
                 baseline_test_acc__per__class.keys()
             )
@@ -257,13 +264,15 @@ class PlotDeltaPerClassAccs(_BaseMultiFilePlotCmd, BasePlotCmd):
 
 
 class PlotAlphaDist(_BaseMultiFilePlotCmd, BasePlotCmd):
+    plot_params: PlotParams
+
     def __call__(self):
         df_rows = []
         dataset_name = None
         n_neighbors = None
         nn_dist = None
 
-        for _id, (_res, _) in enumerate(self._iter_train_results()):
+        for _id, _res in enumerate(self._iter_train_results()):
             if _id == 0:
                 dataset_name = _res.train_data_info.dataset_name
                 n_neighbors = _res.training_config.n_neighbors
@@ -276,6 +285,7 @@ class PlotAlphaDist(_BaseMultiFilePlotCmd, BasePlotCmd):
                 raise ValueError("nn_dist not same for result files")
 
             _alphanet_classifier = _res.load_best_alphanet_classifier()
+            _alphanet_classifier = _alphanet_classifier.to(DEFAULT_DEVICE).eval()
             _alpha__mat = _alphanet_classifier.get_learned_alpha_vecs()
             assert all(bool(_a0 == 1) for _a0 in _alpha__mat[:, 0])
 
@@ -304,10 +314,8 @@ class PlotAlphaDist(_BaseMultiFilePlotCmd, BasePlotCmd):
             palette=itertools.cycle(CUD_PALETTE[1:]),
             facet_kws=dict(despine=False, legend_out=False),
         )
-        g.ax.set_xticks([-1, 0, 1])
+        self.plot_params.set_params(g.ax)
         g.ax.set_xlabel("$\\alpha$")
-        g.ax.set_ylim(0, 1.01)
-        g.ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
         g.legend.set_title("")
         g.despine(top=True, bottom=False, left=True, right=True, trim=True)
         g.figure.set_size_inches(self.plot.get_size())
@@ -341,6 +349,7 @@ class PlotTemplateDeltas(BasePlotCmd):
         )
 
         _alphanet_classifier = alphanet_res.load_best_alphanet_classifier()
+        _alphanet_classifier = _alphanet_classifier.to(DEFAULT_DEVICE).eval()
         alphanet_template__mat = _alphanet_classifier.get_trained_templates()
 
         _baseline_clf = dataset.load_classifier(DEFAULT_DEVICE)
@@ -654,10 +663,18 @@ class PlotTemplateDeltas(BasePlotCmd):
                     )
 
 
+TEST_DATA_CACHE: Dict[str, SplitLTDataGroup] = {}
+
+
 def get_per_class_test_accs(res: TrainResult, batch_size: int, return_preds=False):
     alphanet_classifier = res.load_best_alphanet_classifier()
+    alphanet_classifier = alphanet_classifier.to(DEFAULT_DEVICE).eval()
     dataset = SplitLTDataset(res.train_data_info.dataset_name)
-    test_datagrp = dataset.load_data(res.training_config.test_datagrp)
+    try:
+        test_datagrp = TEST_DATA_CACHE[res.train_data_info.dataset_name]
+    except KeyError:
+        test_datagrp = dataset.load_data(res.training_config.test_datagrp)
+        TEST_DATA_CACHE[res.train_data_info.dataset_name] = test_datagrp
     test_data_loader = DataLoader(
         TensorDataset(test_datagrp.feat__mat, torch.tensor(test_datagrp.label__seq)),
         batch_size,
