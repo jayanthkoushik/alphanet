@@ -24,7 +24,7 @@ from tqdm import tqdm
 
 from alphanet._dataset import SplitLTDataGroup, SplitLTDataset
 from alphanet._samplers import AllFewSampler, ClassBalancedBaseSampler
-from alphanet._utils import ContextPlot, CUD_PALETTE
+from alphanet._utils import ContextPlot, CUD_PALETTE, PlotParams
 from alphanet.train import TrainResult
 
 logging.root.setLevel(logging.INFO)
@@ -61,6 +61,7 @@ class _BaseMultiFilePlotCmd(Corgy):
 class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
     dataset: SplitLTDataset
     eval_batch_size: int = 1024
+    plot_params: PlotParams
 
     def __call__(self):
         baseline_res = TrainResult.from_dict(
@@ -120,6 +121,7 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
         logging.info("loaded dataframe:\n%s", df)
 
         _hue_order = ["Baseline"] + [f"$\\rho={_rho}$" for _rho in sorted(rhos)]
+        self.plot.config()
         g = sns.lmplot(
             data=df,
             x="Train samples",
@@ -132,10 +134,7 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
             legend=False,
             facet_kws=dict(despine=False, legend_out=False),
         )
-        g.ax.set_xscale("log")
-        g.ax.set_xlim(1, 1000)
-        g.ax.set_ylim(0, 1.01)
-        g.ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+        self.plot_params.set_params(g.ax)
         g.add_legend(title="", loc="upper left", bbox_to_anchor=(0.1, 1))
         g.figure.set_size_inches(self.plot.get_size())
         if self.plot.file is not None:
@@ -264,6 +263,8 @@ class PlotDeltaPerClassAccs(_BaseMultiFilePlotCmd, BasePlotCmd):
 
 
 class PlotAlphaDist(_BaseMultiFilePlotCmd, BasePlotCmd):
+    plot_params: PlotParams
+
     def __call__(self):
         df_rows = []
         dataset_name = None
@@ -312,10 +313,8 @@ class PlotAlphaDist(_BaseMultiFilePlotCmd, BasePlotCmd):
             palette=itertools.cycle(CUD_PALETTE[1:]),
             facet_kws=dict(despine=False, legend_out=False),
         )
-        g.ax.set_xticks([-1, 0, 1])
+        self.plot_params.set_params(g.ax)
         g.ax.set_xlabel("$\\alpha$")
-        g.ax.set_ylim(0, 1.01)
-        g.ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
         g.legend.set_title("")
         g.despine(top=True, bottom=False, left=True, right=True, trim=True)
         g.figure.set_size_inches(self.plot.get_size())

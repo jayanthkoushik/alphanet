@@ -1,13 +1,15 @@
 import json
 import logging
+import math
 import shutil
 from contextlib import contextmanager, ExitStack
 from functools import cached_property
-from typing import Any, Dict, Iterable, Literal, Optional, Tuple
+from typing import Any, Dict, Iterable, Literal, Optional, Sequence, Tuple
 from unittest.mock import Mock
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 from corgy import Corgy, corgyparser
 from corgy.types import KeyValuePairs, OutputBinFile, OutputDirectory, SubClass
@@ -300,6 +302,58 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
         mpl.rcParams.update(self._rc_orig)
         if exc_type is not None:
             return
+
+
+class PlotParams(Corgy, corgy_make_slots=False):
+    """Parameters for plot axes."""
+
+    log_xscale: Annotated[bool, "whether to use log scale for the x axis"] = False
+    log_yscale: Annotated[bool, "whether to use log scale for the y axis"] = False
+
+    xlim: Annotated[
+        Tuple[Optional[float], Optional[float]],
+        "limits for the x axis (if a value is 'inf' or '', the corresponding limit "
+        "will not be set",
+    ] = (None, None)
+    ylim: Annotated[
+        Tuple[Optional[float], Optional[float]],
+        "limits for the y axis (if a value is 'inf' or '', the corresponding limit "
+        "will not be set",
+    ] = (None, None)
+
+    xticks: Annotated[
+        Optional[Sequence[float]],
+        "ticks for the x axis (if not specified, ticks will not be modified)",
+    ] = None
+    yticks: Annotated[
+        Optional[Sequence[float]],
+        "ticks for the y axis (if not specified, ticks will not be modified)",
+    ] = None
+
+    @corgyparser("xlim", "ylim", metavar="float")
+    @staticmethod
+    def _parse_lim(s: str) -> Optional[float]:
+        if not s or math.isinf((_f := float(s))):
+            return None
+        return _f
+
+    def set_params(self, axs):
+        """Set plot parameters to the given axes."""
+        if isinstance(axs, np.ndarray):
+            axs = axs.flatten()
+        else:
+            axs = [axs]
+        for _ax in axs:
+            if self.log_xscale:
+                _ax.set_xscale("log")
+            if self.log_yscale:
+                _ax.set_yscale("log")
+            _ax.set_xlim(*self.xlim)
+            _ax.set_ylim(*self.ylim)
+            if self.xticks is not None:
+                _ax.set_xticks(self.xticks)
+            if self.yticks is not None:
+                _ax.set_yticks(self.yticks)
 
 
 class Plot(Corgy, corgy_make_slots=False):
