@@ -323,6 +323,7 @@ class CombinedSampler(BaseSampler):
     """Sampler that combines the output of multiple samplers."""
 
     def __init__(self, data, sampler_cls__seq, sampler_args__seq, *args, **kwargs):
+        # pylint: disable=super-init-not-called
         if 1 < len(sampler_args__seq) < len(sampler_cls__seq):
             raise ValueError(
                 f"need {len(sampler_cls__seq)} sets of arguments for samplers, got "
@@ -334,7 +335,7 @@ class CombinedSampler(BaseSampler):
                 sampler_cls__seq, sampler_args__seq, fillvalue=sampler_args__seq[-1]
             )
         ]
-        super().__init__(data, *args, **kwargs)
+        self.data = data
 
     def _get(self):
         return reduce(concat, (_sampler._get() for _sampler in self._samplers), [])
