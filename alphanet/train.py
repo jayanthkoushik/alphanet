@@ -73,6 +73,7 @@ class EpochData(Corgy):
     max_alpha__vec: Tensor
     val_metrics: Optional[Dict[str, Any]]
     val_acc__per__split: Optional[Dict[str, float]]
+    val_acc__per__class: Optional[Dict[int, float]] = None
     alphanet_classifier_state_dict: Optional[Dict[str, Any]]
 
 
@@ -89,6 +90,7 @@ class TrainResult(Corgy):
     best_alphanet_classifier_state_dict: Dict[str, Any]
     test_metrics: Dict[str, Any]
     test_acc__per__split: Dict[str, float]
+    test_acc__per__class: Optional[Dict[int, float]] = None
 
     def as_dict(self, recursive=False):
         d = super().as_dict(recursive)
@@ -333,6 +335,10 @@ class TrainCmd(Corgy):
                 epoch_data.val_acc__per__split = (
                     eval_engine.state.my_accuracy__per__split
                 )
+                epoch_data.val_acc__per__class = (
+                    eval_engine.state.my_accuracy__per__class
+                )
+
                 log_metrics(
                     epoch_data.val_metrics,
                     epoch_data.val_acc__per__split,  # type: ignore
@@ -373,6 +379,7 @@ class TrainCmd(Corgy):
             engine.state.my_y__seq = []
             engine.state.my_yhat__seq = []
             engine.state.my_accuracy__per__split = None
+            engine.state.my_accuracy__per__class = None
 
         @eval_engine.on(ignite.engine.Events.ITERATION_COMPLETED)
         def _(engine: ignite.engine.Engine):
@@ -385,6 +392,8 @@ class TrainCmd(Corgy):
         def _(engine: ignite.engine.Engine):
             _correct_preds__per__split: Dict[str, int] = defaultdict(int)
             _total_preds__per__split: Dict[str, int] = defaultdict(int)
+            _correct_preds__per__class: Dict[int, int] = defaultdict(int)
+            _total_preds__per__class: Dict[int, int] = defaultdict(int)
 
             for _y_i, _yhat_i in zip(engine.state.my_y__seq, engine.state.my_yhat__seq):
                 _split = next(
@@ -395,13 +404,22 @@ class TrainCmd(Corgy):
                 _correct = int(_y_i == _yhat_i)
                 _correct_preds__per__split[_split] += _correct
                 _total_preds__per__split[_split] += 1
+                _correct_preds__per__class[_y_i] += _correct
+                _total_preds__per__class[_y_i] += 1
 
             engine.state.my_accuracy__per__split = {
                 _split: float(
                     _correct_preds__per__split[_split]
                     / _total_preds__per__split[_split]
                 )
-                for _split in _correct_preds__per__split
+                for _split in _total_preds__per__split
+            }
+            engine.state.my_accuracy__per__class = {
+                _class: float(
+                    _correct_preds__per__class[_class]
+                    / _total_preds__per__class[_class]
+                )
+                for _class in _total_preds__per__class
             }
 
             assert torch.isclose(
@@ -411,6 +429,11 @@ class TrainCmd(Corgy):
                 torch.tensor(
                     [engine.state.metrics["accuracy"] * len(engine.state.my_y__seq)]
                 ),
+            )
+            _y_counter: Dict[int, int] = Counter(engine.state.my_y__seq)
+            assert all(
+                _total_preds__per__class[_class] == _y_counter[_class]
+                for _class in _y_counter
             )
 
         @train_engine.on(ignite.engine.Events.COMPLETED)
@@ -434,6 +457,9 @@ class TrainCmd(Corgy):
             train_result.test_metrics = eval_engine.state.metrics
             train_result.test_acc__per__split = (
                 eval_engine.state.my_accuracy__per__split
+            )
+            train_result.test_acc__per__class = (
+                eval_engine.state.my_accuracy__per__class
             )
             log_metrics(
                 train_result.test_metrics,

@@ -43,7 +43,7 @@ class _BaseMultiFilePlotCmd(Corgy):
     res_files_pattern: str = "**/*.pth"
     plot: ContextPlot
 
-    def _iter_train_results(self, include_baselines=False):
+    def _iter_train_results(self):
         dataset_names = set()
         for _res_sub_dir in self.res_sub_dirs or [""]:
             for _res_file in tqdm(
@@ -55,16 +55,7 @@ class _BaseMultiFilePlotCmd(Corgy):
                     torch.load(_res_file, map_location=DEFAULT_DEVICE)
                 )
                 dataset_names.add(res.train_data_info.dataset_name)
-                yield res, "AlphaNet"
-
-        for _dataset_name in dataset_names:
-            _dataset = SplitLTDataset(_dataset_name)
-            res = TrainResult.from_dict(
-                torch.load(
-                    _dataset.baseline_eval_file_path, map_location=DEFAULT_DEVICE
-                )
-            )
-            yield res, "Baseline"
+                yield res
 
 
 class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
@@ -82,7 +73,10 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
         df_rows = []
         rhos = set()
         for _id, (_res, _res_type) in enumerate(
-            itertools.chain(self._iter_train_results(), [(baseline_res, "Baseline")])
+            itertools.chain(
+                ((_tres, "AlphaNet") for _tres in self._iter_train_results()),
+                [(baseline_res, "Baseline")],
+            )
         ):
             if _res.train_data_info.dataset_name != str(self.dataset):
                 raise ValueError("result file does not match input dataset")
@@ -94,7 +88,14 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
             ):
                 raise ValueError(f"bad sampler: {_res.training_config.sampler_builder}")
 
-            _acc__per__class, _ = get_per_class_test_accs(_res, self.eval_batch_size)
+            _acc__per__class = _res.test_acc__per__class
+            if _acc__per__class is None:
+                tqdm.write(
+                    f"generating per-class test accuracies for {_res_type.lower()} file"
+                )
+                _acc__per__class, _ = get_per_class_test_accs(
+                    _res, self.eval_batch_size
+                )
             assert set(_acc__per__class.keys()) == set(n_train_imgs__per__class.keys())
 
             if _res_type == "AlphaNet":
@@ -118,7 +119,6 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
         df = pd.DataFrame(df_rows)
         logging.info("loaded dataframe:\n%s", df)
 
-        self.plot.config()
         _hue_order = ["Baseline"] + [f"$\\rho={_rho}$" for _rho in sorted(rhos)]
         g = sns.lmplot(
             data=df,
@@ -139,8 +139,7 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
         g.add_legend(title="", loc="upper left", bbox_to_anchor=(0.1, 1))
         g.figure.set_size_inches(self.plot.get_size())
         if self.plot.file is not None:
-            g.savefig(self.plot.file)
-            self.plot.file.close()
+            g.savefig(self.plot.file.name)
 
 
 class PlotDeltaPerClassAccs(_BaseMultiFilePlotCmd, BasePlotCmd):
@@ -153,9 +152,12 @@ class PlotDeltaPerClassAccs(_BaseMultiFilePlotCmd, BasePlotCmd):
                 self.dataset.baseline_eval_file_path, map_location=DEFAULT_DEVICE
             )
         )
-        baseline_test_acc__per__class, _ = get_per_class_test_accs(
-            baseline_res, self.eval_batch_size
-        )
+        baseline_test_acc__per__class = baseline_res.test_acc__per__class
+        if baseline_test_acc__per__class is None:
+            tqdm.write("generating per-class test accuracies for baseline")
+            baseline_test_acc__per__class, _ = get_per_class_test_accs(
+                baseline_res, self.eval_batch_size
+            )
 
         def _get_split_for_class(_class):
             nonlocal baseline_res
@@ -178,11 +180,16 @@ class PlotDeltaPerClassAccs(_BaseMultiFilePlotCmd, BasePlotCmd):
         overall_test_acc_deltas = set()
         test_acc_deltas__per__split = defaultdict(set)
 
-        for _id, (_res, _) in enumerate(self._iter_train_results()):
+        for _id, _res in enumerate(self._iter_train_results()):
             if _res.train_data_info.dataset_name != str(self.dataset):
                 raise ValueError("result file does not match input dataset")
 
-            _acc__per__class, _ = get_per_class_test_accs(_res, self.eval_batch_size)
+            _acc__per__class = _res.test_acc__per__class
+            if _acc__per__class is None:
+                tqdm.write("generating per-class test accuracies for file")
+                _acc__per__class, _ = get_per_class_test_accs(
+                    _res, self.eval_batch_size
+                )
             assert set(_acc__per__class.keys()) == set(
                 baseline_test_acc__per__class.keys()
             )
@@ -263,7 +270,7 @@ class PlotAlphaDist(_BaseMultiFilePlotCmd, BasePlotCmd):
         n_neighbors = None
         nn_dist = None
 
-        for _id, (_res, _) in enumerate(self._iter_train_results()):
+        for _id, _res in enumerate(self._iter_train_results()):
             if _id == 0:
                 dataset_name = _res.train_data_info.dataset_name
                 n_neighbors = _res.training_config.n_neighbors
