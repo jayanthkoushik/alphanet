@@ -61,6 +61,7 @@ class _BaseMultiFilePlotCmd(Corgy):
 class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
     dataset: SplitLTDataset
     eval_batch_size: int = 1024
+    scatter: bool = False
     plot_params: PlotParams
 
     def __call__(self):
@@ -130,7 +131,7 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
             units="ID",
             hue_order=_hue_order,
             logx=True,
-            scatter=False,
+            scatter=self.scatter,
             legend=False,
             facet_kws=dict(despine=False, legend_out=False),
         )
