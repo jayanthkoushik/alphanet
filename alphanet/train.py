@@ -5,10 +5,11 @@ from typing import Any, Dict, List, Literal, Optional
 
 import ignite.contrib.handlers
 import ignite.engine
+import ignite.handlers
 import ignite.metrics
 import torch
 from corgy import Corgy
-from corgy.types import KeyValuePairs, OutputBinFile
+from corgy.types import KeyValuePairs, OutputBinFile, OutputDirectory
 from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 from typing_extensions import Annotated
@@ -119,9 +120,41 @@ class TrainResult(Corgy):
         alphanet_classifier.load_state_dict(self.best_alphanet_classifier_state_dict)
         return alphanet_classifier
 
+    def state_dict(self):
+        return self.as_dict(recursive=True)
+
+    def load_state_dict(self, d):
+        o = self.__class__.from_dict(d)
+        try:
+            self.train_data_info = o.train_data_info
+            self.val_data_info = o.val_data_info
+            self.nn_info = o.nn_info
+            self.alphanet = o.alphanet
+            self.alphanet_source__mat__seq = o.alphanet_source__mat__seq
+            self.fbclass_ordered_idx__vec = o.fbclass_ordered_idx__vec
+            self.training_config = o.training_config
+            self.epoch_data__seq = o.epoch_data__seq
+            self.best_epoch = o.best_epoch
+            self.best_alphanet_classifier_state_dict = (
+                o.best_alphanet_classifier_state_dict
+            )
+            self.test_metrics = o.test_metrics
+            self.test_acc__per__class = o.test_acc__per__class
+            self.test_acc__per__split = o.test_acc__per__split
+        except AttributeError:
+            pass
+
 
 class TrainCmd(Corgy):
     save_file: Annotated[Optional[OutputBinFile], "file to save training results"]
+    ckpt_dir: Annotated[
+        Optional[OutputDirectory], "directory to save/load checkpoints"
+    ] = None
+    n_ckpt: Annotated[int, "number of most recent checkpoints to keep"] = 2
+    load_from_ckpt: Annotated[
+        bool,
+        "whether to load the latest checkpoint (ignored if `ckpt_dir` not provided)",
+    ] = True
     dataset: Annotated[
         SplitLTDataset, "name of dataset as defined in 'config/datasets.toml'",
     ]
@@ -467,6 +500,37 @@ class TrainCmd(Corgy):
                 self.training.tb_logs,
                 "test",
             )
+
+        # Set up checkpointing.
+        if self.ckpt_dir is not None:
+            _ckpt_data = {
+                "model": alphanet_classifier,
+                "optimizer": self.training.ptopt.optimizer,
+                "lr_scheduler": self.training.ptopt.lr_scheduler,
+                "trainer": train_engine,
+                "train_result": train_result,
+            }
+            _ckpt_handler = ignite.handlers.ModelCheckpoint(
+                self.ckpt_dir,
+                n_saved=self.n_ckpt,
+                require_empty=False,
+                global_step_transform=lambda *_: train_engine.state.epoch,
+            )
+            train_engine.add_event_handler(
+                ignite.engine.Events.EPOCH_COMPLETED, _ckpt_handler, _ckpt_data
+            )
+
+            # Load exisiting checkpoint if available.
+            if self.load_from_ckpt:
+                _ckpt_files = list(self.ckpt_dir.glob("checkpoint_*.pt"))
+                if not _ckpt_files:
+                    logging.info("no previous checkpoint found")
+                else:
+                    _latest_ckpt_file = max(
+                        _ckpt_files, key=lambda _f: int(_f.stem.split("_")[1])
+                    )
+                    logging.warning("loading from checkpoint: '%s'", _latest_ckpt_file)
+                    _ckpt_handler.load_objects(_ckpt_data, _latest_ckpt_file)
 
         train_engine.run(get_train_data_loader(), max_epochs=self.training.train_epochs)
         self.training.tb_logs.writer.close()
