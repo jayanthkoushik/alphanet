@@ -64,6 +64,11 @@ class TrainingConfig(Corgy):
         if self.train_epochs < self.min_epochs:
             raise ValueError("`train_epochs` should be less than `min_epochs`")
 
+    def as_dict(self, recursive=False):
+        d = super().as_dict(recursive)
+        del d["tb_logs"]
+        return d
+
 
 class EpochData(Corgy):
     n_train__per__class: Dict[int, int]
