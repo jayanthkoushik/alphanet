@@ -358,6 +358,15 @@ class SamplerBuilder(Corgy):
         "it is used for all samplers",
     ] = (KeyValuePairs(""),)
 
+    def as_dict(self, recursive=False):
+        return {
+            "sampler_classes": tuple(
+                _s.which if isinstance(_s, SubClass) else _s
+                for _s in self.sampler_classes
+            ),
+            "sampler_args": tuple(map(dict, self.sampler_args)),
+        }
+
     def build(self, data, *args, **kwargs):
         return CombinedSampler(
             data, self.sampler_classes, self.sampler_args, *args, **kwargs
