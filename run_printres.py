@@ -99,7 +99,8 @@ print(sep_str)
 
 for _mrow, _srow in zip(mean_table.iterrows(), std_table.iterrows()):
     _mrow, _srow = _mrow[1], _srow[1]
-    assert (_exp := str(_mrow["Experiment"])) == str(_srow["Experiment"])
+    _exp = str(_mrow["Experiment"])
+    assert _exp == str(_srow["Experiment"])
     row_str = f"{_exp:{max_exp_name_len + 3}}"
     for _split in ("Few", "Medium", "Many", "Overall"):
         _mu, _sig = _mrow[_split], _srow[_split]
