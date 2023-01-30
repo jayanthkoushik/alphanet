@@ -63,6 +63,7 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
     eval_batch_size: int = 1024
     scatter: bool = False
     plot_params: PlotParams
+    group_by_rhos: bool = True
 
     def __call__(self):
         baseline_res = TrainResult.from_dict(
@@ -83,12 +84,16 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
             if _res.train_data_info.dataset_name != str(self.dataset):
                 raise ValueError("result file does not match input dataset")
 
-            if (
-                _res_type == "AlphaNet"
-                and not _res.training_config.sampler_builder.sampler_classes
-                == (AllFewSampler, ClassBalancedBaseSampler)
-            ):
-                raise ValueError(f"bad sampler: {_res.training_config.sampler_builder}")
+            if self.group_by_rhos:
+                if (
+                    _res_type == "AlphaNet"
+                    and not _res.training_config.sampler_builder.sampler_classes
+                    == (AllFewSampler, ClassBalancedBaseSampler)
+                ):
+
+                    raise ValueError(
+                        f"bad sampler: {_res.training_config.sampler_builder}"
+                    )
 
             _acc__per__class = _res.test_acc__per__class
             if _acc__per__class is None:
@@ -101,9 +106,13 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
             assert set(_acc__per__class.keys()) == set(n_train_imgs__per__class.keys())
 
             if _res_type == "AlphaNet":
-                _rho = _res.training_config.sampler_builder.sampler_args[1]["r"]
-                rhos.add(_rho)
-                _exp_name = f"$\\rho={_rho}$"
+                if self.group_by_rhos:
+                    _rho = _res.training_config.sampler_builder.sampler_args[1]["r"]
+                    rhos.add(_rho)
+                    _exp_name = f"$\\rho={_rho}$"
+                else:
+                    _exp_name = f"AlphaNet-{_id}"
+                    rhos.add(_id)
             else:
                 _exp_name = "Baseline"
 
@@ -121,7 +130,10 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
         df = pd.DataFrame(df_rows)
         logging.info("loaded dataframe:\n%s", df)
 
-        _hue_order = ["Baseline"] + [f"$\\rho={_rho}$" for _rho in sorted(rhos)]
+        if self.group_by_rhos:
+            _hue_order = ["Baseline"] + [f"$\\rho={_rho}$" for _rho in sorted(rhos)]
+        else:
+            _hue_order = ["Baseline"] + [f"AlphaNet-{_j}" for _j in sorted(rhos)]
         self.plot.config()
         g = sns.lmplot(
             data=df,
@@ -133,10 +145,11 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
             logx=True,
             scatter=self.scatter,
             legend=False,
+            scatter_kws=dict(s=(mpl.rcParams["lines.markersize"] / 2) ** 2),
             facet_kws=dict(despine=False, legend_out=False),
         )
         self.plot_params.set_params(g.ax)
-        g.add_legend(title="", loc="upper left", bbox_to_anchor=(0.1, 1))
+        g.add_legend(title="")
         g.figure.set_size_inches(self.plot.get_size())
         if self.plot.file is not None:
             g.savefig(self.plot.file.name)
