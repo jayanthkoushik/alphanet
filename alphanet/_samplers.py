@@ -10,6 +10,7 @@ from corgy import Corgy
 from corgy.types import KeyValuePairs, SubClass
 from torch import Tensor
 from torch.utils.data import TensorDataset
+from tqdm import tqdm
 from typing_extensions import Annotated
 
 from alphanet._dataset import SplitLTDataGroup
@@ -34,7 +35,11 @@ class BaseSampler(metaclass=_SamplerMeta):
             _esplit: defaultdict(list)
             for _esplit in ("many", "medium", "few", "base")
         }
-        for _i, _label in enumerate(data.label__seq):
+        for _i, _label in tqdm(
+            enumerate(data.label__seq),
+            desc="Initializing sampler",
+            total=len(data.label__seq),
+        ):
             for _split in ("many", "medium", "few"):
                 if _label in data.info.class__set__per__split[_split]:
                     self._idx__seq__per__class__esplit[_split][_label].append(_i)

@@ -237,7 +237,9 @@ class SplitLTDataGroup:
             pbar.update(1)
         pbar.close()
 
+        logging.info("stacking '%s' features...", datagrp)
         self.feat__mat = torch.vstack(feat__mat_parts)
+        logging.info("stacking '%s' features...done", datagrp)
 
         if dataset.label_names_file_path is not None:
             with open(dataset.label_names_file_path, "r", encoding="utf-8") as _f:

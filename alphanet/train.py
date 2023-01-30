@@ -19,7 +19,11 @@ from alphanet._samplers import AllFewSampler, ClassBalancedBaseSampler, SamplerB
 from alphanet._utils import log_alphas, log_metrics, PTOpt, TBLogs
 from alphanet.alphanet import AlphaNet, AlphaNetClassifier
 
-logging.root.setLevel(logging.INFO)
+logging.basicConfig(
+    format="%(levelname)s:%(asctime)s:%(message)s",
+    level=logging.INFO,
+    datefmt="%H:%M:%S",
+)
 
 DEFAULT_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -167,19 +171,28 @@ class TrainCmd(Corgy):
     training: Annotated[TrainingConfig, "training parameters"]
 
     def __call__(self) -> TrainResult:
+        logging.info("loading train data...")
         orig_train_data = self.dataset.load_data(self.training.train_datagrp)
+        logging.info("loading train data...done")
         if (_val_datagrp := self.training.val_datagrp) is not None:
+            logging.info("loading val data...")
             orig_val_data = self.dataset.load_data(_val_datagrp)
+            logging.info("loading val data...done")
         else:
             logging.warning("no validation data")
             orig_val_data = None
+        logging.info("loading test data...")
         orig_test_data = self.dataset.load_data(self.training.test_datagrp)
+        logging.info("loading test data...done")
+        logging.info("loading classifier...")
         full_clf = self.dataset.load_classifier(DEFAULT_DEVICE)
+        logging.info("loading classifier...done")
 
         ############################################################
 
         # Get an ordered list of 'base' and 'few' split classes, so they can be
         # accessed consistently by index.
+        logging.info("preparing indexes...")
         bclass_ordered__seq = list(
             orig_train_data.info.class__set__per__split["many"]
             | orig_train_data.info.class__set__per__split["medium"]
@@ -203,10 +216,12 @@ class TrainCmd(Corgy):
             fbclass_ordered__vec[fbclass_ordered_idx__vec[_i]] == _i
             for _i in range(orig_train_data.info.n_classes)
         )
+        logging.info("preparing indexes...done")
 
         ############################################################
 
         # Load nearest neighbor weights.
+        logging.info("loading nns...")
         nns_result = self.dataset.load_nns(
             self.training.nn_dist,
             self.training.n_neighbors,
@@ -228,11 +243,13 @@ class TrainCmd(Corgy):
                 fclass_ordered__seq, fclass_nn_clf_w_ordered__seq
             )
         )
+        logging.info("loading nns...done")
 
         ############################################################
 
         # Set up model.
 
+        logging.info("setting up model...")
         self.alphanet.set_sources(fclass_nn_clf_w_ordered__seq)
 
         # Create 'b's for the 'few' split classes, initialized to values from the
@@ -260,10 +277,14 @@ class TrainCmd(Corgy):
 
         self.training.ptopt.set_weights(alphanet_classifier.parameters())
         loss_fn = torch.nn.CrossEntropyLoss()
+        logging.info("setting up model...done")
 
         ############################################################
 
+        logging.info("setting up train data sampler...")
         train_data_sampler = self.training.sampler_builder.build(orig_train_data)
+        logging.info("setting up train data sampler...done")
+        logging.info("setting up val/test data loaders...")
         _val_test_data_loaders = [
             DataLoader(
                 TensorDataset(
@@ -280,11 +301,16 @@ class TrainCmd(Corgy):
         else:
             val_data_loader = None
             test_data_loader = _val_test_data_loaders[0]
+        logging.info("setting up val/test data loaders...done")
 
         def get_train_data_loader():
+            logging.info("generating training data...")
             _dataset = train_data_sampler.get_dataset()
-            return DataLoader(_dataset, self.training.train_batch_size, shuffle=True)
+            _lo = DataLoader(_dataset, self.training.train_batch_size, shuffle=True)
+            logging.info("generating training data...done")
+            return _lo
 
+        logging.info("setting up training...")
         train_result = TrainResult()
         train_result.train_data_info = orig_train_data.info
         train_result.val_data_info = (
@@ -537,9 +563,14 @@ class TrainCmd(Corgy):
                     logging.warning("loading from checkpoint: '%s'", _latest_ckpt_file)
                     _ckpt_handler.load_objects(_ckpt_data, _latest_ckpt_file)
 
+        logging.info("setting up training...done")
+        logging.info("training...")
         train_engine.run(get_train_data_loader(), max_epochs=self.training.train_epochs)
         self.training.tb_logs.writer.close()
+        logging.info("training...done")
         if self.save_file is not None:
+            logging.info("saving results...")
             torch.save(train_result.as_dict(recursive=True), self.save_file)
             self.save_file.close()
+            logging.info("saving results...done")
         return train_result
