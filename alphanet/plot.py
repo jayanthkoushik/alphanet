@@ -131,9 +131,10 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
         logging.info("loaded dataframe:\n%s", df)
 
         if self.group_by_rhos:
-            _hue_order = ["Baseline"] + [f"$\\rho={_rho}$" for _rho in sorted(rhos)]
+            _hue_order = [f"$\\rho={_rho}$" for _rho in sorted(rhos)]
         else:
-            _hue_order = ["Baseline"] + [f"AlphaNet-{_j}" for _j in sorted(rhos)]
+            _hue_order = [f"AlphaNet-{_j}" for _j in sorted(rhos)]
+        _hue_order = _hue_order + ["Baseline"]
         self.plot.config()
         g = sns.lmplot(
             data=df,
@@ -145,11 +146,16 @@ class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
             logx=True,
             scatter=self.scatter,
             legend=False,
+            palette=sns.color_palette("husl", n_colors=len(rhos)) + ["#000"],
+            ci=None,
             scatter_kws=dict(s=(mpl.rcParams["lines.markersize"] / 2) ** 2),
             facet_kws=dict(despine=False, legend_out=False),
         )
         self.plot_params.set_params(g.ax)
-        g.add_legend(title="")
+        if len(_hue_order) > 4:
+            g.add_legend(title="", ncols=2, bbox_to_anchor=(1, 1), loc="upper left")
+        else:
+            g.add_legend(title="", ncols=4, loc="upper middle", bbox_to_anchor=(0.5, 1))
         g.figure.set_size_inches(self.plot.get_size())
         if self.plot.file is not None:
             g.savefig(self.plot.file.name)
