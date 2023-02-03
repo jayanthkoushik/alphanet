@@ -28,7 +28,7 @@ class Args(Corgy):
 
 args = Args.parse_from_cmdline(usage=SUPPRESS)
 table_rows: List[Dict[str, Any]] = []
-max_exp_name_len = 0
+max_exp_name_len = len("Experiment")
 seen_datasets = set()
 
 pbar = trange(len(args.rel_exp_paths), desc="Loading", unit="experiment")
@@ -71,7 +71,6 @@ for _dataset_name in seen_datasets:
     _baseline_res = TrainResult.from_dict(
         torch.load(str(_dataset.baseline_eval_file_path), map_location=DEVICE)
     )
-
     _res_dict = {"Experiment": "Baseline", "Dataset": _dataset_name}
     for _split, _split_acc in _baseline_res.test_acc__per__split.items():
         _res_dict[_split.title()] = _split_acc * 100
@@ -81,42 +80,54 @@ for _dataset_name in seen_datasets:
     pbar.update(1)
 pbar.close()
 
-table = pd.DataFrame(table_rows)
-_grouped_table = table.groupby(["Experiment", "Dataset"], group_keys=False, sort=False)
-mean_table = _grouped_table.mean().reset_index()
-std_table = _grouped_table.std().reset_index()
-
-max_exp_name_len = max(max_exp_name_len, len("Experiment"))
-
-hdr_str = f"{'Experiment':{max_exp_name_len + 3}}"
-sep_str = f"{'-' * 10:{max_exp_name_len + 3}}"
-for _split in ("Few", "Med.", "Many", "Overall"):
-    hdr_str += f"{_split:20}"
-    sep_str += f"{'-' * 10:20}"
-print("\n\n\n")
-print(hdr_str)
-print(sep_str)
-
-for _mrow, _srow in zip(mean_table.iterrows(), std_table.iterrows()):
-    _mrow, _srow = _mrow[1], _srow[1]
-    _exp = str(_mrow["Experiment"])
-    assert _exp == str(_srow["Experiment"])
-    row_str = f"{_exp:{max_exp_name_len + 3}}"
-    for _split in ("Few", "Medium", "Many", "Overall"):
-        _mu, _sig = _mrow[_split], _srow[_split]
-        row_str += f"${_mu:4.1f}"
-        if not isnan(_sig):
-            row_str += f"^{{\\pm {_sig:4.2f}}}$"
-        else:
-            row_str += "$           "
-        row_str += "   "
-    print(row_str.rstrip())
-
-print("\n\nCSV:\n\n")
-
-_col_order = ["Experiment", "Few", "Medium", "Many", "Overall"]
-print(
-    mean_table.to_csv(
-        columns=_col_order, index=False, float_format=lambda _f: f"{_f:4.1f}"
+full_table = pd.DataFrame(table_rows)
+for _dataset_name in seen_datasets:
+    table = full_table[full_table["Dataset"] == _dataset_name]
+    _grouped_table = table.groupby(
+        ["Experiment", "Dataset"], group_keys=False, sort=False
     )
-)
+    mean_table = _grouped_table.mean().reset_index()
+    std_table = _grouped_table.std().reset_index()
+    _sig_width__per__split = {}
+    for _split in ("Few", "Medium", "Many", "Overall"):
+        _sig_width__per__split[_split] = 5 if std_table[_split].max() >= 10 else 4
+
+    hdr_str = f"{'Experiment':{max_exp_name_len + 2}}"
+    sep_str = f"{'-' * max_exp_name_len}  "
+    for _split in ("Few", "Medium", "Many", "Overall"):
+        _split_hdr_size = (
+            4  # mean value (xx.x)
+            + _sig_width__per__split[_split]  # std value (x.xx or xx.xx)
+            + 3  # format characters (<mean>^±<std>^)
+        )
+        _split_title = "Med." if _split == "Medium" else _split
+        hdr_str += f"{_split_title:{_split_hdr_size + 2}}"  # 2 spaces between columns
+        sep_str += f"{'-' * _split_hdr_size}  "
+
+    print(f"\n\n{_dataset_name}:")
+    print(f"{'=' * (len(_dataset_name) + 1)}\n")
+    print(hdr_str)
+    print(sep_str)
+
+    for _mrow, _srow in zip(mean_table.iterrows(), std_table.iterrows()):
+        _mrow, _srow = _mrow[1], _srow[1]
+        _exp = str(_mrow["Experiment"])
+        assert _exp == str(_srow["Experiment"])
+        row_str = f"{_exp:{max_exp_name_len + 2}}"
+        for _split in ("Few", "Medium", "Many", "Overall"):
+            _mu, _sig = _mrow[_split], _srow[_split]
+            row_str += f"{_mu:4.1f}"
+            if not isnan(_sig):
+                row_str += f"^±{_sig:{_sig_width__per__split[_split]}.2f}^"
+            else:
+                row_str += " " * (_sig_width__per__split[_split] + 3)
+            row_str += "  "
+        print(row_str.rstrip())
+
+    _col_order = ["Experiment", "Few", "Medium", "Many", "Overall"]
+    print()
+    print(
+        mean_table.to_csv(
+            columns=_col_order, index=False, float_format=lambda _f: f"{_f:4.1f}"
+        )
+    )
