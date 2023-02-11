@@ -129,6 +129,7 @@ class SplitLTDataset(str):
     baseline_eval_file_path: Path
     label_names_file_path: Optional[Path] = None
     datagrps: Tuple[str, ...] = ("train", "val", "test")
+    proper_name: str
 
     try:
         _configs = tomli.load(InputBinFile("config/datasets.toml"))
@@ -157,6 +158,7 @@ class SplitLTDataset(str):
             self.datagrps = self._configs[config].get(
                 "datagrps", ("train", "val", "test")
             )
+            self.proper_name = self._configs[config].get("proper_name", config)
         except KeyError as e:
             raise ValueError(f"config '{config}' missing value for {e}") from None
         except Exception as e:

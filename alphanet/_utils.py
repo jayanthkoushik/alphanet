@@ -1,9 +1,11 @@
 import json
 import logging
 import math
+import pickle
 import shutil
 from contextlib import contextmanager, ExitStack
 from functools import cached_property
+from pathlib import Path
 from typing import Any, Dict, Iterable, Literal, Optional, Sequence, Tuple
 from unittest.mock import Mock
 
@@ -221,11 +223,14 @@ _BASE_RC = {
     "xtick.direction": "out",
     "ytick.major.size": 0,
     "scatter.marker": ".",
+    "legend.handletextpad": 0.25,
     "figure.constrained_layout.use": True,
-    "pgf.rcfonts": False,
+    "mathtext.default": "regular",
+    "pgf.rcfonts": True,
     "pgf.preamble": "\n".join(
         [
             r"\usepackage[default]{sourcesanspro}",
+            r"\usepackage{cmbright}",
             r"\usepackage[T1]{fontenc}",
             r"\usepackage{microtype}",
             r"\usepackage{mathtools}",
@@ -234,6 +239,54 @@ _BASE_RC = {
         ]
     ),
 }
+
+_DARK_THEME_BG = "#212529"
+_DARK_THEME_FG = "#adb5bd"
+_DARK_THEME_RC = {
+    "axes.edgecolor": _DARK_THEME_FG,
+    "axes.facecolor": _DARK_THEME_BG,
+    "axes.labelcolor": _DARK_THEME_FG,
+    "boxplot.boxprops.color": _DARK_THEME_FG,
+    "boxplot.capprops.color": _DARK_THEME_FG,
+    "boxplot.flierprops.color": _DARK_THEME_FG,
+    "boxplot.flierprops.markeredgecolor": _DARK_THEME_FG,
+    "boxplot.whiskerprops.color": _DARK_THEME_FG,
+    "figure.edgecolor": _DARK_THEME_BG,
+    "figure.facecolor": _DARK_THEME_BG,
+    "grid.color": _DARK_THEME_FG,
+    "lines.color": _DARK_THEME_FG,
+    "patch.edgecolor": _DARK_THEME_FG,
+    "savefig.edgecolor": _DARK_THEME_BG,
+    "savefig.facecolor": _DARK_THEME_BG,
+    "text.color": _DARK_THEME_FG,
+    "xtick.color": _DARK_THEME_FG,
+    "ytick.color": _DARK_THEME_FG,
+}
+
+
+class PlotFont(Corgy):
+    default: Annotated[Optional[str], "default font family override"] = None
+    serif: Annotated[Optional[Sequence[str]], "serif font family override"] = None
+    sans_serif: Annotated[
+        Optional[Sequence[str]], "sans-serif font family override"
+    ] = None
+    monospace: Annotated[
+        Optional[Sequence[str]], "monospace font family override"
+    ] = None
+    cursive: Annotated[Optional[Sequence[str]], "cursive font family override"] = None
+    fantasy: Annotated[Optional[Sequence[str]], "fantasy font family override"] = None
+
+    def config(self, rc):
+        if self.default is not None:
+            rc["font.family"] = self.default
+        if self.serif is not None:
+            rc["font.serif"] = self.serif
+        if self.sans_serif is not None:
+            rc["font.sans-serif"] = self.sans_serif
+        if self.monospace is not None:
+            rc["font.monospace"] = self.monospace
+        if self.fantasy is not None:
+            rc["font.fantasy"] = self.fantasy
 
 
 class PlottingConfig(Corgy, corgy_make_slots=False):
@@ -248,15 +301,16 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
         plt_cfg.config()  # permanently apply settings
     """
 
+    theme: Annotated[Literal["light", "dark"], "plot color palette"] = "light"
     context: Annotated[
         Literal["paper", "poster", "notebook", "talk"], "seaborn plotting context"
     ] = "paper"
-    font: Annotated[Optional[str], "default font family override"] = None
     backend: Annotated[
         Optional[str],
         "matplotlib backend (if not specified, will use 'pgf' if LaTeX is available "
         "and matplotlib default otherwise)",
     ] = None
+    font: Annotated[PlotFont, "font config"]
 
     DEFAULT_ASPECT_RATIO = 1.4
     _default_width_per_context = {
@@ -284,15 +338,19 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
             _mpl_rc["backend"] = self.backend
         elif self._can_use_latex:
             _mpl_rc["backend"] = "pgf"
-        if self.font is not None:
-            _mpl_rc["font.family"] = [self.font]
-            _mpl_rc["pgf.rcfonts"] = True
+        self.font.config(_mpl_rc)
         _default_width = self._default_width_per_context[self.context]
         _default_height = _default_width / self.DEFAULT_ASPECT_RATIO
         _mpl_rc["figure.figsize"] = (_default_width, _default_height)
         sns.set_theme(
-            context=self.context, style="ticks", palette=CUD_PALETTE, rc=_mpl_rc
+            context=self.context, style="ticks", palette=self.palette, rc=_mpl_rc
         )
+        if self.theme == "dark":
+            mpl.rcParams.update(_DARK_THEME_RC)
+
+    @cached_property
+    def palette(self):
+        return CUD_PALETTE if self.theme == "light" else ["white"] + CUD_PALETTE[1:]
 
     def __enter__(self) -> None:
         self._rc_orig = mpl.rcParams.copy()
@@ -374,6 +432,9 @@ class Plot(Corgy, corgy_make_slots=False):
         Optional[OutputBinFile],
         "file to save plot to (plot will not be saved if unspecified)",
     ] = None
+    raw_file: Annotated[
+        Optional[OutputBinFile], "file to save the plot object as a pickle"
+    ] = None
     width: Annotated[
         Optional[float],
         "plot width in inches (if unspecified, will use value from rcParams)",
@@ -384,6 +445,10 @@ class Plot(Corgy, corgy_make_slots=False):
         "width:height (if unspecified, value will be determined by default height in "
         "rcParams)",
     ] = None
+
+    def __init__(self, **args):
+        super().__init__(**args)
+        self.fig, self.ax = None, None
 
     @corgyparser("aspect", metavar="float[:float]")
     @staticmethod
@@ -417,18 +482,38 @@ class Plot(Corgy, corgy_make_slots=False):
             with plot.open(nrows=2, ncols=1) as (fig, (ax1, ax2)):
                 ... # plot with 2 rows and 1 column.
         """
-        _fig, _ax = plt.subplots(**kwargs)
+        self.fig, self.ax = plt.subplots(**kwargs)
 
         if self.width is not None or self.aspect is not None:
-            _fig.set_size_inches(self.get_size())
+            self.fig.set_size_inches(self.get_size())
 
         try:
-            yield (_fig, _ax)
+            yield (self.fig, self.ax)
         finally:
             if self.file is not None:
-                _fig.savefig(self.file)
+                self.fig.savefig(self.file, format=Path(self.file.name).suffix[1:])
                 self.file.close()
-            plt.close(_fig)
+            if self.raw_file is not None:
+                pickle.dump(self.as_dict(), self.raw_file)
+                self.raw_file.close()
+            plt.close(self.fig)
+
+    def as_dict(self, recursive=True):
+        d = super().as_dict(recursive)
+        if self.file is not None:
+            d["file"] = str(self.file)
+        if self.raw_file is not None:
+            d["raw_file"] = str(self.raw_file)
+        d["fig"] = self.fig
+        d["ax"] = self.ax
+        return d
+
+    @classmethod
+    def from_dict(cls, d):
+        obj = super().from_dict(d)
+        obj.fig = d["fig"]
+        obj.ax = d["ax"]
+        return obj
 
 
 class Plots(Corgy, corgy_make_slots=False):
