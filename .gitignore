@@ -1,10 +1,8 @@
 results/**/*
 !/results/**/
 !results/**/summary.txt
-!results/**/per_cls_acc_vs_samples*
-!results/**/delta_per_cls_accs*
-!results/**/split_acc_vs_k*
-!results/**/split_acc_delta_vs_exp*
+!results/**/split_acc_delta_vs_rho.svg
+!results/**/split_acc_vs_k.svg
 config/datasets.toml
 data/
 __pycache__/
