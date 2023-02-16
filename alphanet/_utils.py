@@ -6,7 +6,7 @@ import shutil
 from contextlib import contextmanager, ExitStack
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict, Iterable, Literal, Optional, Sequence, Tuple
+from typing import Any, cast, Dict, Iterable, Literal, Optional, Sequence, Tuple, Union
 from unittest.mock import Mock
 
 import matplotlib as mpl
@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from corgy import Corgy, corgyparser
-from corgy.types import KeyValuePairs, OutputBinFile, OutputDirectory, SubClass
+from corgy.types import KeyValuePairs, OutputBinFile, SubClass
 from torch import Tensor
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
@@ -226,6 +226,8 @@ _BASE_RC = {
     "legend.handletextpad": 0.25,
     "figure.constrained_layout.use": True,
     "mathtext.default": "regular",
+    "savefig.bbox": "standard",
+    "savefig.transparent": True,
     "pgf.rcfonts": True,
     "pgf.preamble": "\n".join(
         [
@@ -305,19 +307,21 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
     context: Annotated[
         Literal["paper", "poster", "notebook", "talk"], "seaborn plotting context"
     ] = "paper"
-    backend: Annotated[
-        Optional[str],
-        "matplotlib backend (if not specified, will use 'pgf' if LaTeX is available "
-        "and matplotlib default otherwise)",
-    ] = None
+    backend: Annotated[Optional[str], "matplotlib backend override"] = None
     font: Annotated[PlotFont, "font config"]
 
-    DEFAULT_ASPECT_RATIO = 1.4
-    _default_width_per_context = {
+    DEFAULT_ASPECT_RATIO = 2
+    _default_half_width_per_context = {
         "paper": 3.5,
-        "notebook": 4.375,
-        "poster": 8.75,
-        "talk": 6.5625,
+        "notebook": 3.375,
+        "poster": 8.5,
+        "talk": 8,
+    }
+    _default_full_width_per_context = {
+        "paper": 6.5,
+        "notebook": 6.75,
+        "poster": 13,
+        "talk": 18,
     }
 
     @cached_property
@@ -336,10 +340,8 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
         _mpl_rc = _BASE_RC.copy()
         if self.backend is not None:
             _mpl_rc["backend"] = self.backend
-        elif self._can_use_latex:
-            _mpl_rc["backend"] = "pgf"
         self.font.config(_mpl_rc)
-        _default_width = self._default_width_per_context[self.context]
+        _default_width = self._default_half_width_per_context[self.context]
         _default_height = _default_width / self.DEFAULT_ASPECT_RATIO
         _mpl_rc["figure.figsize"] = (_default_width, _default_height)
         sns.set_theme(
@@ -440,11 +442,10 @@ class Plot(Corgy, corgy_make_slots=False):
         "plot width in inches (if unspecified, will use value from rcParams)",
     ] = None
     aspect: Annotated[
-        Optional[float],
+        float,
         "plot aspect ratio, 'width/height', as a single number, or in the form "
-        "width:height (if unspecified, value will be determined by default height in "
-        "rcParams)",
-    ] = None
+        "width:height",
+    ] = PlottingConfig.DEFAULT_ASPECT_RATIO
 
     def __init__(self, **args):
         super().__init__(**args)
@@ -462,13 +463,14 @@ class Plot(Corgy, corgy_make_slots=False):
             return float(_s_parts[0]) / float(_s_parts[1])
         raise ValueError("expected one or two values")
 
-    def get_size(self) -> Tuple[float, float]:
-        _rc_size = mpl.rcParams["figure.figsize"]
-        _plot_width = self.width if self.width is not None else _rc_size[0]
-        _plot_aspect = (
-            self.aspect if self.aspect is not None else (_rc_size[0] / _rc_size[1])
+    def get_width(self) -> float:
+        return (
+            self.width if self.width is not None else mpl.rcParams["figure.figsize"][0]
         )
-        _plot_height = _plot_width / _plot_aspect
+
+    def get_size(self) -> Tuple[float, float]:
+        _plot_width = self.get_width()
+        _plot_height = _plot_width / self.aspect
         return (_plot_width, _plot_height)
 
     @contextmanager
@@ -483,9 +485,7 @@ class Plot(Corgy, corgy_make_slots=False):
                 ... # plot with 2 rows and 1 column.
         """
         self.fig, self.ax = plt.subplots(**kwargs)
-
-        if self.width is not None or self.aspect is not None:
-            self.fig.set_size_inches(self.get_size())
+        self.fig.set_size_inches(self.get_size())
 
         try:
             yield (self.fig, self.ax)
@@ -516,60 +516,6 @@ class Plot(Corgy, corgy_make_slots=False):
         return obj
 
 
-class Plots(Corgy, corgy_make_slots=False):
-    """Wrapper around a collection of plots.
-
-    This class allows creating multiple plots, all saved to a directory. New
-    plots are created by calling the `new` method, which returns a new `Plot`
-    instance. Example::
-
-        plots = Plots(dir="plots", ext="png")
-        with plots.new("p1").open() as (fig, ax):
-            ...  # plot using `fig` and `ax`
-        # Figure saved to 'plots/p1.png'.
-    """
-
-    directory: Annotated[
-        Optional[OutputDirectory],
-        "directory to save plots to (plots will not be saved if unspecified)",
-    ] = None
-    width: Annotated[
-        Optional[float],
-        "default plot width in inches (if unspecified, will use value from rcParams)",
-    ] = None
-    aspect: Annotated[
-        Optional[float],
-        "default plot aspect ratio, 'width/height', as a single number, or a pair "
-        "(if unspecified, value will be determined by default height in rcParams)",
-    ] = None
-    ext: Annotated[str, "extension for plot save files (including dot)"] = ".pdf"
-
-    def new(
-        self,
-        name: Optional[str] = None,
-        width: Optional[float] = None,
-        aspect: Optional[float] = None,
-    ) -> Plot:
-        """Get a new `Plot` instance.
-
-        Args:
-            name: Filename (without extension) for the plot. The plot will not
-                be saved if `None`.
-            width: Value to override `Plots.width`.
-            aspect: Value to override `Plots.aspect`.
-
-        Returns:
-            A new `Plot` instance.
-        """
-        if self.directory is not None and name is not None:
-            plotfile = OutputBinFile(self.directory / f"{name}{self.ext}")
-        else:
-            plotfile = None
-        width = width or self.width
-        aspect = aspect or self.aspect
-        return Plot(file=plotfile, width=width, aspect=aspect)
-
-
 class ContextPlot(Plot, PlottingConfig):
     """Class combining `Plot` and `PlottingConfig`.
 
@@ -583,6 +529,35 @@ class ContextPlot(Plot, PlottingConfig):
             ...  # plot using `fig` and `ax`
         # Figure saved to 'plot.png'. Original matplotlib settings restored.
     """
+
+    class _widthType:
+        __metavar__ = "'half'/'full'/float"
+
+        value: Union[Literal["half", "full"], float]
+
+        def __init__(self, s: str):
+            if s in ("half", "full"):
+                self.value = cast(Literal["half", "full"], s)
+            else:
+                self.value = float(s)
+
+        def __str__(self):
+            return str(self.value)
+
+    width: Annotated[
+        _widthType,
+        "plot width in inches, or special values 'half' and 'full' which "
+        "are default values based on the context",
+    ] = _widthType(
+        "half"
+    )  # type: ignore
+
+    def get_width(self) -> float:
+        if self.width.value == "half":
+            return self._default_half_width_per_context[self.context]
+        if self.width.value == "full":
+            return self._default_full_width_per_context[self.context]
+        return cast(int, self.width)
 
     @contextmanager
     def open(self, **kwargs):

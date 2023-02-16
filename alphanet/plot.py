@@ -2,10 +2,10 @@ import itertools
 import logging
 from collections import defaultdict
 from heapq import nlargest, nsmallest
-from math import ceil, sqrt
+from math import ceil
 from pathlib import Path
 from statistics import mean
-from typing import Dict, Iterator, Literal, Optional, Tuple
+from typing import Dict, Iterator, List, Literal, Optional, Sequence, Tuple
 
 import ignite.contrib.handlers
 import ignite.engine
@@ -17,7 +17,9 @@ import seaborn as sns
 import torch
 from corgy import Corgy
 from corgy.types import InputBinFile, InputDirectory
-from matplotlib import pyplot as plt
+from matplotlib import patches as mpatches, patheffects as pe, pyplot as plt
+from matplotlib.ticker import MultipleLocator
+from matplotlib.transforms import Bbox
 from scipy.spatial.distance import cosine, euclidean
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
@@ -27,33 +29,210 @@ from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 
 from alphanet._dataset import SplitLTDataGroup, SplitLTDataset
-from alphanet._samplers import AllFewSampler, ClassBalancedBaseSampler
-from alphanet._utils import ContextPlot, PlotParams
+from alphanet._utils import ContextPlot
 from alphanet.train import TrainResult
 
 logging.root.setLevel(logging.INFO)
 
-DEFAULT_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+_DEFAULT_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+_TEST_DATA_CACHE: Dict[str, SplitLTDataGroup] = {}
+_NNDIST_PER_BCLASS_CACHE: Dict[Tuple[SplitLTDataset, str, int], Dict[int, float]] = {}
+_BASELINE_RES_CACHE: Dict[SplitLTDataset, TrainResult] = {}
 
 
-def load_train_res_with_per_cls_accs(res_file: Path, batch_size: int) -> TrainResult:
-    res = TrainResult.from_dict(torch.load(res_file, map_location=DEFAULT_DEVICE))
-    if res.test_acc__per__class is None:
-        res.test_acc__per__class, _ = get_per_class_test_accs(res, batch_size)
-        torch.save(res.as_dict(recursive=True), res_file)
-    return res
-
-
-def get_test_split_acc(res: TrainResult, split: str) -> float:
+def _get_split_test_acc(res: TrainResult, split: str) -> float:
     if split.lower() == "overall":
         return res.test_metrics["accuracy"]
     return res.test_acc__per__split[split.lower()]
 
 
-def get_metric_desc(metric: Literal["euclidean", "cosine", "random"]):
-    if metric == "random":
-        return "Random neighbors"
-    return f"{metric.title()} distance nearest neighbors"
+def _get_nn_dist_per_bclass(
+    dataset: SplitLTDataset, metric: str, k: int
+) -> Dict[int, float]:
+    try:
+        return _NNDIST_PER_BCLASS_CACHE[dataset, metric, k]
+    except KeyError:
+        pass
+
+    logging.info(
+        "generating bclass nn dists (dataset='%s', metric='%s', k='%d')",
+        dataset,
+        metric,
+        k,
+    )
+
+    _train_data = dataset.load_data("train")
+
+    _mean_feat__vec__per__class__msplit: Dict[str, Dict[int, torch.Tensor]] = {
+        "base": defaultdict(lambda: torch.zeros(_train_data.info.n_features)),
+        "few": defaultdict(lambda: torch.zeros(_train_data.info.n_features)),
+    }
+    for _label, _feat__vec in zip(_train_data.label__seq, _train_data.feat__mat):
+        _msplit = (
+            "few"
+            if _label in _train_data.info.class__set__per__split["few"]
+            else "base"
+        )
+        _mean_feat__vec__per__class__msplit[_msplit][_label] += (
+            _feat__vec / _train_data.info.n_imgs__per__class[_label]
+        )
+
+    _class__seq__per__msplit: Dict[str, List[int]] = {}
+    _mean_feat__mat__per__msplit: Dict[str, torch.Tensor] = {}
+    for _msplit in ("base", "few"):
+        _class__seq, _mean_feat__mats = zip(
+            *_mean_feat__vec__per__class__msplit[_msplit].items()
+        )
+        _class__seq__per__msplit[_msplit] = list(_class__seq)
+        _mean_feat__mat__per__msplit[_msplit] = torch.stack(_mean_feat__mats)
+
+    _n_many, _n_med, _n_few = [
+        len(_train_data.info.class__set__per__split[_split])
+        for _split in ("many", "medium", "few")
+    ]
+    _n_base = _n_many + _n_med
+    _n_feats = _train_data.info.n_features
+    assert len(_class__seq__per__msplit["base"]) == _n_base
+    assert _mean_feat__mat__per__msplit["base"].shape == (_n_base, _n_feats)
+    assert len(_class__seq__per__msplit["few"]) == _n_few
+    assert _mean_feat__mat__per__msplit["few"].shape == (_n_few, _n_feats)
+
+    _cdist__mat: torch.Tensor
+    _XA, _XB = (_mean_feat__mat__per__msplit[_msplit] for _msplit in ["base", "few"])
+    if metric == "euclidean":
+        _cdist__mat = torch.cdist(_XA.unsqueeze(0), _XB.unsqueeze(0), p=2)
+        _cdist__mat = _cdist__mat.squeeze(0)
+    elif metric == "cosine":
+        _cdist__mat = 1 - (_XA @ _XB.t())
+    else:
+        raise AssertionError
+    assert _cdist__mat.shape == (_n_base, _n_few)
+
+    _nndist__mat = _cdist__mat.sort(dim=1)[0][:, :k]
+    assert _nndist__mat.shape == (_n_base, k)
+
+    nn_dist__per__bclass = {
+        _bclass: _nndist__vec.mean().item()
+        for _bclass, _nndist__vec in zip(_class__seq__per__msplit["base"], _nndist__mat)
+    }
+    _NNDIST_PER_BCLASS_CACHE[dataset, metric, k] = nn_dist__per__bclass
+    return nn_dist__per__bclass
+
+
+def _get_test_acc_per_class(
+    res: TrainResult, batch_size: int, return_preds=False
+) -> Tuple[Dict[int, float], Optional[List[int]]]:
+    alphanet_classifier = res.load_best_alphanet_classifier()
+    alphanet_classifier = alphanet_classifier.to(_DEFAULT_DEVICE).eval()
+    dataset = SplitLTDataset(res.train_data_info.dataset_name)
+    try:
+        test_datagrp = _TEST_DATA_CACHE[res.train_data_info.dataset_name]
+    except KeyError:
+        test_datagrp = dataset.load_data(res.training_config.test_datagrp)
+        _TEST_DATA_CACHE[res.train_data_info.dataset_name] = test_datagrp
+    test_data_loader = DataLoader(
+        TensorDataset(test_datagrp.feat__mat, torch.tensor(test_datagrp.label__seq)),
+        batch_size,
+        shuffle=False,
+    )
+    eval_engine = ignite.engine.create_supervised_evaluator(
+        alphanet_classifier,
+        {"accuracy": ignite.metrics.Accuracy()},  # for sanity check
+        _DEFAULT_DEVICE,
+    )
+    ignite.contrib.handlers.ProgressBar(
+        desc="Generating test results for file", persist=False
+    ).attach(eval_engine)
+
+    @eval_engine.on(ignite.engine.Events.STARTED)
+    def _(engine: ignite.engine.Engine):
+        engine.state.my_y__seq = []
+        engine.state.my_yhat__seq = []
+        engine.state.my_accuracy__per__class = None
+
+    @eval_engine.on(ignite.engine.Events.ITERATION_COMPLETED)
+    def _(engine: ignite.engine.Engine):
+        _scores__batch, _y__batch = engine.state.output  # type: ignore
+        _yhat__batch = torch.argmax(_scores__batch, dim=1)
+        engine.state.my_y__seq.extend(_y__batch.tolist())
+        engine.state.my_yhat__seq.extend(_yhat__batch.tolist())
+
+    @eval_engine.on(ignite.engine.Events.COMPLETED)
+    def _(engine: ignite.engine.Engine):
+        _correct_preds__per__class: Dict[int, int] = defaultdict(int)
+        _total_preds__per__class: Dict[int, int] = defaultdict(int)
+
+        for _y_i, _yhat_i in zip(engine.state.my_y__seq, engine.state.my_yhat__seq):
+            _correct = int(_y_i == _yhat_i)
+            _correct_preds__per__class[_y_i] += _correct
+            _total_preds__per__class[_y_i] += 1
+
+        engine.state.my_accuracy__per__class = {
+            _class: float(
+                _correct_preds__per__class[_class] / _total_preds__per__class[_class]
+            )
+            for _class in _correct_preds__per__class
+        }
+
+        assert all(
+            _total_preds__per__class[_class] == _class_imgs
+            for _class, _class_imgs in test_datagrp.info.n_imgs__per__class.items()
+        )
+        assert torch.isclose(
+            torch.tensor([sum(_correct_preds__per__class.values())], dtype=torch.float),
+            torch.tensor(
+                [engine.state.metrics["accuracy"] * len(engine.state.my_y__seq)]
+            ),
+        )
+        assert torch.isclose(
+            torch.tensor([engine.state.metrics["accuracy"]]),
+            torch.tensor([res.test_metrics["accuracy"]]),
+            rtol=1e-3,
+            atol=1e-5,
+        )
+        assert all(
+            _l == _y for _l, _y in zip(test_datagrp.label__seq, engine.state.my_y__seq)
+        )
+
+    eval_engine.run(test_data_loader)
+    _second_ret = eval_engine.state.my_yhat__seq if return_preds else None
+    return eval_engine.state.my_accuracy__per__class, _second_ret
+
+
+def _load_train_res(res_file: Path, batch_size: int) -> TrainResult:
+    res = TrainResult.from_dict(torch.load(res_file, map_location=_DEFAULT_DEVICE))
+    if res.test_acc__per__class is None:
+        res.test_acc__per__class, _ = _get_test_acc_per_class(res, batch_size)
+        torch.save(res.as_dict(recursive=True), res_file)
+    return res
+
+
+def _load_baseline_res(dataset: SplitLTDataset, batch_size: int) -> TrainResult:
+    try:
+        return _BASELINE_RES_CACHE[dataset]
+    except KeyError:
+        baseline_res = _load_train_res(dataset.baseline_eval_file_path, batch_size)
+        _BASELINE_RES_CACHE[dataset] = baseline_res
+        return baseline_res
+
+
+def _get_classes_ordered_by_size(res: TrainResult, reverse: bool = False) -> List[int]:
+    _n_imgs__per__cls = res.train_data_info.n_imgs__per__class
+    return list(
+        sorted(_n_imgs__per__cls, key=lambda _c: _n_imgs__per__cls[_c], reverse=reverse)
+    )
+
+
+def _get_split_for_class(class_: int, res: TrainResult) -> str:
+    return next(
+        (
+            _split
+            for _split, _split_classes in (
+                res.train_data_info.class__set__per__split.items()
+            )
+            if class_ in _split_classes
+        )
+    )
 
 
 class BasePlotCmd(Corgy, corgy_make_slots=False):
@@ -62,43 +241,10 @@ class BasePlotCmd(Corgy, corgy_make_slots=False):
     def __call__(self):
         raise NotImplementedError
 
-    def _get_ha(self) -> Dict[str, float]:
-        _plot_size = self.plot.get_size()
-        return {"height": _plot_size[1], "aspect": _plot_size[0] / _plot_size[1]}
-
-    def _set_facet_grid_size(self, g: sns.FacetGrid) -> None:
-        _n_rows, _n_cols = g.axes.shape
-        if g._col_wrap is not None and g._col_wrap < _n_cols:
-            _n_cols = g._col_wrap
-            _n_rows = _n_rows * ceil(_n_cols / g._col_wrap)
-        _plot_size = self.plot.get_size()
-        g.figure.set_size_inches(_plot_size[0] * _n_cols, _plot_size[1] * _n_rows)
-
-    def _save_facet_grid(self, g: sns.FacetGrid) -> None:
+    def _save_figure(self, fig: mpl.figure.Figure) -> None:
         if self.plot.file is not None:
-            g.figure.savefig(
-                self.plot.file, format=Path(self.plot.file.name).suffix[1:]
-            )
+            fig.savefig(self.plot.file, format=Path(self.plot.file.name).suffix[1:])
             self.plot.file.close()
-
-
-class _BaseMultiFilePlotCmd(Corgy, corgy_make_slots=False):
-    base_res_dir: InputDirectory
-    res_sub_dirs: Optional[Tuple[str]] = None
-    res_files_pattern: str = "**/*.pth"
-    eval_batch_size: int = 1024
-
-    def _iter_train_results(self) -> Iterator[TrainResult]:
-        dataset_names = set()
-        for _res_sub_dir in self.res_sub_dirs or [""]:
-            for _res_file in tqdm(
-                list((self.base_res_dir / _res_sub_dir).glob(self.res_files_pattern)),
-                desc=f"Loading {_res_sub_dir}".rstrip(),
-                unit="file",
-            ):
-                res = load_train_res_with_per_cls_accs(_res_file, self.eval_batch_size)
-                dataset_names.add(res.train_data_info.dataset_name)
-                yield res
 
 
 class _BaseMultiExpPlotCmd(Corgy, corgy_make_slots=False):
@@ -107,59 +253,62 @@ class _BaseMultiExpPlotCmd(Corgy, corgy_make_slots=False):
     exp_names: Optional[Tuple[str]] = None
     res_files_pattern: str = "**/*.pth"
     eval_batch_size: int = 1024
-    col_wrap: Optional[int] = None
     n_boot: int = 1000
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._baseline_res_cache = {}
-
-    def _iter_train_results(self) -> Iterator[Tuple[int, int, str, str, TrainResult]]:
-        _exp_names = self.exp_sub_dirs if self.exp_names is None else self.exp_names
-        if len(_exp_names) != len(self.exp_sub_dirs):
+    def _train_results(self) -> Iterator[Tuple[int, str, SplitLTDataset, TrainResult]]:
+        exp_names = self.exp_sub_dirs if self.exp_names is None else self.exp_names
+        if len(exp_names) != len(self.exp_sub_dirs):
             raise ValueError("`exp_names` size mismatch with `exp_sub_dirs`")
 
-        global_id = 0
-        for _exp_sub_dir, exp_name in zip(self.exp_sub_dirs, _exp_names):
-            for local_id, _res_file in enumerate(
-                tqdm(
-                    list(
-                        (self.base_res_dir / _exp_sub_dir).glob(self.res_files_pattern)
-                    ),
-                    desc=f"Loading from '{_exp_sub_dir}'",
-                    unit="file",
-                )
+        file_id = 0
+        for exp_sub_dir, exp_name in zip(self.exp_sub_dirs, exp_names):
+            for res_file in tqdm(
+                list((self.base_res_dir / exp_sub_dir).glob(self.res_files_pattern)),
+                desc=f"Loading from '{exp_sub_dir}'",
+                unit="file",
             ):
-                res = load_train_res_with_per_cls_accs(_res_file, self.eval_batch_size)
-                dataset_name = res.train_data_info.dataset_name
-                yield (global_id, local_id, exp_name, dataset_name, res)
-                global_id += 1
-
-    def _get_baseline_res(self, dataset_name: str) -> TrainResult:
-        try:
-            return self._baseline_res_cache[dataset_name]
-        except KeyError:
-            _baseline_res = load_train_res_with_per_cls_accs(
-                SplitLTDataset(dataset_name).baseline_eval_file_path,
-                self.eval_batch_size,
-            )
-            self._baseline_res_cache[dataset_name] = _baseline_res
-            return _baseline_res
+                res = _load_train_res(res_file, self.eval_batch_size)
+                dataset = SplitLTDataset(res.train_data_info.dataset_name)
+                yield (file_id, exp_name, dataset, res)
+                file_id += 1
 
 
-class PlotPerClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
+class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
+    splits: Sequence[Literal["many", "medium", "few", "base"]]
     dist_for_rand: Literal["euclidean", "cosine"] = "euclidean"
+    col_wrap: Optional[int] = None
+    sharex: bool = False
+    sharey: bool = False
+    x_bins: Optional[int] = None
+    x_jitter: float = 0.1
+    fit_reg: bool = True
+    plot_r: bool = True
+    r_group_classes: bool = False
+    plot_r_loc: Tuple[float, float] = (0.75, 0.9)
 
     def __call__(self):
-        df_rows = []
-        for _gid, _lid, _exp_name, _dataset_name, _res in self._iter_train_results():
-            _metric = _res.nn_info.nn_dist
-            assert _metric in {"euclidean", "cosine", "random"}
-            if _metric == "random":
-                _metric = self.dist_for_rand
-            _f_metric = euclidean if _metric == "euclidean" else cosine
+        if "base" in self.splits and ("many" in self.splits or "medium" in self.splits):
+            raise ValueError(
+                "cannot have 'base' in `splits` along with 'many'/'medium'"
+            )
 
-            _nn_dist__per__class = {}
+        if len(self.splits) != len(set(self.splits)):
+            raise ValueError("cannot have duplicates in `splits`")
+
+        df_rows = []
+        for _fid, _exp_name, _dataset, _res in self._train_results():
+            _class__set__per__split = _res.train_data_info.class__set__per__split
+            _acc__per__class = _res.test_acc__per__class
+
+            _metric = _res.nn_info.nn_dist
+            assert _metric in ["euclidean", "cosine", "random"]
+            if _metric == "random":
+                if self.splits != ["few"]:
+                    raise ValueError("random distance only available for 'few' split")
+                _metric = self.dist_for_rand
+
+            _f_metric = euclidean if _metric == "euclidean" else cosine
+            _nn_dist__per__fclass = {}
             for (
                 _fclass,
                 _nn_mean_feat__mat,
@@ -169,101 +318,186 @@ class PlotPerClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
                     _res.train_data_info.n_features,
                 )
                 _fclass__vec = _nn_mean_feat__mat[0]
-                _nn_dist__per__class[_fclass] = mean(
+                _nn_dist__per__fclass[_fclass] = mean(
                     _f_metric(_fclass__vec, _nn__vec)
                     for _nn__vec in _nn_mean_feat__mat[1:]
                 )
-            assert (
-                set(_nn_dist__per__class.keys())
-                == _res.train_data_info.class__set__per__split["few"]
+            assert set(_nn_dist__per__fclass.keys()) == _class__set__per__split["few"]
+
+            _nn_dist__per__bclass = _get_nn_dist_per_bclass(
+                _dataset, _metric, _res.nn_info.n_neighbors
             )
 
-            _baseline_res = self._get_baseline_res(_dataset_name)
-            _acc__per__class = _res.test_acc__per__class
+            assert not set(_nn_dist__per__bclass).intersection(
+                set(_nn_dist__per__fclass)
+            )
+            _nn_dist__per__class = {**_nn_dist__per__fclass, **_nn_dist__per__bclass}
+            assert len(_nn_dist__per__class) == _res.train_data_info.n_classes
+
+            _baseline_res = _load_baseline_res(_dataset, self.eval_batch_size)
             _baseline_acc__per__class = _baseline_res.test_acc__per__class
 
-            # pylint: disable=consider-using-dict-items
+            def _get_class_split(_c):
+                # pylint: disable=cell-var-from-loop
+                nonlocal _class__set__per__split
+                if _c in _class__set__per__split["few"]:
+                    return "few"
+                if "base" in self.splits:
+                    return "base"
+                if _c in _class__set__per__split["medium"]:
+                    return "medium"
+                return "many"
+
             for _class in _nn_dist__per__class:
                 df_rows.append(
                     {
-                        "GID": _gid,
-                        "LID": _lid,
+                        "FID": _fid,
                         "Experiment": _exp_name,
-                        "Metric": _metric.title(),
-                        "Dataset": SplitLTDataset(_dataset_name).proper_name,
                         "Class": _class,
+                        "Split": _get_class_split(_class),
                         "Test accuracy change": (
                             _acc__per__class[_class] - _baseline_acc__per__class[_class]
                         ),
                         "Mean NN distance": _nn_dist__per__class[_class],
                     }
                 )
+
         df = pd.DataFrame(df_rows)
         logging.info("loaded dataframe:\n%s", df)
-
-        assert len(df.groupby("Experiment")["Metric"].agg(set).values[0]) == 1
-        assert len(df.groupby("Experiment")["Dataset"].agg(set).values[0]) == 1
-
-        def annotate_with_corr(data, **kwargs):
-            assert len(data["Experiment"].unique()) == 1
-            _corr = (
-                data[["Test accuracy change", "Mean NN distance"]].corr().values[0, 1]
-            )
-            _ax = plt.gca()
-            _ax.text(0.75, 0.9, f"$r={_corr:.2f}$", transform=_ax.transAxes)
+        df = df[df["Split"].isin(self.splits)]
+        _palette = (
+            [self.plot.palette[0]]
+            if len(self.splits) == 1
+            else dict(zip(["base", "few", "medium", "many"], self.plot.palette[:4]))
+        )
 
         self.plot.config()
         g = sns.lmplot(
             df,
             x="Test accuracy change",
             y="Mean NN distance",
+            hue="Split",
             col="Experiment",
+            palette=_palette,
             col_wrap=self.col_wrap,
+            aspect=1,
             markers=".",
-            facet_kws=dict(sharex=False, sharey=False),
+            legend=False,
             scatter=True,
-            fit_reg=True,
-            units="GID",
+            fit_reg=self.fit_reg,
+            n_boot=self.n_boot,
+            units="Class",
+            x_bins=self.x_bins,
+            x_jitter=self.x_jitter,
             scatter_kws=dict(
                 s=(mpl.rcParams["lines.markersize"] ** 2) / 2, alpha=0.5, linewidths=0
             ),
-            n_boot=self.n_boot,
-            **self._get_ha(),
+            line_kws=dict(
+                path_effects=[
+                    pe.Stroke(
+                        linewidth=(mpl.rcParams["lines.linewidth"] * 1.75),
+                        foreground=self.plot.palette[0],
+                        alpha=0.5,
+                    ),
+                    pe.Normal(),
+                ]
+            ),
+            facet_kws=dict(sharex=self.sharex, sharey=self.sharey),
         )
-        g.map_dataframe(annotate_with_corr)
-        g.set_titles("{col_name}")
+
+        def annotate_with_corr(data, **kwargs):
+            _splits = data["Split"].unique()
+            assert len(_splits) == 1
+            _split = _splits[0]
+            if self.r_group_classes:
+                data = data.groupby("Class").mean().reset_index()
+            _corr = (
+                data[["Test accuracy change", "Mean NN distance"]].corr().values[0, 1]
+            )
+            _ax = plt.gca()
+            _corr_text = f"$r={_corr:+.2f}$"
+            _corr_text = "\n" * self.splits.index(_split) + _corr_text
+            _color = self.plot.palette[0] if len(self.splits) == 1 else _palette[_split]
+            _ax.text(
+                *self.plot_r_loc,
+                _corr_text,
+                transform=_ax.transAxes,
+                color=_color,
+                va="top",
+                fontweight=("bold" if len(self.splits) > 1 else "normal"),
+            )
+
+        if self.plot_r:
+            g.map_dataframe(annotate_with_corr)
+
+        if len(df["Experiment"].unique()) == 1:
+            g.set_titles("")
+        else:
+            g.set_titles("{col_name}")
         g.despine(left=True, right=True, top=True, bottom=True)
-        for _ax in g.axes.flatten():
+        for _ax in g.axes.flat:
             _ax.grid(visible=True, axis="both", which="major")
-            _ax.tick_params(axis="x", which="major", length=0)
-        self._set_facet_grid_size(g)
-        self._save_facet_grid(g)
+            _ax.tick_params(axis="both", which="major", length=0)
+
+        if len(self.splits) > 1:
+            _patch_splits = [
+                mpatches.Patch(color=_palette[_split], label=_split.title())
+                for _split in self.splits
+            ]
+            _fig_xmax = g.figure.get_tightbbox().xmax
+            _legend = g.figure.legend(
+                handles=_patch_splits,
+                loc="center left",
+                bbox_to_anchor=(1, 0.4),
+                frameon=False,
+            )
+            _legend_xmax = g.figure.get_tightbbox(bbox_extra_artists=[_legend]).xmax
+            _plot_size = self.plot.get_size()
+            g.figure.set_size_inches(
+                (_plot_size[0] / _legend_xmax) * _fig_xmax, _plot_size[1]
+            )
+            sns.move_legend(g.figure, loc="center right")
+            if self.plot.file is not None:
+                g.figure.savefig(
+                    self.plot.file,
+                    format=Path(self.plot.file.name).suffix[1:],
+                    bbox_inches=Bbox([[0, 0], _plot_size]),
+                )
+        else:
+            g.figure.set_size_inches(self.plot.get_size())
+            self._save_figure(g.figure)
 
 
 class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
-    col: Literal["dataset", "metric"]
+    col: Optional[Literal["dataset", "metric"]] = None
+    col_wrap: Optional[int] = None
     y: Literal["acc", "acc_delta"]
     xlabel: str = ""
     legend_loc: str = "upper right"
     legend_bbox_to_anchor: Optional[Tuple[float, float]] = None
 
+    @staticmethod
+    def _get_metric_desc(metric: Literal["euclidean", "cosine", "random"]) -> str:
+        if metric == "random":
+            return "Random neighbors"
+        return f"{metric.title()} distance nearest neighbors"
+
     def __call__(self):
         df_rows = []
-        for _gid, _lid, _exp_name, _dataset_name, _res in self._iter_train_results():
-            _baseline_res = self._get_baseline_res(_dataset_name)
+        for _fid, _exp_name, _dataset, _res in self._train_results():
+            _baseline_res = _load_baseline_res(_dataset, self.eval_batch_size)
             for _split in ["Many", "Medium", "Few", "Overall"]:
                 df_rows.append(
                     {
-                        "GID": _gid,
-                        "LID": _lid,
+                        "FID": _fid,
                         "Experiment": _exp_name,
-                        "Dataset": SplitLTDataset(_dataset_name).proper_name,
-                        "Metric": get_metric_desc(_res.nn_info.nn_dist),
+                        "Dataset": str(_dataset),
+                        "Metric": self._get_metric_desc(_res.nn_info.nn_dist),
                         "Split": _split,
-                        "Accuracy": get_test_split_acc(_res, _split),
+                        "Accuracy": _get_split_test_acc(_res, _split),
                         "Accuracy change": (
-                            get_test_split_acc(_res, _split)
-                            - get_test_split_acc(_baseline_res, _split)
+                            _get_split_test_acc(_res, _split)
+                            - _get_split_test_acc(_baseline_res, _split)
                         ),
                     }
                 )
@@ -271,10 +505,12 @@ class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
         df = pd.DataFrame(df_rows)
         logging.info("loaded dataframe:\n%s", df)
 
-        if self.col == "Dataset":
-            assert len(df["Metric"].unique()) == 1
-        else:
-            assert len(df["Dataset"].unique() == 1)
+        if self.col is not None:
+            self.col = self.col.title()
+            _notcol = "Dataset" if self.col == "Metric" else "Metric"
+            assert all(
+                len(_s) == 1 for _s in df.groupby(self.col)[_notcol].agg(set).values
+            )
 
         self.plot.config()
         g = sns.catplot(
@@ -283,22 +519,22 @@ class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
             y=("Accuracy change" if self.y == "acc_delta" else "Accuracy"),
             hue="Split",
             hue_order=["Overall", "Few", "Medium", "Many"],
-            col=self.col.title(),
+            col=self.col,
             col_wrap=self.col_wrap,
             n_boot=self.n_boot,
-            units="GID",
+            units="FID",
             kind="point",
             facet_kws=dict(sharex=False, sharey=True),
             dodge=0.4,
             markers=["x", ".", "d", "*"],
-            **self._get_ha(),
         )
-        g.refline(y=0, ls="-", color=self.plot.palette[0], zorder=1)
-        if len(df[self.col.title()].unique()) > 1:
-            g.set_titles("{col_name}")
-        else:
-            assert g.axes.shape == (1, 1)
-            g.set_titles("")
+        if self.y == "acc_delta":
+            g.refline(y=0, ls="-", color=self.plot.palette[0], zorder=1)
+        if self.col is not None:
+            if len(df[self.col].unique()) > 1:
+                g.set_titles("{col_name}")
+            else:
+                g.set_titles("")
         g.set_xlabels(self.xlabel)
         g.despine(left=True, right=True, bottom=False, top=True)
         if not self.legend_loc:
@@ -315,241 +551,334 @@ class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
             g.set(ylim=(0, 1.01), yticks=[0.2, 0.4, 0.6, 0.8, 1.0])
         else:
             g.set(ylim=(-0.25, 0.25), yticks=[-0.2, -0.1, 0, 0.1, 0.2])
-        self._set_facet_grid_size(g)
-        self._save_facet_grid(g)
-
-
-class PlotPerClsAccVsSamples(_BaseMultiFilePlotCmd, BasePlotCmd):
-    dataset: SplitLTDataset
-    scatter: bool = False
-    plot_params: PlotParams
-    group_by_rhos: bool = True
-
-    def __call__(self):
-        baseline_res = load_train_res_with_per_cls_accs(
-            self.dataset.baseline_eval_file_path, self.eval_batch_size
-        )
-        n_train_imgs__per__class = baseline_res.train_data_info.n_imgs__per__class
-
-        df_rows = []
-        rhos = set()
-        for _id, (_res, _res_type) in enumerate(
-            itertools.chain(
-                ((_tres, "AlphaNet") for _tres in self._iter_train_results()),
-                [(baseline_res, "Baseline")],
-            )
-        ):
-            if _res.train_data_info.dataset_name != str(self.dataset):
-                raise ValueError("result file does not match input dataset")
-
-            if self.group_by_rhos:
-                if (
-                    _res_type == "AlphaNet"
-                    and not _res.training_config.sampler_builder.sampler_classes
-                    == (AllFewSampler, ClassBalancedBaseSampler)
-                ):
-                    raise ValueError(
-                        f"bad sampler: {_res.training_config.sampler_builder}"
-                    )
-
-            _acc__per__class = _res.test_acc__per__class
-            assert set(_acc__per__class.keys()) == set(n_train_imgs__per__class.keys())
-
-            if _res_type == "AlphaNet":
-                if self.group_by_rhos:
-                    _rho = _res.training_config.sampler_builder.sampler_args[1]["r"]
-                    rhos.add(_rho)
-                    _exp_name = f"$\\rho={_rho}$"
-                else:
-                    _exp_name = f"AlphaNet-{_id}"
-                    rhos.add(_id)
-            else:
-                _exp_name = "Baseline"
-
-            for _class in _acc__per__class:
-                df_rows.append(
-                    {
-                        "ID": _id,
-                        "Experiment": _exp_name,
-                        "Class": _class,
-                        "Test accuracy": _acc__per__class[_class],
-                        "Train samples": n_train_imgs__per__class[_class],
-                    }
-                )
-
-        df = pd.DataFrame(df_rows)
-        logging.info("loaded dataframe:\n%s", df)
-
-        if self.group_by_rhos:
-            _hue_order = [f"$\\rho={_rho}$" for _rho in sorted(rhos)]
-        else:
-            _hue_order = [f"AlphaNet-{_j}" for _j in sorted(rhos)]
-        _hue_order = _hue_order + ["Baseline"]
-        self.plot.config()
-        g = sns.lmplot(
-            data=df,
-            x="Train samples",
-            y="Test accuracy",
-            hue="Experiment",
-            units="ID",
-            hue_order=_hue_order,
-            logx=True,
-            scatter=self.scatter,
-            legend=False,
-            palette=sns.color_palette("husl", n_colors=len(rhos)) + ["#000"],
-            ci=None,
-            scatter_kws=dict(s=(mpl.rcParams["lines.markersize"] / 2) ** 2),
-            facet_kws=dict(despine=False, legend_out=False),
-        )
-        self.plot_params.set_params(g.ax)
-        if len(_hue_order) > 4:
-            g.add_legend(title="", ncols=2, bbox_to_anchor=(1, 1), loc="upper left")
-        else:
-            g.add_legend(title="", ncols=4, loc="upper center", bbox_to_anchor=(0.5, 1))
         g.figure.set_size_inches(self.plot.get_size())
-        if self.plot.file is not None:
-            g.savefig(self.plot.file.name)
+        self._save_figure(g.figure)
 
 
-class PlotDeltaPerClassAccs(_BaseMultiFilePlotCmd, BasePlotCmd):
-    dataset: SplitLTDataset
-
+class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
     def __call__(self):
-        baseline_res = load_train_res_with_per_cls_accs(
-            self.dataset.baseline_eval_file_path, self.eval_batch_size
-        )
-
-        def _get_split_for_class(_class):
-            nonlocal baseline_res
-            return next(
-                (
-                    _split
-                    for _split, _split_classes in (
-                        baseline_res.train_data_info.class__set__per__split.items()
-                    )
-                    if _class in _split_classes
-                )
-            )
-
-        classes_ordered_by_size = sorted(
-            baseline_res.train_data_info.n_imgs__per__class,
-            key=lambda _c: baseline_res.train_data_info.n_imgs__per__class[_c],
-        )
-
         df_rows = []
-        overall_test_acc_deltas = set()
-        test_acc_deltas__per__split = defaultdict(set)
+        test_acc_deltas__per__split__experiment = defaultdict(lambda: defaultdict(list))
 
-        for _id, _res in enumerate(self._iter_train_results()):
-            if _res.train_data_info.dataset_name != str(self.dataset):
-                raise ValueError("result file does not match input dataset")
+        for _fid, _exp_name, _dataset, _res in self._train_results():
+            _baseline_res = _load_baseline_res(_dataset, self.eval_batch_size)
 
-            _acc__per__class = _res.test_acc__per__class
-            assert set(_acc__per__class.keys()) == set(
-                baseline_res.test_acc__per__class.keys()
-            )
-
-            overall_test_acc_deltas.add(
-                _res.test_metrics["accuracy"] - baseline_res.test_metrics["accuracy"]
-            )
-            for _split in ("many", "medium", "few"):
-                test_acc_deltas__per__split[_split].add(
-                    _res.test_acc__per__split[_split]
-                    - baseline_res.test_acc__per__split[_split]
+            for _split in ("overall", "many", "medium", "few"):
+                test_acc_deltas__per__split__experiment[_exp_name][_split].append(
+                    _get_split_test_acc(_res, _split)
+                    - _get_split_test_acc(_baseline_res, _split)
                 )
 
             _delta_acc__per__class = {
-                _class: _acc__per__class[_class]
-                - baseline_res.test_acc__per__class[_class]
-                for _class in _acc__per__class
+                _class: (
+                    _res.test_acc__per__class[_class]
+                    - _baseline_res.test_acc__per__class[_class]
+                )
+                for _class in _res.test_acc__per__class
             }
 
-            for _index, _class in enumerate(classes_ordered_by_size):
-                df_rows.append(
-                    {
-                        "ID": _id,
-                        "Index": _index,
-                        "Class": _class,
-                        "Split": _get_split_for_class(_class),
-                        "Delta test accuracy": _delta_acc__per__class[_class],
-                    }
-                )
+            _class_idx = 0
+            for _split in ("few", "medium", "many"):
+                for _class in _res.train_data_info.class__set__per__split[_split]:
+                    df_rows.append(
+                        {
+                            "FID": _fid,
+                            "Experiment": _exp_name,
+                            "Dataset": str(_dataset),
+                            "Split": _split,
+                            "Class index": _class_idx,
+                            "Class": _class,
+                            "Delta test accuracy": _delta_acc__per__class[_class],
+                        }
+                    )
+                    _class_idx += 1
 
         df = pd.DataFrame(df_rows)
-        logging.info("loaded data frame:%s\n", df)
+        logging.info("loaded dataframe:%s\n", df)
 
-        with self.plot.open() as (_fig, _ax):
-            _xticks = [0]
-            for _split, _color in zip(("few", "medium", "many"), self.plot.palette[1:]):
-                _split_df = df[df["Split"] == _split]
-                sns.lineplot(
-                    data=_split_df,
-                    x="Index",
+        assert all(
+            len(_s) == 1 for _s in df.groupby("Experiment")["Dataset"].agg(set).values
+        )
+
+        _exps = list(test_acc_deltas__per__split__experiment.keys())
+        _n_exps = len(_exps)
+
+        with self.plot.open(
+            nrows=_n_exps, ncols=1, squeeze=False, gridspec_kw=dict(hspace=0.1)
+        ) as (_fig, _axs):
+            for _exp, _ax in zip(_exps, _axs[:, 0]):
+                _exp_df = df[df["Experiment"] == _exp]
+                _xticks = [0]
+                _xorder = []
+                for _split, _color in zip(
+                    ("few", "medium", "many"), self.plot.palette[1:]
+                ):
+                    _split_df = _exp_df[_exp_df["Split"] == _split]
+                    _xorder.extend(
+                        _split_df[["Class", "Delta test accuracy"]]
+                        .groupby("Class", group_keys=False, sort=False)
+                        .mean()
+                        .reset_index()
+                        .sort_values("Delta test accuracy", ascending=False)["Class"]
+                        .tolist()
+                    )
+                    _xticks.append(_split_df["Class index"].max())
+                    _acc_del = mean(
+                        test_acc_deltas__per__split__experiment[_exp][_split]
+                    )
+                    _ax.hlines(
+                        y=_acc_del,
+                        xmin=_xticks[-2],
+                        xmax=_xticks[-1],
+                        colors=[_color],
+                        linestyles=["-"],
+                        linewidths=[mpl.rcParams["lines.linewidth"] * 0.75],
+                        zorder=2,
+                        path_effects=[
+                            pe.Stroke(
+                                linewidth=(mpl.rcParams["lines.linewidth"] * 1.25),
+                                foreground=self.plot.palette[0],
+                                alpha=0.5,
+                            ),
+                            pe.Normal(),
+                        ],
+                    )
+                    _ax.annotate(
+                        f"$\\Delta={_acc_del:+.2f}$",
+                        xy=(
+                            _xticks[-1] * 0.98 if _acc_del > 0 else _xticks[-2] * 1.02,
+                            _acc_del + 0.02 if _acc_del > 0 else _acc_del - 0.02,
+                        ),
+                        color=_color,
+                        ha=("right" if _acc_del > 0 else "left"),
+                        va=("bottom" if _acc_del > 0 else "top"),
+                        fontweight="bold",
+                    )
+                    if _exp == _exps[-1]:
+                        _ax.text(
+                            _split_df["Class index"].mean(),
+                            -0.7,
+                            f"{_split.title()} split",
+                            horizontalalignment="center",
+                        )
+
+                sns.barplot(
+                    _exp_df,
+                    x="Class",
                     y="Delta test accuracy",
+                    hue="Split",
+                    order=_xorder,
+                    hue_order=("few", "medium", "many"),
+                    errorbar=None,
+                    units="FID",
+                    palette=self.plot.palette[1:],
+                    saturation=1,
+                    width=1,
+                    dodge=False,
                     ax=_ax,
-                    color=_color,
-                    alpha=0.75,
+                    linewidth=0,
                 )
 
-                _xticks.append(_split_df["Index"].max())
-                _ax.hlines(
-                    y=mean(test_acc_deltas__per__split[_split]),
-                    xmin=_xticks[-2],
-                    xmax=_xticks[-1],
-                    colors=[_color],
-                    linestyles=["--"],
-                    zorder=-1,
+                _overall_del = mean(
+                    test_acc_deltas__per__split__experiment[_exp]["overall"]
                 )
+
+                _title_text = _exp + "\n" if _n_exps > 1 else ""
+                _title_text += f"$\\Delta={_overall_del:+.2f}$"
                 _ax.text(
-                    _split_df["Index"].mean(),
-                    -0.7,
-                    f"{_split.title()} split",
+                    0.9,
+                    0.75,
+                    _title_text,
                     horizontalalignment="center",
+                    verticalalignment="bottom",
+                    fontweight="bold",
+                    transform=_ax.transAxes,
                 )
 
-            _ax.set_xticks(_xticks[1:-1])
-            _ax.set_xticklabels(["", ""])
-            _ax.set_xlabel("")
-            _ax.set_ylim(-0.6, 0.6)
-            _ax.set_ylabel("Change in test accuracy")
-            _ax.set_yticks([-0.4, -0.2, 0, 0.2, 0.4])
-            _ax.axhline(y=0, ls="-", color=self.plot.palette[0])
+                _ax.set_xticks(_xticks[1:-1])
+                _ax.set_xticklabels(["", ""])
+                _ax.set_xlabel("")
+                _ax.set_ylim(-0.6, 0.6)
+                _ax.set_ylabel("Change in test accuracy")
+                _ax.set_yticks([-0.5, -0.25, 0, 0.25, 0.5])
+                _ax.axhline(y=0, ls="-", color=self.plot.palette[0], alpha=0.5)
+                _ax.axhline(
+                    y=_overall_del, ls="--", color=self.plot.palette[0], zorder=1
+                )
+                sns.despine(
+                    ax=_ax,
+                    left=(_n_exps == 1),
+                    bottom=False,
+                    right=(_n_exps == 1),
+                    top=(_n_exps == 1),
+                )
+                _ax.legend().remove()
 
-            _mean_overall_acc_delta = mean(overall_test_acc_deltas)
-            _ax.axhline(
-                y=_mean_overall_acc_delta,
-                ls="--",
-                color=self.plot.palette[0],
-                zorder=-1,
-            )
 
-
-class PlotAlphaDist(_BaseMultiFilePlotCmd, BasePlotCmd):
-    plot_params: PlotParams
-    show_xlabels: bool = False
-    legend_loc: str = "lower right"
-    legend_bbox_to_anchor: Optional[Tuple[float, float]] = None
+class PlotClsAccAndSamples(_BaseMultiExpPlotCmd, BasePlotCmd):
     col_wrap: Optional[int] = None
 
     def __call__(self):
         df_rows = []
-        n_neighbors = None
-        nn_dist = None
+        dataset_name__per__exp = {}
+        class_order__per__exp = {}
+        n_train__per__class__exp = defaultdict(lambda: defaultdict(int))
 
-        for _id, _res in enumerate(self._iter_train_results()):
-            if _id == 0:
-                n_neighbors = _res.training_config.n_neighbors
-                nn_dist = _res.training_config.nn_dist
-            elif _res.training_config.n_neighbors != n_neighbors:
-                raise ValueError("n_neighbors not same for result files")
-            elif _res.training_config.nn_dist != nn_dist:
-                raise ValueError("nn_dist not same for result files")
+        for _gid, _exp_name, _dataset, _res in self._train_results():
+            try:
+                if dataset_name__per__exp[_exp_name] != str(_dataset):
+                    raise AssertionError
+            except KeyError:
+                dataset_name__per__exp[_exp_name] = str(_dataset)
+                _add_baseline_res = True
+                _baseline_res = _load_baseline_res(_dataset, self.eval_batch_size)
+            else:
+                _add_baseline_res = False
+                _baseline_res = None
 
-            _dataset_name = SplitLTDataset(
-                _res.train_data_info.dataset_name
-            ).proper_name
+            if _add_baseline_res:
+                class_order__per__exp[_exp_name] = _get_classes_ordered_by_size(
+                    _baseline_res, reverse=True
+                )
+            _train_imgs__per__cls = _res.train_data_info.n_imgs__per__class
+
+            for _class in class_order__per__exp[_exp_name]:
+                df_rows.append(
+                    {
+                        "GID": _gid,
+                        "Experiment": _exp_name,
+                        "Dataset": _dataset.proper_name,
+                        "Class": _class,
+                        "Model": "AlphaNet",
+                        "Test accuracy": _res.test_acc__per__class[_class],
+                        "Train samples": _train_imgs__per__cls[_class],
+                    }
+                )
+                if _add_baseline_res:
+                    n_train__per__class__exp[_exp_name][_class] = _train_imgs__per__cls[
+                        _class
+                    ]
+                    df_rows.append(
+                        {
+                            "Experiment": _exp_name,
+                            "Dataset": _dataset.proper_name,
+                            "Class": _class,
+                            "Model": "Baseline",
+                            "Test accuracy": _baseline_res.test_acc__per__class[_class],
+                            "Train samples": _train_imgs__per__cls[_class],
+                        }
+                    )
+
+        df = pd.DataFrame(df_rows)
+        logging.info("loaded dataframe:\n%s", df)
+
+        _exps = list(dataset_name__per__exp.keys())
+        _n_exps = len(_exps)
+
+        _n_cols = _n_exps
+        if self.col_wrap is not None and _n_cols > self.col_wrap:
+            _n_rows = ceil(_n_cols / self.col_wrap)
+            _n_cols = self.col_wrap
+        else:
+            _n_rows = 1
+
+        with self.plot.open(
+            nrows=_n_rows,
+            ncols=_n_cols,
+            squeeze=False,
+            sharey=True,
+            gridspec_kw=dict(hspace=0.2),
+        ) as (_fig, _axs):
+            for _i, (_exp, _ax) in enumerate(
+                itertools.zip_longest(_exps, _axs.flatten())
+            ):
+                if _exp is None:
+                    _ax.remove()
+                    continue
+
+                _exp_df = df[df["Experiment"] == _exp]
+                for _model in ["AlphaNet", "Baseline"]:
+                    _model_df = _exp_df[_exp_df["Model"] == _model]
+                    _color = self.plot.palette[int(_model == "AlphaNet")]
+                    sns.barplot(
+                        _model_df,
+                        x="Class",
+                        order=class_order__per__exp[_exp],
+                        y="Test accuracy",
+                        n_boot=self.n_boot,
+                        units="GID",
+                        saturation=1,
+                        errorbar=None,
+                        ax=_ax,
+                        linewidth=None,
+                        fill=True,
+                        color=_color,
+                        edgecolor=_color,
+                        facecolor=_color,
+                        alpha=(0.8 if _model == "AlphaNet" else 0.6),
+                        label=_model,
+                    )
+
+                sns.despine(ax=_ax, left=False, top=True, right=True, bottom=True)
+                _ax.grid(which="major", visible=False)
+                _ax.tick_params(size=mpl.rcParams["xtick.major.size"])
+                if _i == _n_cols - 1:
+                    _ax.legend(loc="upper right", frameon=False)
+                if _n_exps > 1:
+                    _ax.set_title(_exp, y=0.85)
+
+                _ax.set_xticks([])
+                _ax.set_xlim(0, df["Class"].max())
+                _ax.set_xlabel("")
+
+                _ax.set_ylim(-0.05, 1.05)
+                _ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
+                if _i % _n_cols:
+                    _ax.set_ylabel("")
+                    _ax.tick_params(labelleft=False)
+                else:
+                    _ax.set_ylabel("Test accuracy")
+
+                _ax2 = _ax.twinx()
+                _ax2.plot(
+                    class_order__per__exp[_exp],
+                    [
+                        n_train__per__class__exp[_exp][_c]
+                        for _c in class_order__per__exp[_exp]
+                    ],
+                    color=self.plot.palette[2],
+                )
+
+                sns.despine(ax=_ax2, left=True, right=False, top=True, bottom=True)
+                _ax2.grid(which="major", visible=False)
+                _ax2.tick_params(
+                    color=self.plot.palette[2],
+                    labelcolor=self.plot.palette[2],
+                    size=mpl.rcParams["xtick.major.size"],
+                    right=True,
+                )
+
+                _ax2.set_xticks([])
+                _ax2.set_xlabel("")
+
+                _ax2.yaxis.set_major_locator(MultipleLocator(100))
+                if _i % _n_cols == _n_cols - 1 or _i == _n_exps - 1:
+                    _ax2.set_ylabel("Train samples", color=self.plot.palette[2])
+                else:
+                    _ax2.set_ylabel("")
+                    _ax2.tick_params(labelright=False)
+
+
+class PlotAlphaDist(_BaseMultiExpPlotCmd, BasePlotCmd):
+    col_wrap: Optional[int] = None
+    legend_loc: Optional[str] = "center right"
+    legend_bbox_to_anchor: Optional[Tuple[float, float]] = None
+
+    def __call__(self):
+        df_rows = []
+        for _gid, _exp_name, _dataset, _res in self._train_results():
             _alphanet_classifier = _res.load_best_alphanet_classifier()
-            _alphanet_classifier = _alphanet_classifier.to(DEFAULT_DEVICE).eval()
+            _alphanet_classifier = _alphanet_classifier.to(_DEFAULT_DEVICE).eval()
             _alpha__mat = _alphanet_classifier.get_learned_alpha_vecs()
             assert all(bool(_a0 == 1) for _a0 in _alpha__mat[:, 0])
 
@@ -558,8 +887,8 @@ class PlotAlphaDist(_BaseMultiFilePlotCmd, BasePlotCmd):
             ):
                 df_rows.append(
                     {
-                        "ID": _id,
-                        "Dataset": _dataset_name,
+                        "GID": _gid,
+                        "Experiment": _exp_name,
                         "Target": _target,
                         "Source": f"$\\alpha_{_source}$",
                         "Alpha": _alpha__mat[_target, _source].item(),
@@ -567,51 +896,48 @@ class PlotAlphaDist(_BaseMultiFilePlotCmd, BasePlotCmd):
                 )
 
         df = pd.DataFrame(df_rows)
-        logging.info("loaded data frame:\n%s", df)
+        logging.info("loaded dataframe:\n%s", df)
 
         self.plot.config()
-        _n_datasets = len(df["Dataset"].unique())
-        _col_wrap = (
-            _n_datasets // int(sqrt(_n_datasets))
-            if self.col_wrap is None
-            else self.col_wrap
+        _exps = list(df["Experiment"].unique())
+        _n_exps = len(_exps)
+        _n_srcs = len(df["Source"].unique())
+        _palette = sns.cubehelix_palette(
+            n_colors=_n_srcs,
+            hue=1,
+            gamma=0.5,
+            dark=0.05,
+            light=0.75,
+            reverse=self.plot.theme == "light",
         )
-        _plot_size = self.plot.get_size()
         g = sns.displot(
-            data=df,
+            df,
             x="Alpha",
             hue="Source",
-            col="Dataset",
-            col_wrap=_col_wrap,
-            col_order=sorted(list(df["Dataset"].unique())),
+            col="Experiment",
+            col_wrap=self.col_wrap,
             kind="kde",
             legend=True,
-            palette=itertools.cycle(self.plot.palette[1:]),
-            # palette="husl",
-            height=_plot_size[1],
-            aspect=(_plot_size[0] / _plot_size[1]),
+            palette=_palette,
+            aspect=1,
             facet_kws=dict(sharex=True, sharey=False),
-            # alpha=0.5,
-            # linewidth=0,
-            # fill=True,
         )
-        self.plot_params.set_params(g.axes)
-        g.despine(top=True, bottom=False, left=True, right=True, trim=True)
-        g.refline(x=0, ls="-", color=self.plot.palette[0], zorder=-1)
-        g.set_titles("{col_name}")
-        if not self.show_xlabels:
-            g.set_xlabels("")
+        if _n_exps > 1:
+            g.set_titles("{col_name}")
+        else:
+            g.set_titles("")
+        g.set_xlabels("")
         g.set_ylabels("")
-        for _ax in g.axes.flatten():
-            _ax.tick_params(
-                axis="x",
-                which="major",
-                reset=True,
-                top=False,
-                bottom=True,
-                grid_linewidth=0,
-            )
-            _ax.set_xticklabels(list(map(str, _ax.get_xticks())))
+        g.set(xlim=[-1, 1], xticks=[-1, 0, 1], yticks=[])
+        g.despine(top=True, left=True, right=True, bottom=False, trim=True)
+        g.tick_params(
+            axis="x",
+            which="major",
+            reset=True,
+            top=False,
+            bottom=True,
+            grid_linewidth=0,
+        )
         if self.legend_loc:
             sns.move_legend(
                 g,
@@ -621,13 +947,86 @@ class PlotAlphaDist(_BaseMultiFilePlotCmd, BasePlotCmd):
             )
         else:
             g.legend.remove()
-        _n_cols = _n_datasets / _col_wrap
-        g.figure.set_size_inches(_plot_size[0] * _col_wrap, _plot_size[1] * _n_cols)
-        if self.plot.file is not None:
-            g.figure.savefig(
-                self.plot.file, format=Path(self.plot.file.name).suffix[1:]
+        g.figure.set_size_inches(self.plot.get_size())
+        self._save_figure(g.figure)
+
+
+class PlotClsAccVsSamples(_BaseMultiExpPlotCmd, BasePlotCmd):
+    col_wrap: Optional[int] = None
+    use_husl: bool = False
+    ci: Optional[int] = None
+    legend_loc: Optional[str] = None
+    legend_bbox_to_anchor: Optional[Tuple[float, float]] = None
+
+    def __call__(self):
+        df_rows = []
+        dataset__set = set()
+        for _gid, _exp_name, _dataset, _res in self._train_results():
+            dataset__set.add(_dataset)
+            for _class, _n_class in _res.train_data_info.n_imgs__per__class.items():
+                df_rows.append(
+                    {
+                        "GID": _gid,
+                        "Experiment": _exp_name,
+                        "Dataset": _dataset.proper_name,
+                        "Class": _class,
+                        "Test accuracy": _res.test_acc__per__class[_class],
+                        "Train samples": _n_class,
+                    }
+                )
+
+        baseline_df_rows = []
+        for _dataset in dataset__set:
+            _baseline_res = _load_baseline_res(_dataset, self.eval_batch_size)
+            for (
+                _class,
+                _n_class,
+            ) in _baseline_res.train_data_info.n_imgs__per__class.items():
+                baseline_df_rows.append(
+                    {
+                        "Experiment": "Baseline",
+                        "Dataset": _dataset.proper_name,
+                        "Class": _class,
+                        "Test accuracy": _baseline_res.test_acc__per__class[_class],
+                        "Train samples": _n_class,
+                    }
+                )
+
+        df = pd.DataFrame(baseline_df_rows + df_rows)
+        logging.info("loaded dataframe:\n%s", df)
+
+        self.plot.config()
+        g = sns.lmplot(
+            data=df,
+            x="Train samples",
+            y="Test accuracy",
+            hue="Experiment",
+            col="Dataset",
+            col_wrap=self.col_wrap,
+            units="Class",
+            logx=True,
+            scatter=False,
+            legend=True,
+            palette=("husl" if self.use_husl else self.plot.palette),
+            ci=self.ci,
+        )
+
+        g.despine(left=True, right=True, top=True, bottom=False)
+        g.set(ylim=[0, 1.01], yticks=[0.2, 0.4, 0.6, 0.8, 1.0])
+        g.legend.set_title("")
+        if self.legend_loc is not None:
+            sns.move_legend(
+                g, self.legend_loc, bbox_to_anchor=self.legend_bbox_to_anchor
             )
-            self.plot.file.close()
+        if len(dataset__set) > 1:
+            g.set_titles("{col_var}")
+        else:
+            g.set_titles("")
+        for _ax in g.axes.flat:
+            _ax.set_xscale("log")
+
+        g.figure.set_size_inches(self.plot.get_size())
+        self._save_figure(g.figure)
 
 
 class PlotTemplateDeltas(BasePlotCmd):
@@ -636,12 +1035,13 @@ class PlotTemplateDeltas(BasePlotCmd):
     delta_type: Literal["min", "max"] = "max"
     n_deltas: int = 1
     n_pcs: int = 50
+    mds_iters: int = 300
     plot: ContextPlot
 
     def __call__(self):
         # Load result and baseline templates.
         alphanet_res = TrainResult.from_dict(
-            torch.load(self.res_file, map_location=DEFAULT_DEVICE)
+            torch.load(self.res_file, map_location=_DEFAULT_DEVICE)
         )
         if alphanet_res.training_config.n_neighbors > len(self.plot.palette) - 1:
             raise ValueError(
@@ -651,14 +1051,14 @@ class PlotTemplateDeltas(BasePlotCmd):
 
         dataset = SplitLTDataset(alphanet_res.train_data_info.dataset_name)
         baseline_res = TrainResult.from_dict(
-            torch.load(dataset.baseline_eval_file_path, map_location=DEFAULT_DEVICE)
+            torch.load(dataset.baseline_eval_file_path, map_location=_DEFAULT_DEVICE)
         )
 
         _alphanet_classifier = alphanet_res.load_best_alphanet_classifier()
-        _alphanet_classifier = _alphanet_classifier.to(DEFAULT_DEVICE).eval()
+        _alphanet_classifier = _alphanet_classifier.to(_DEFAULT_DEVICE).eval()
         alphanet_template__mat = _alphanet_classifier.get_trained_templates()
 
-        _baseline_clf = dataset.load_classifier(DEFAULT_DEVICE)
+        _baseline_clf = dataset.load_classifier(_DEFAULT_DEVICE)
         baseline_template__mat = _baseline_clf.weight.data.detach()
 
         assert (
@@ -674,13 +1074,13 @@ class PlotTemplateDeltas(BasePlotCmd):
         (
             alphanet_test_acc__per__class,
             alphanet_test_pred__seq,
-        ) = get_per_class_test_accs(
+        ) = _get_test_acc_per_class(
             alphanet_res, self.eval_batch_size, return_preds=True
         )
         (
             baseline_test_acc__per__class,
             baseline_test_pred__seq,
-        ) = get_per_class_test_accs(
+        ) = _get_test_acc_per_class(
             baseline_res, self.eval_batch_size, return_preds=True
         )
         delta_test_acc__per__class = {
@@ -694,11 +1094,11 @@ class PlotTemplateDeltas(BasePlotCmd):
                 alphanet_res.train_data_info.class__set__per__split["many"]
                 | alphanet_res.train_data_info.class__set__per__split["medium"]
             ),
-            device=DEFAULT_DEVICE,
+            device=_DEFAULT_DEVICE,
         )
         fclass_ordered__vec = torch.tensor(
             list(alphanet_res.train_data_info.class__set__per__split["few"]),
-            device=DEFAULT_DEVICE,
+            device=_DEFAULT_DEVICE,
         )
 
         # Separate 'base' and 'few' split templates.
@@ -751,7 +1151,9 @@ class PlotTemplateDeltas(BasePlotCmd):
                 test_proj_pcs__nmat,
             )
         )
-        _mds = MDS(2, verbose=2, n_jobs=-1, normalized_stress="auto")
+        _mds = MDS(
+            2, verbose=2, n_jobs=-1, normalized_stress="auto", max_iter=self.mds_iters
+        )
         _alldata_embed__nmat = _mds.fit_transform(_alldata__nmat)
         _alldata_embed__mat__seq = [None, None, None, None]
         _n = 0
@@ -765,7 +1167,7 @@ class PlotTemplateDeltas(BasePlotCmd):
         ):
             _embed__mat = torch.from_numpy(
                 _alldata_embed__nmat[_n : _n + _mat.shape[0]]
-            ).to(device=DEFAULT_DEVICE)
+            ).to(device=_DEFAULT_DEVICE)
             _alldata_embed__mat__seq[_i] = _embed__mat
             _n += _mat.shape[0]
         (
@@ -807,7 +1209,7 @@ class PlotTemplateDeltas(BasePlotCmd):
             torch.index_select(
                 _ftemplate_embed__mat,
                 0,
-                torch.tensor(selected_idx__seq, device=DEFAULT_DEVICE),
+                torch.tensor(selected_idx__seq, device=_DEFAULT_DEVICE),
             )
             for _ftemplate_embed__mat in [
                 baseline_ftemplate_embed__mat,
@@ -827,7 +1229,7 @@ class PlotTemplateDeltas(BasePlotCmd):
             nn_btemplate_embed__mat__per__selected_fclass[_fclass] = torch.index_select(
                 btemplate_embed__mat,
                 0,
-                torch.tensor(_nn_idx__seq, device=DEFAULT_DEVICE),
+                torch.tensor(_nn_idx__seq, device=_DEFAULT_DEVICE),
             )
 
         # Get test projection embeddings for the selected classes.
@@ -843,7 +1245,7 @@ class PlotTemplateDeltas(BasePlotCmd):
             test_proj_embed__mat__per__selected_fclass[_fclass] = torch.index_select(
                 test_proj_embed__mat,
                 0,
-                torch.tensor(_test_idx__seq, device=DEFAULT_DEVICE),
+                torch.tensor(_test_idx__seq, device=_DEFAULT_DEVICE),
             )
             (
                 alphanet_test_pred__seq__per__selected_fclass[_fclass],
@@ -967,86 +1369,3 @@ class PlotTemplateDeltas(BasePlotCmd):
                     sns.despine(
                         left=False, right=False, top=False, bottom=False, ax=_ax
                     )
-
-
-TEST_DATA_CACHE: Dict[str, SplitLTDataGroup] = {}
-
-
-def get_per_class_test_accs(res: TrainResult, batch_size: int, return_preds=False):
-    alphanet_classifier = res.load_best_alphanet_classifier()
-    alphanet_classifier = alphanet_classifier.to(DEFAULT_DEVICE).eval()
-    dataset = SplitLTDataset(res.train_data_info.dataset_name)
-    try:
-        test_datagrp = TEST_DATA_CACHE[res.train_data_info.dataset_name]
-    except KeyError:
-        test_datagrp = dataset.load_data(res.training_config.test_datagrp)
-        TEST_DATA_CACHE[res.train_data_info.dataset_name] = test_datagrp
-    test_data_loader = DataLoader(
-        TensorDataset(test_datagrp.feat__mat, torch.tensor(test_datagrp.label__seq)),
-        batch_size,
-        shuffle=False,
-    )
-    eval_engine = ignite.engine.create_supervised_evaluator(
-        alphanet_classifier,
-        {"accuracy": ignite.metrics.Accuracy()},  # for sanity check
-        DEFAULT_DEVICE,
-    )
-    ignite.contrib.handlers.ProgressBar(
-        desc="Generating test results for file", persist=False
-    ).attach(eval_engine)
-
-    @eval_engine.on(ignite.engine.Events.STARTED)
-    def _(engine: ignite.engine.Engine):
-        engine.state.my_y__seq = []
-        engine.state.my_yhat__seq = []
-        engine.state.my_accuracy__per__class = None
-
-    @eval_engine.on(ignite.engine.Events.ITERATION_COMPLETED)
-    def _(engine: ignite.engine.Engine):
-        _scores__batch, _y__batch = engine.state.output  # type: ignore
-        _yhat__batch = torch.argmax(_scores__batch, dim=1)
-        engine.state.my_y__seq.extend(_y__batch.tolist())
-        engine.state.my_yhat__seq.extend(_yhat__batch.tolist())
-
-    @eval_engine.on(ignite.engine.Events.COMPLETED)
-    def _(engine: ignite.engine.Engine):
-        _correct_preds__per__class: Dict[int, int] = defaultdict(int)
-        _total_preds__per__class: Dict[int, int] = defaultdict(int)
-
-        for _y_i, _yhat_i in zip(engine.state.my_y__seq, engine.state.my_yhat__seq):
-            _correct = int(_y_i == _yhat_i)
-            _correct_preds__per__class[_y_i] += _correct
-            _total_preds__per__class[_y_i] += 1
-
-        engine.state.my_accuracy__per__class = {
-            _class: float(
-                _correct_preds__per__class[_class] / _total_preds__per__class[_class]
-            )
-            for _class in _correct_preds__per__class
-        }
-
-        assert all(
-            _total_preds__per__class[_class] == _class_imgs
-            for _class, _class_imgs in test_datagrp.info.n_imgs__per__class.items()
-        )
-        assert torch.isclose(
-            torch.tensor([sum(_correct_preds__per__class.values())], dtype=torch.float),
-            torch.tensor(
-                [engine.state.metrics["accuracy"] * len(engine.state.my_y__seq)]
-            ),
-        )
-        assert torch.isclose(
-            torch.tensor([engine.state.metrics["accuracy"]]),
-            torch.tensor([res.test_metrics["accuracy"]]),
-            rtol=1e-3,
-            atol=1e-5,
-        )
-        assert all(
-            _l == _y for _l, _y in zip(test_datagrp.label__seq, engine.state.my_y__seq)
-        )
-
-    logging.root.setLevel(logging.WARNING)
-    eval_engine.run(test_data_loader)
-    logging.root.setLevel(logging.INFO)
-    _second_ret = eval_engine.state.my_yhat__seq if return_preds else None
-    return eval_engine.state.my_accuracy__per__class, _second_ret
