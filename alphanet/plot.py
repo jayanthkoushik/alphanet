@@ -17,7 +17,12 @@ import seaborn as sns
 import torch
 from corgy import Corgy
 from corgy.types import InputBinFile, InputDirectory
-from matplotlib import patches as mpatches, patheffects as pe, pyplot as plt
+from matplotlib import (
+    patches as mpatches,
+    path as mpath,
+    patheffects as pe,
+    pyplot as plt,
+)
 from matplotlib.ticker import MultipleLocator
 from matplotlib.transforms import Bbox
 from scipy.spatial.distance import cosine, euclidean
@@ -223,16 +228,36 @@ def _get_classes_ordered_by_size(res: TrainResult, reverse: bool = False) -> Lis
     )
 
 
-def _get_split_for_class(class_: int, res: TrainResult) -> str:
-    return next(
-        (
-            _split
-            for _split, _split_classes in (
-                res.train_data_info.class__set__per__split.items()
-            )
-            if class_ in _split_classes
-        )
-    )
+def _gradient_image(ax, extent, direction=0.3, cmap_range=(0, 1), **kwargs):
+    # From 'matplotlib.org/stable/gallery/lines_bars_and_markers/gradient_bar.html'.
+    """
+    Draw a gradient image based on a colormap.
+
+    Parameters
+    ----------
+    ax : Axes
+        The axes to draw on.
+    extent
+        The extent of the image as (xmin, xmax, ymin, ymax).
+        By default, this is in Axes coordinates but may be
+        changed using the *transform* keyword argument.
+    direction : float
+        The direction of the gradient. This is a number in
+        range 0 (=vertical) to 1 (=horizontal).
+    cmap_range : float, float
+        The fraction (cmin, cmax) of the colormap that should be
+        used for the gradient, where the complete colormap is (0, 1).
+    **kwargs
+        Other parameters are passed on to `.Axes.imshow()`.
+        In particular useful is *cmap*.
+    """
+    phi = direction * np.pi / 2
+    v = np.array([np.cos(phi), np.sin(phi)])
+    X = np.array([[v @ [1, 0], v @ [1, 1]], [v @ [0, 0], v @ [0, 1]]])
+    a, b = cmap_range
+    X = a + (b - a) / X.max() * X
+    im = ax.imshow(X, extent=extent, interpolation="bicubic", vmin=0, vmax=1, **kwargs)
+    return im
 
 
 class BasePlotCmd(Corgy, corgy_make_slots=False):
@@ -1369,3 +1394,224 @@ class PlotTemplateDeltas(BasePlotCmd):
                     sns.despine(
                         left=False, right=False, top=False, bottom=False, ax=_ax
                     )
+
+
+class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
+    col_wrap: Optional[int] = None
+
+    @staticmethod
+    def _get_pred_status(_y, _yhat, _nns__per__fclass):
+        if _yhat == _y:
+            return "Correct"
+        if _yhat in _nns__per__fclass[_y]:
+            return "Incorrect as NN"
+        return "Incorrect as non-NN"
+
+    @staticmethod
+    def _get_status_label(status):
+        if status == "Correct":
+            return "Correctly\nclassified"
+        if status == "Incorrect as NN":
+            return "Incorrectly\nclassified\nas a NN"
+        return "Incorrectly\nclassified\nas a non-NN"
+
+    def __call__(self):
+        df_rows = []
+        baseline_test_yhats__per__dataset = {}
+
+        for _gid, _exp_name, _dataset, _res in self._train_results():
+            try:
+                _baseline_test_yhats = baseline_test_yhats__per__dataset[_dataset]
+            except KeyError:
+                _baseline_res = TrainResult.from_dict(
+                    torch.load(
+                        _dataset.baseline_eval_file_path, map_location=_DEFAULT_DEVICE
+                    )
+                )
+                _, _baseline_test_yhats = _get_test_acc_per_class(
+                    _baseline_res, self.eval_batch_size, return_preds=True
+                )
+                baseline_test_yhats__per__dataset[_dataset] = _baseline_test_yhats
+
+            _, _res_test_yhats = _get_test_acc_per_class(
+                _res, self.eval_batch_size, return_preds=True
+            )
+            _test_datagrp = _TEST_DATA_CACHE[str(_dataset)]
+            _test_ys = _test_datagrp.label__seq
+            _fclass_nns = _res.nn_info.nn_class__seq__per__fclass
+
+            for _i, (_y, _baseline_yhat, _res_yhat) in enumerate(
+                zip(_test_ys, _baseline_test_yhats, _res_test_yhats)
+            ):
+                if _y not in _fclass_nns:
+                    continue
+                df_rows.append(
+                    {
+                        "GID": _gid,
+                        "Dataset": _dataset.proper_name,
+                        "Experiment": _exp_name,
+                        "Sample": _i,
+                        "Baseline prediction": self._get_pred_status(
+                            _y, _baseline_yhat, _fclass_nns
+                        ),
+                        "AlphaNet prediction": self._get_pred_status(
+                            _y, _res_yhat, _fclass_nns
+                        ),
+                    }
+                )
+
+        df = pd.DataFrame(df_rows)
+        logging.info("loaded dataframe:\n%s", df)
+        assert all(
+            len(_s) == 1
+            for _s in df.groupby("Experiment")["Dataset"].aggregate(set).values
+        )
+
+        _exps = list(df["Experiment"].unique())
+        _statuses = ["Incorrect as non-NN", "Incorrect as NN", "Correct"]
+        if self.col_wrap is None or self.col_wrap >= len(_exps):
+            _n_cols = len(_exps)
+            _n_rows = 1
+        else:
+            _n_cols = self.col_wrap
+            _n_rows = ceil(len(_exps) / self.col_wrap)
+
+        with self.plot.open(nrows=_n_rows, ncols=_n_cols) as (_fig, _axs):
+            for _exp, _ax in itertools.zip_longest(_exps, _axs.flatten()):
+                if _exp is None:
+                    _ax.remove()
+                    continue
+
+                _exp_df = df[df["Experiment"] == _exp]
+                _n_preds = len(_exp_df)
+
+                if len(_exps) > 1:
+                    _ax.set_title(_exp)
+                sns.despine(ax=_ax, top=True, bottom=True, left=True, right=True)
+
+                _status_to_baseline_n = {}
+                _status_to_alphanet_n = {}
+                _xcoords = [1, 4]
+                _bar_width = 0.8
+
+                for _i, _model in zip(_xcoords, ["Baseline", "AlphaNet"]):
+                    _offset = 0
+                    for _j, _status in enumerate(_statuses):
+                        _n_status = len(
+                            _exp_df[_exp_df[f"{_model} prediction"] == _status]
+                        )
+                        _bar_height = _n_status / _n_preds
+                        _bar = _ax.bar(
+                            _i,
+                            _bar_height,
+                            width=_bar_width,
+                            bottom=_offset,
+                            color=self.plot.palette[_j + 1],
+                            linewidth=0,
+                        )
+                        if _model == "Baseline":
+                            _ax.bar_label(
+                                _bar,
+                                labels=[self._get_status_label(_status)],
+                                label_type="center",
+                                fontsize="xx-small",
+                            )
+                        _offset += _bar_height
+                        if _model == "Baseline":
+                            _status_to_baseline_n[_status] = _n_status
+                        else:
+                            _status_to_alphanet_n[_status] = _n_status
+                    assert torch.isclose(
+                        torch.tensor(data=1.0), torch.tensor(data=_offset)
+                    )
+
+                _band_yl = 0
+                _band_roffset__per__status = defaultdict(int)
+                for _j, _lstatus in enumerate(_statuses):
+                    _band_yrbase = 0
+                    for _k, _rstatus in enumerate(_statuses):
+                        _band_yr = _band_yrbase + _band_roffset__per__status[_rstatus]
+                        _n_l2r = len(
+                            _exp_df[
+                                (_exp_df["Baseline prediction"] == _lstatus)
+                                & (_exp_df["AlphaNet prediction"] == _rstatus)
+                            ]
+                        )
+                        _band_w = _n_l2r / _n_preds
+                        _band_xl = _xcoords[0] + (_bar_width / 2)
+                        _band_xr = _xcoords[1] - (_bar_width / 2)
+
+                        _band = mpatches.PathPatch(
+                            mpath.Path(
+                                [
+                                    (_band_xl, _band_yl),
+                                    (_band_xr, _band_yr),
+                                    (_band_xr, _band_yr + _band_w),
+                                    (_band_xl, _band_yl + _band_w),
+                                    (_band_xl, _band_yl),
+                                ],
+                                [
+                                    mpath.Path.MOVETO,
+                                    mpath.Path.LINETO,
+                                    mpath.Path.LINETO,
+                                    mpath.Path.LINETO,
+                                    mpath.Path.LINETO,
+                                ],
+                            ),
+                            fill=False,
+                            transform=_ax.transData,
+                        )
+
+                        _grad_img = _gradient_image(
+                            _ax,
+                            extent=(
+                                _band_xl,
+                                _band_xr,
+                                min(_band_yl, _band_yr),
+                                max(_band_yl, _band_yr) + _band_w,
+                            ),
+                            direction=1,
+                            cmap=sns.blend_palette(
+                                [self.plot.palette[_j + 1], self.plot.palette[_k + 1]],
+                                as_cmap=True,
+                            ),
+                            alpha=0.75,
+                            aspect="auto",
+                        )
+                        _grad_img.set_clip_path(_band)
+
+                        _band_yl += _band_w
+                        _band_roffset__per__status[_rstatus] += _band_w
+                        _band_yrbase += _status_to_alphanet_n[_rstatus] / _n_preds
+
+                    assert torch.isclose(
+                        torch.tensor(data=_band_yl),
+                        torch.tensor(
+                            data=sum(
+                                _status_to_baseline_n[_s] for _s in _statuses[: _j + 1]
+                            )
+                            / _n_preds
+                        ),
+                    )
+                    assert torch.isclose(
+                        torch.tensor(data=_band_yrbase), torch.tensor(data=1.0)
+                    )
+                assert all(
+                    torch.isclose(
+                        torch.tensor(data=_band_roffset__per__status[_s]),
+                        torch.tensor(data=_status_to_alphanet_n[_s] / _n_preds),
+                    )
+                    for _s in _statuses
+                )
+                assert torch.isclose(
+                    torch.tensor(data=_band_yl), torch.tensor(data=1.0)
+                )
+                assert torch.isclose(
+                    torch.tensor(data=_band_yr + _band_w), torch.tensor(data=1.0)
+                )
+                _ax.set_xlim(0, 5)
+                _ax.set_ylim(-0.1, 1.1)
+                _ax.set_xticks([])
+                _ax.set_yticks([])
+                _ax.xaxis.grid(visible=False)
+                _ax.yaxis.grid(visible=False)
