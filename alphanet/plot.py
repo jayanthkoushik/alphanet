@@ -17,12 +17,7 @@ import seaborn as sns
 import torch
 from corgy import Corgy
 from corgy.types import InputBinFile, InputDirectory
-from matplotlib import (
-    patches as mpatches,
-    path as mpath,
-    patheffects as pe,
-    pyplot as plt,
-)
+from matplotlib import patches as mpatches, patheffects as pe, pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from matplotlib.transforms import Bbox
 from scipy.spatial.distance import cosine, euclidean
@@ -1476,7 +1471,10 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
             _n_cols = self.col_wrap
             _n_rows = ceil(len(_exps) / self.col_wrap)
 
-        with self.plot.open(nrows=_n_rows, ncols=_n_cols) as (_fig, _axs):
+        with self.plot.open(nrows=_n_rows, ncols=_n_cols, squeeze=False) as (
+            _fig,
+            _axs,
+        ):
             for _exp, _ax in itertools.zip_longest(_exps, _axs.flatten()):
                 if _exp is None:
                     _ax.remove()
@@ -1541,25 +1539,24 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                         _band_xl = _xcoords[0] + (_bar_width / 2)
                         _band_xr = _xcoords[1] - (_bar_width / 2)
 
-                        _band = mpatches.PathPatch(
-                            mpath.Path(
-                                [
-                                    (_band_xl, _band_yl),
-                                    (_band_xr, _band_yr),
-                                    (_band_xr, _band_yr + _band_w),
-                                    (_band_xl, _band_yl + _band_w),
-                                    (_band_xl, _band_yl),
-                                ],
-                                [
-                                    mpath.Path.MOVETO,
-                                    mpath.Path.LINETO,
-                                    mpath.Path.LINETO,
-                                    mpath.Path.LINETO,
-                                    mpath.Path.LINETO,
-                                ],
-                            ),
-                            fill=False,
-                            transform=_ax.transData,
+                        _sig_xs = torch.linspace(_band_xl, _band_xr, 1000)
+                        _sig_ys = torch.sigmoid(
+                            (10 * (_sig_xs - _band_xl) / (_band_xr - _band_xl)) - 5
+                        )
+                        _sig_ys_m, _sig_ys_M = _sig_ys.min(), _sig_ys.max()
+                        _sig_ys = (_sig_ys - _sig_ys_m) / (_sig_ys_M - _sig_ys_m)
+                        _sig_ys = (
+                            ((_sig_ys - 0.5) * (_band_yr - _band_yl))
+                            + (abs(_band_yr - _band_yl) / 2)
+                            + min(_band_yl, _band_yr)
+                        )
+
+                        _band = _ax.fill_between(
+                            _sig_xs.tolist(),
+                            _sig_ys.tolist(),
+                            (_sig_ys + _band_w).tolist(),
+                            lw=0,
+                            color="none",
                         )
 
                         _grad_img = _gradient_image(
@@ -1578,7 +1575,9 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                             alpha=0.75,
                             aspect="auto",
                         )
-                        _grad_img.set_clip_path(_band)
+                        _grad_img.set_clip_path(
+                            _band.get_paths()[0], transform=_ax.transData
+                        )
 
                         _band_yl += _band_w
                         _band_roffset__per__status[_rstatus] += _band_w
