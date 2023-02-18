@@ -1507,13 +1507,15 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                             color=self.plot.palette[_j + 1],
                             linewidth=0,
                         )
+                        _label = f"$n = {_n_status}$"
                         if _model == "Baseline":
-                            _ax.bar_label(
-                                _bar,
-                                labels=[self._get_status_label(_status)],
-                                label_type="center",
-                                fontsize="xx-small",
-                            )
+                            _label = self._get_status_label(_status) + "\n\n" + _label
+                        _ax.bar_label(
+                            _bar,
+                            labels=[_label],
+                            label_type="center",
+                            fontsize="xx-small",
+                        )
                         _offset += _bar_height
                         if _model == "Baseline":
                             _status_to_baseline_n[_status] = _n_status
