@@ -1578,7 +1578,7 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                             linewidth=0,
                         )
                         _label = f"$n = {_n_status}$"
-                        if (_axno % self.col_wrap) == 0 and _model == "Baseline":
+                        if (_axno % _n_cols) == 0 and _model == "Baseline":
                             _label = self._get_status_label(_status) + "\n\n" + _label
                         _ax.bar_label(
                             _bar,
