@@ -153,7 +153,7 @@ class SplitLTDataset(str):
             self.nn_files_dir = Path(self._configs[config]["nn_files_dir"])
             self.baseline_eval_file_path = self._configs[config]["baseline_eval_file"]
             self.label_names_file_path = self._configs[config].get(
-                "label_names_file_path", None
+                "label_names_file", None
             )
             self.datagrps = self._configs[config].get(
                 "datagrps", ("train", "val", "test")
