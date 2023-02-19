@@ -1419,8 +1419,9 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
     @staticmethod
     def _make_band(xl, xr, yl, yr, w):
         assert xr > xl
+        assert w > 0
 
-        if yr == yl:
+        if torch.isclose(torch.tensor(data=float(yr)), torch.tensor(data=float(yl))):
             return mpath.Path([(xl, yl), (xr, yr), (xr, yr + w), (xl, yl + w)])
 
         y_del = abs(yr - yl)
@@ -1429,19 +1430,20 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
         x_del2 = x_del * x_del
         y_del2 = y_del * y_del
 
-        q = w * (x_del2 - y_del2) / (x_del2 + y_del2)
+        q = w * abs(x_del2 - y_del2) / (x_del2 + y_del2)
         p = (w + y_del - q) / 2
         r = w * (y_del - p) / ((2 * p) - y_del)
+        assert r > 0
+
         a = r * x_del / (w + (2 * r))
         b = x_del - (2 * a)
+        assert b > 0
 
         t = math.asin(a / r)
+        assert 0 < t < (math.pi / 2)
         z = math.tan(t / 2)
         bz_del1 = r * z
         bz_del2 = bz_del1 + (w * z)
-
-        assert all(_z > 0 for _z in (p, q, r, a, b, z, bz_del1, bz_del2))
-        assert 0 < t < (math.pi / 2)
 
         if yl > yr:
             yl, yr = yl + w, yr + w
@@ -1541,7 +1543,9 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
             _fig,
             _axs,
         ):
-            for _exp, _ax in itertools.zip_longest(_exps, _axs.flatten()):
+            for _axno, (_exp, _ax) in enumerate(
+                itertools.zip_longest(_exps, _axs.flatten())
+            ):
                 if _exp is None:
                     _ax.remove()
                     continue
@@ -1550,7 +1554,7 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                 _n_preds = len(_exp_df)
 
                 if len(_exps) > 1:
-                    _ax.set_title(_exp)
+                    _ax.set_title(_exp, y=0.98, verticalalignment="top", pad=0)
                 sns.despine(ax=_ax, top=True, bottom=True, left=True, right=True)
 
                 _status_to_baseline_n = {}
@@ -1574,7 +1578,7 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                             linewidth=0,
                         )
                         _label = f"$n = {_n_status}$"
-                        if _model == "Baseline":
+                        if (_axno % self.col_wrap) == 0 and _model == "Baseline":
                             _label = self._get_status_label(_status) + "\n\n" + _label
                         _ax.bar_label(
                             _bar,
@@ -1594,13 +1598,13 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                 _band_yl = 0
                 _band_xl = _xcoords[0] + (_bar_width / 2)
                 _band_xr = _xcoords[1] - (_bar_width / 2)
-                _band_del_x = _band_xr - _band_xl
-                _band_roffset__per__status = defaultdict(int)
+                _band_roffset__per__status = defaultdict(float)
 
                 for _j, _lstatus in enumerate(_statuses):
-                    _band_yrbase = 0
+                    _band_yrbase = 0.0
                     for _k, _rstatus in enumerate(_statuses):
                         _band_yr = _band_yrbase + _band_roffset__per__status[_rstatus]
+                        _band_yrbase += _status_to_alphanet_n[_rstatus] / _n_preds
                         _n_l2r = len(
                             _exp_df[
                                 (_exp_df["Baseline prediction"] == _lstatus)
@@ -1609,9 +1613,13 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                         )
                         _band_w = _n_l2r / _n_preds
 
+                        if _n_l2r == 0:
+                            continue
+
                         _band = self._make_band(
                             _band_xl, _band_xr, _band_yl, _band_yr, _band_w
                         )
+                        _ax.add_patch(mpatches.PathPatch(_band, linewidth=0, fc="none"))
                         _grad_img = _gradient_image(
                             _ax,
                             extent=(
@@ -1632,7 +1640,6 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
 
                         _band_yl += _band_w
                         _band_roffset__per__status[_rstatus] += _band_w
-                        _band_yrbase += _status_to_alphanet_n[_rstatus] / _n_preds
 
                     assert torch.isclose(
                         torch.tensor(data=_band_yl),
@@ -1663,7 +1670,7 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                 _ax.set_xlim(
                     _xcoords[0] - (_bar_width / 2), _xcoords[1] + (_bar_width / 2)
                 )
-                _ax.set_ylim(0, 1)
+                _ax.set_ylim(-0.01, 1.01)
                 _ax.set_xticks([])
                 _ax.set_yticks([])
                 _ax.xaxis.grid(visible=False)
