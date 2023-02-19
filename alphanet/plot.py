@@ -1,5 +1,6 @@
 import itertools
 import logging
+import math
 from collections import defaultdict
 from heapq import nlargest, nsmallest
 from math import ceil
@@ -17,7 +18,12 @@ import seaborn as sns
 import torch
 from corgy import Corgy
 from corgy.types import InputBinFile, InputDirectory
-from matplotlib import patches as mpatches, patheffects as pe, pyplot as plt
+from matplotlib import (
+    patches as mpatches,
+    path as mpath,
+    patheffects as pe,
+    pyplot as plt,
+)
 from matplotlib.ticker import MultipleLocator
 from matplotlib.transforms import Bbox
 from scipy.spatial.distance import cosine, euclidean
@@ -1410,6 +1416,66 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
             return "Incorrectly\nclassified\nas a NN"
         return "Incorrectly\nclassified\nas a non-NN"
 
+    @staticmethod
+    def _make_band(xl, xr, yl, yr, w):
+        assert xr > xl
+
+        if yr == yl:
+            return mpath.Path([(xl, yl), (xr, yr), (xr, yr + w), (xl, yl + w)])
+
+        y_del = abs(yr - yl)
+        x_del = xr - xl
+
+        x_del2 = x_del * x_del
+        y_del2 = y_del * y_del
+
+        q = w * (x_del2 - y_del2) / (x_del2 + y_del2)
+        p = (w + y_del - q) / 2
+        r = w * (y_del - p) / ((2 * p) - y_del)
+        a = r * x_del / (w + (2 * r))
+        b = x_del - (2 * a)
+
+        t = math.asin(a / r)
+        z = math.tan(t / 2)
+        bz_del1 = r * z
+        bz_del2 = bz_del1 + (w * z)
+
+        assert all(_z > 0 for _z in (p, q, r, a, b, z, bz_del1, bz_del2))
+        assert 0 < t < (math.pi / 2)
+
+        if yl > yr:
+            yl, yr = yl + w, yr + w
+            w, p, q = -w, -p, -q
+
+        return mpath.Path(
+            [
+                (xl, yl),
+                (xl + bz_del2, yl),
+                (xl + a + b, yl + p),
+                (xr - bz_del1, yr),
+                (xr, yr),
+                (xr, yr + w),
+                (xr - bz_del2, yr + w),
+                (xl + a, yl + p + q),
+                (xl + bz_del1, yl + w),
+                (xl, yl + w),
+                (xl, yl),
+            ],
+            [
+                mpath.Path.MOVETO,
+                mpath.Path.CURVE3,
+                mpath.Path.CURVE3,
+                mpath.Path.CURVE3,
+                mpath.Path.CURVE3,
+                mpath.Path.LINETO,
+                mpath.Path.CURVE3,
+                mpath.Path.CURVE3,
+                mpath.Path.CURVE3,
+                mpath.Path.CURVE3,
+                mpath.Path.LINETO,
+            ],
+        )
+
     def __call__(self):
         df_rows = []
         baseline_test_yhats__per__dataset = {}
@@ -1489,8 +1555,8 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
 
                 _status_to_baseline_n = {}
                 _status_to_alphanet_n = {}
-                _xcoords = [1, 4]
-                _bar_width = 0.8
+                _xcoords = [0.05, 0.45]
+                _bar_width = 0.1
 
                 for _i, _model in zip(_xcoords, ["Baseline", "AlphaNet"]):
                     _offset = 0
@@ -1526,7 +1592,11 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                     )
 
                 _band_yl = 0
+                _band_xl = _xcoords[0] + (_bar_width / 2)
+                _band_xr = _xcoords[1] - (_bar_width / 2)
+                _band_del_x = _band_xr - _band_xl
                 _band_roffset__per__status = defaultdict(int)
+
                 for _j, _lstatus in enumerate(_statuses):
                     _band_yrbase = 0
                     for _k, _rstatus in enumerate(_statuses):
@@ -1538,29 +1608,10 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                             ]
                         )
                         _band_w = _n_l2r / _n_preds
-                        _band_xl = _xcoords[0] + (_bar_width / 2)
-                        _band_xr = _xcoords[1] - (_bar_width / 2)
 
-                        _sig_xs = torch.linspace(_band_xl, _band_xr, 1000)
-                        _sig_ys = torch.sigmoid(
-                            (10 * (_sig_xs - _band_xl) / (_band_xr - _band_xl)) - 5
+                        _band = self._make_band(
+                            _band_xl, _band_xr, _band_yl, _band_yr, _band_w
                         )
-                        _sig_ys_m, _sig_ys_M = _sig_ys.min(), _sig_ys.max()
-                        _sig_ys = (_sig_ys - _sig_ys_m) / (_sig_ys_M - _sig_ys_m)
-                        _sig_ys = (
-                            ((_sig_ys - 0.5) * (_band_yr - _band_yl))
-                            + (abs(_band_yr - _band_yl) / 2)
-                            + min(_band_yl, _band_yr)
-                        )
-
-                        _band = _ax.fill_between(
-                            _sig_xs.tolist(),
-                            _sig_ys.tolist(),
-                            (_sig_ys + _band_w).tolist(),
-                            lw=0,
-                            color="none",
-                        )
-
                         _grad_img = _gradient_image(
                             _ax,
                             extent=(
@@ -1577,9 +1628,7 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                             alpha=0.75,
                             aspect="auto",
                         )
-                        _grad_img.set_clip_path(
-                            _band.get_paths()[0], transform=_ax.transData
-                        )
+                        _grad_img.set_clip_path(_band, transform=_ax.transData)
 
                         _band_yl += _band_w
                         _band_roffset__per__status[_rstatus] += _band_w
@@ -1610,8 +1659,11 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                 assert torch.isclose(
                     torch.tensor(data=_band_yr + _band_w), torch.tensor(data=1.0)
                 )
-                _ax.set_xlim(0, 5)
-                _ax.set_ylim(-0.1, 1.1)
+                _ax.set_aspect(1)
+                _ax.set_xlim(
+                    _xcoords[0] - (_bar_width / 2), _xcoords[1] + (_bar_width / 2)
+                )
+                _ax.set_ylim(0, 1)
                 _ax.set_xticks([])
                 _ax.set_yticks([])
                 _ax.xaxis.grid(visible=False)
