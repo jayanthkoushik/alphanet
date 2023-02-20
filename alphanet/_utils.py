@@ -308,7 +308,7 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
         Literal["paper", "poster", "notebook", "talk"], "seaborn plotting context"
     ] = "paper"
     backend: Annotated[Optional[str], "matplotlib backend override"] = None
-    font: Annotated[PlotFont, "font config"]
+    font: Annotated[PlotFont, "font config"] = PlotFont()
 
     DEFAULT_ASPECT_RATIO = 2
     _default_half_width_per_context = {
@@ -341,7 +341,7 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
         if self.backend is not None:
             _mpl_rc["backend"] = self.backend
         self.font.config(_mpl_rc)
-        _default_width = self._default_half_width_per_context[self.context]
+        _default_width = self._default_full_width_per_context[self.context]
         _default_height = _default_width / self.DEFAULT_ASPECT_RATIO
         _mpl_rc["figure.figsize"] = (_default_width, _default_height)
         sns.set_theme(
@@ -474,7 +474,7 @@ class Plot(Corgy, corgy_make_slots=False):
         return (_plot_width, _plot_height)
 
     @contextmanager
-    def open(self, **kwargs):
+    def open(self, close_fig_on_exit: bool = True, **kwargs):
         """Context manager for a (figure, axes) pair.
 
         Figure creation can be customized by keyword arguments to the method,
@@ -496,7 +496,8 @@ class Plot(Corgy, corgy_make_slots=False):
             if self.raw_file is not None:
                 pickle.dump(self.as_dict(), self.raw_file)
                 self.raw_file.close()
-            plt.close(self.fig)
+            if close_fig_on_exit:
+                plt.close(self.fig)
 
     def as_dict(self, recursive=True):
         d = super().as_dict(recursive)
@@ -560,10 +561,10 @@ class ContextPlot(Plot, PlottingConfig):
         return cast(int, self.width)
 
     @contextmanager
-    def open(self, **kwargs):
+    def open(self, close_fig_on_exit: bool = True, **kwargs):
         stack = ExitStack()
         try:
             stack.enter_context(self)
-            yield stack.enter_context(super().open(**kwargs))
+            yield stack.enter_context(super().open(close_fig_on_exit, **kwargs))
         finally:
             stack.close()

@@ -264,7 +264,7 @@ def _gradient_image(ax, extent, direction=0.3, cmap_range=(0, 1), **kwargs):
 class BasePlotCmd(Corgy, corgy_make_slots=False):
     plot: ContextPlot
 
-    def __call__(self):
+    def __call__(self) -> mpl.figure.Figure:
         raise NotImplementedError
 
     def _save_figure(self, fig: mpl.figure.Figure) -> None:
@@ -492,6 +492,7 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
         else:
             g.figure.set_size_inches(self.plot.get_size())
             self._save_figure(g.figure)
+        return g.figure
 
 
 class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
@@ -579,6 +580,7 @@ class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
             g.set(ylim=(-0.25, 0.25), yticks=[-0.2, -0.1, 0, 0.1, 0.2])
         g.figure.set_size_inches(self.plot.get_size())
         self._save_figure(g.figure)
+        return g.figure
 
 
 class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
@@ -630,7 +632,11 @@ class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
         _n_exps = len(_exps)
 
         with self.plot.open(
-            nrows=_n_exps, ncols=1, squeeze=False, gridspec_kw=dict(hspace=0.1)
+            close_fig_on_exit=False,
+            nrows=_n_exps,
+            ncols=1,
+            squeeze=False,
+            gridspec_kw=dict(hspace=0.1),
         ) as (_fig, _axs):
             for _exp, _ax in zip(_exps, _axs[:, 0]):
                 _exp_df = df[df["Experiment"] == _exp]
@@ -739,6 +745,7 @@ class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
                     top=(_n_exps == 1),
                 )
                 _ax.legend().remove()
+        return _fig
 
 
 class PlotClsAccAndSamples(_BaseMultiExpPlotCmd, BasePlotCmd):
@@ -809,6 +816,7 @@ class PlotClsAccAndSamples(_BaseMultiExpPlotCmd, BasePlotCmd):
             _n_rows = 1
 
         with self.plot.open(
+            close_fig_on_exit=False,
             nrows=_n_rows,
             ncols=_n_cols,
             squeeze=False,
@@ -893,6 +901,7 @@ class PlotClsAccAndSamples(_BaseMultiExpPlotCmd, BasePlotCmd):
                 else:
                     _ax2.set_ylabel("")
                     _ax2.tick_params(labelright=False)
+        return _fig
 
 
 class PlotAlphaDist(_BaseMultiExpPlotCmd, BasePlotCmd):
@@ -975,6 +984,7 @@ class PlotAlphaDist(_BaseMultiExpPlotCmd, BasePlotCmd):
             g.legend.remove()
         g.figure.set_size_inches(self.plot.get_size())
         self._save_figure(g.figure)
+        return g.figure
 
 
 class PlotClsAccVsSamples(_BaseMultiExpPlotCmd, BasePlotCmd):
@@ -1053,6 +1063,7 @@ class PlotClsAccVsSamples(_BaseMultiExpPlotCmd, BasePlotCmd):
 
         g.figure.set_size_inches(self.plot.get_size())
         self._save_figure(g.figure)
+        return g.figure
 
 
 class PlotTemplateDeltas(BasePlotCmd):
@@ -1287,7 +1298,12 @@ class PlotTemplateDeltas(BasePlotCmd):
 
         # Plot.
         with self.plot.open(
-            ncols=2, nrows=self.n_deltas, sharex="row", sharey="row", squeeze=False
+            close_fig_on_exit=False,
+            ncols=2,
+            nrows=self.n_deltas,
+            sharex="row",
+            sharey="row",
+            squeeze=False,
         ) as (_fig, _ax__mat):
             _ftemplate_dot_rad = mpl.rcParams["lines.markersize"] * 3
             _test_proj_dot_rad = _ftemplate_dot_rad / 5
@@ -1395,6 +1411,7 @@ class PlotTemplateDeltas(BasePlotCmd):
                     sns.despine(
                         left=False, right=False, top=False, bottom=False, ax=_ax
                     )
+        return _fig
 
 
 class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
@@ -1539,10 +1556,9 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
             _n_cols = self.col_wrap
             _n_rows = ceil(len(_exps) / self.col_wrap)
 
-        with self.plot.open(nrows=_n_rows, ncols=_n_cols, squeeze=False) as (
-            _fig,
-            _axs,
-        ):
+        with self.plot.open(
+            close_fig_on_exit=False, nrows=_n_rows, ncols=_n_cols, squeeze=False
+        ) as (_fig, _axs):
             for _axno, (_exp, _ax) in enumerate(
                 itertools.zip_longest(_exps, _axs.flatten())
             ):
@@ -1554,7 +1570,13 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                 _n_preds = len(_exp_df)
 
                 if len(_exps) > 1:
-                    _ax.set_title(_exp, y=0.98, verticalalignment="top", pad=0)
+                    _ax.set_title(
+                        _exp,
+                        y=0.98,
+                        verticalalignment="top",
+                        pad=0,
+                        color=self.plot.palette[0],
+                    )
                 sns.despine(ax=_ax, top=True, bottom=True, left=True, right=True)
 
                 _status_to_baseline_n = {}
@@ -1584,7 +1606,8 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                             _bar,
                             labels=[_label],
                             label_type="center",
-                            fontsize="xx-small",
+                            fontsize="x-small",
+                            color=self.plot.palette[0],
                         )
                         _offset += _bar_height
                         if _model == "Baseline":
@@ -1675,3 +1698,4 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                 _ax.set_yticks([])
                 _ax.xaxis.grid(visible=False)
                 _ax.yaxis.grid(visible=False)
+        return _fig
