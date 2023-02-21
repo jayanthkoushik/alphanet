@@ -4,7 +4,7 @@ from argparse import SUPPRESS
 from collections import defaultdict
 from heapq import nlargest, nsmallest
 from statistics import mean
-from typing import Dict, List, Literal, Tuple
+from typing import Dict, List, Literal, Set, Tuple
 
 import torch
 from corgy import Corgy
@@ -68,14 +68,24 @@ class Main(Corgy):
     select_n: int = 5
     eval_batch_size: int = 1024
 
+    @staticmethod
+    def _process_mistakes(ys, yhats, fclasses, n_mistakes_dic, n_preds_dic):
+        for _y, _yhat in zip(ys, yhats):
+            if _y in fclasses:
+                n_preds_dic[_y] += 1
+                if _y != _yhat:
+                    n_mistakes_dic[_y][_yhat] += 1
+
     def __call__(self) -> None:
         dataset_name: str
         alpha__vec__seq__per__fclass: Dict[int, List[torch.Tensor]] = defaultdict(list)
-        test_acc__seq__per__class: Dict[int, List[float]] = defaultdict(list)
-        n_mistakes__per__class__fclass: Dict[int, Dict[int, int]] = defaultdict(
+        test_post_acc__seq__per__class: Dict[int, List[float]] = defaultdict(list)
+        n_post_mistakes__per__class__fclass: Dict[int, Dict[int, int]] = defaultdict(
             lambda: defaultdict(int)
         )
-        n_preds__per__fclass: Dict[int, int] = defaultdict(int)
+        n_post_preds__per__fclass: Dict[int, int] = defaultdict(int)
+        fclass__set: Set[int]
+        test_ys: List[int]
 
         result_files = list(self.base_res_dir.glob(self.res_files_pattern))
         for _i, _res_file in enumerate(tqdm(result_files, desc="Loading", unit="file")):
@@ -83,22 +93,27 @@ class Main(Corgy):
 
             if _i == 0:
                 dataset_name = _res.train_data_info.dataset_name
+                fclass__set = _res.train_data_info.class__set__per__split["few"]
             elif dataset_name != _res.train_data_info.dataset_name:
                 raise ValueError("all result files must be from same dataset")
 
             _test_acc__per__class, _test_yhats = _get_test_acc_per_class(
                 _res, self.eval_batch_size, return_preds=True
             )
-            assert _test_yhats is not None
-            for _class, _class_acc in _test_acc__per__class.items():
-                test_acc__seq__per__class[_class].append(_class_acc)
+            if _i == 0:
+                test_ys = _TEST_DATA_CACHE[dataset_name].label__seq
 
-            _test_ys = _TEST_DATA_CACHE[dataset_name].label__seq
-            for _y, _yhat in zip(_test_ys, _test_yhats):
-                if _y in _res.train_data_info.class__set__per__split["few"]:
-                    n_preds__per__fclass[_y] += 1
-                    if _y != _yhat:
-                        n_mistakes__per__class__fclass[_y][_yhat] += 1
+            for _class, _class_acc in _test_acc__per__class.items():
+                test_post_acc__seq__per__class[_class].append(_class_acc)
+
+            assert _test_yhats is not None
+            self._process_mistakes(
+                test_ys,
+                _test_yhats,
+                fclass__set,
+                n_post_mistakes__per__class__fclass,
+                n_post_preds__per__fclass,
+            )
 
             _alphanet_classifier = _res.load_best_alphanet_classifier()
             _alphanet_classifier = _alphanet_classifier.to(DEVICE).eval()
@@ -106,8 +121,8 @@ class Main(Corgy):
             assert _alphas.shape[1] == _res.nn_info.n_neighbors + 1
             assert torch.allclose(_alphas[:, 0], torch.ones(_alphas.shape[0]))
             for _class, _idx in enumerate(_res.fbclass_ordered_idx__vec):
-                if _class in _res.train_data_info.class__set__per__split["few"]:
-                    assert _idx < _res.train_data_info.n_few_classes
+                if _class in fclass__set:
+                    assert _idx < len(fclass__set)
                     alpha__vec__seq__per__fclass[_class].append(_alphas[_idx])
 
         dataset = SplitLTDataset(dataset_name)
@@ -123,17 +138,37 @@ class Main(Corgy):
         )
         assert len(label_name__per__class) == baseline_res.train_data_info.n_classes
         train_samples__per__class = baseline_res.train_data_info.n_imgs__per__class
-        baseline_test_acc__per__class = baseline_res.test_acc__per__class
-        assert baseline_test_acc__per__class is not None
+        test_pre_acc__per__class, baseline_test_yhats = _get_test_acc_per_class(
+            baseline_res, self.eval_batch_size, return_preds=True
+        )
 
-        mean_test_acc__per__class: Dict[int, float] = {
+        n_pre_mistakes__per__class__fclass: Dict[int, Dict[int, int]] = defaultdict(
+            lambda: defaultdict(int)
+        )
+        n_pre_preds__per__fclass: Dict[int, int] = defaultdict(int)
+        assert baseline_test_yhats is not None
+        self._process_mistakes(
+            test_ys,
+            baseline_test_yhats,
+            fclass__set,
+            n_pre_mistakes__per__class__fclass,
+            n_pre_preds__per__fclass,
+        )
+
+        assert all(
+            n_pre_preds__per__fclass[_fclass] * len(result_files)
+            == n_post_preds__per__fclass[_fclass]
+            for _fclass in fclass__set
+        )
+
+        mean_test_post_acc__per__class: Dict[int, float] = {
             _class: mean(_test_acc__seq)
-            for _class, _test_acc__seq in test_acc__seq__per__class.items()
+            for _class, _test_acc__seq in test_post_acc__seq__per__class.items()
         }
         mean_test_acc_delta__per__class = {
-            _class: mean_test_acc__per__class[_class]
-            - baseline_test_acc__per__class[_class]
-            for _class in mean_test_acc__per__class
+            _class: mean_test_post_acc__per__class[_class]
+            - test_pre_acc__per__class[_class]
+            for _class in mean_test_post_acc__per__class
         }
 
         combo_builder = ComboBuilder(
@@ -144,49 +179,95 @@ class Main(Corgy):
 
         _f_select = nlargest if self.select_max else nsmallest
         _key_dic = (
-            mean_test_acc__per__class
+            mean_test_post_acc__per__class
             if self.select_by == "acc"
             else mean_test_acc_delta__per__class
         )
         selected_fclasses = _f_select(
-            self.select_n,
-            baseline_res.train_data_info.class__set__per__split["few"],
-            lambda _c: _key_dic[_c],
+            self.select_n, fclass__set, lambda _c: _key_dic[_c]
         )
 
-        for _fclass in selected_fclasses:
-            print("*********")
-            print(combo_builder.get_combo_str(_fclass))
-            print(f"Training samples: {train_samples__per__class[_fclass]}")
-            print(f"Baseline accuracy: {baseline_test_acc__per__class[_fclass]:.2f}")
-            print(f"Mean AlphaNet accuracy: {mean_test_acc__per__class[_fclass]:.2f}")
-
-            _top_misclassifications = nlargest(
-                self.select_n,
-                n_mistakes__per__class__fclass[_fclass],
-                # pylint: disable=cell-var-from-loop
-                key=lambda _c: n_mistakes__per__class__fclass[_fclass][_c],
-            )
-            _n_misclassifications = sum(
-                n_mistakes__per__class__fclass[_fclass].values()
-            )
+        for _sel_fclass in selected_fclasses:
+            print("********************************************")
+            print(combo_builder.get_combo_str(_sel_fclass))
+            print(f"\nTraining samples: {train_samples__per__class[_sel_fclass]}")
+            print(f"Baseline accuracy: {test_pre_acc__per__class[_sel_fclass]:.2f}")
             print(
-                f"Top misclassifications ("
-                f"{_n_misclassifications}/{n_preds__per__fclass[_fclass]} across "
+                f"Mean AlphaNet accuracy: "
+                f"{mean_test_post_acc__per__class[_sel_fclass]:.2f}\n"
+            )
+
+            _top_pre_misclassifications = nlargest(
+                self.select_n,
+                n_pre_mistakes__per__class__fclass[_sel_fclass],
+                # pylint: disable=cell-var-from-loop
+                key=lambda _c: n_pre_mistakes__per__class__fclass[_sel_fclass][_c],
+            )
+            _n_total_pre_misclassifications = sum(
+                n_pre_mistakes__per__class__fclass[_sel_fclass].values()
+            )
+            __z = 1.0 - (
+                _n_total_pre_misclassifications / n_pre_preds__per__fclass[_sel_fclass]
+            )
+            assert torch.isclose(
+                torch.tensor(data=__z),
+                torch.tensor(data=test_pre_acc__per__class[_sel_fclass]),
+            )
+
+            _top_post_misclassifications = nlargest(
+                self.select_n,
+                n_post_mistakes__per__class__fclass[_sel_fclass],
+                # pylint: disable=cell-var-from-loop
+                key=lambda _c: n_post_mistakes__per__class__fclass[_sel_fclass][_c],
+            )
+            _n_total_post_misclassifications = sum(
+                n_post_mistakes__per__class__fclass[_sel_fclass].values()
+            )
+            __z = 1.0 - (
+                _n_total_post_misclassifications
+                / n_post_preds__per__fclass[_sel_fclass]
+            )
+            assert torch.isclose(
+                torch.tensor(data=__z),
+                torch.tensor(data=mean_test_post_acc__per__class[_sel_fclass]),
+            )
+
+            def _print_mistakes(_fclass, _mistakes):
+                print(
+                    "\t<pred.> ('<pred. split>' split): "
+                    "<base errs> -> <mean AlphaNet errs> "
+                    "(<total errs>/<reps>)"
+                )
+                for c in _mistakes:
+                    _split = next(
+                        _s
+                        for _s in ("few", "medium", "many")
+                        if c in baseline_res.train_data_info.class__set__per__split[_s]
+                    )
+                    _label = label_name__per__class[c]
+                    _n_pre_mistakes = n_pre_mistakes__per__class__fclass[_fclass][c]
+                    _n_post_mistakes = n_post_mistakes__per__class__fclass[_fclass][c]
+                    _mean_n_post_mistakes = _n_post_mistakes / len(result_files)
+                    print(
+                        f"\t{_label} ('{_split}' split): "
+                        f"{_n_pre_mistakes} -> {_mean_n_post_mistakes:.2f} "
+                        f"({_n_post_mistakes}/{len(result_files)})"
+                    )
+
+            print(
+                f"Top baseline misclassifications (total "
+                f"{_n_total_pre_misclassifications} mistakes / "
+                f"{n_pre_preds__per__fclass[_sel_fclass]} predictions),\n"
+                f"and corresponding mean AlphaNet misclassifications\n"
+                f"(total {_n_total_post_misclassifications} mistakes / "
+                f"{n_post_preds__per__fclass[_sel_fclass]} predictions, across "
                 f"{len(result_files)} repetitions):"
             )
-            for _class in _top_misclassifications:
-                _split = next(
-                    _s
-                    for _s in ("few", "medium", "many")
-                    if _class in baseline_res.train_data_info.class__set__per__split[_s]
-                )
-                _label = label_name__per__class[_class]
-                print(
-                    f"\t{_label} ('{_split}' split): "
-                    f"{n_mistakes__per__class__fclass[_fclass][_class]}"
-                )
-            print("*********\n")
+            _print_mistakes(_sel_fclass, _top_pre_misclassifications)
+
+            print("\nTop AlphaNet misclassifications:")
+            _print_mistakes(_sel_fclass, _top_post_misclassifications)
+            print("********************************************\n")
 
 
 if __name__ == "__main__":
