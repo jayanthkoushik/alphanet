@@ -25,7 +25,6 @@ from matplotlib import (
     pyplot as plt,
 )
 from matplotlib.ticker import MultipleLocator
-from matplotlib.transforms import Bbox
 from scipy.spatial.distance import cosine, euclidean
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
@@ -305,12 +304,14 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
     col_wrap: Optional[int] = None
     sharex: bool = False
     sharey: bool = False
-    x_bins: Optional[int] = None
-    x_jitter: float = 0.1
+    dist_bins: Optional[int] = None
+    dist_jitter: float = 0.1
     fit_reg: bool = True
     plot_r: bool = True
     r_group_classes: bool = False
     plot_r_loc: Tuple[float, float] = (0.75, 0.9)
+    dist_on_x: bool = True
+    acc: Literal["baseline", "alphanet", "delta"] = "alphanet"
 
     def __call__(self):
         if "base" in self.splits and ("many" in self.splits or "medium" in self.splits):
@@ -381,6 +382,8 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
                         "Experiment": _exp_name,
                         "Class": _class,
                         "Split": _get_class_split(_class),
+                        "Baseline accuracy": _baseline_acc__per__class[_class],
+                        "AlphaNet accuracy": _acc__per__class[_class],
                         "Test accuracy change": (
                             _acc__per__class[_class] - _baseline_acc__per__class[_class]
                         ),
@@ -391,17 +394,23 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
         df = pd.DataFrame(df_rows)
         logging.info("loaded dataframe:\n%s", df)
         df = df[df["Split"].isin(self.splits)]
-        _palette = (
-            [self.plot.palette[0]]
-            if len(self.splits) == 1
-            else dict(zip(["base", "few", "medium", "many"], self.plot.palette[:4]))
-        )
+        _palette = dict(zip(["few", "base", "many", "medium"], self.plot.palette[:4]))
 
         self.plot.config()
+        _extra_artists = []
+        if self.acc == "baseline":
+            acc_field = "Baseline accuracy"
+        elif self.acc == "alphanet":
+            acc_field = "AlphaNet accuracy"
+        else:
+            acc_field = "Test accuracy change"
+        x, y = "Mean NN distance", acc_field
+        if not self.dist_on_x:
+            x, y = (y, x)
         g = sns.lmplot(
             df,
-            x="Test accuracy change",
-            y="Mean NN distance",
+            x=x,
+            y=y,
             hue="Split",
             col="Experiment",
             palette=_palette,
@@ -413,8 +422,8 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
             fit_reg=self.fit_reg,
             n_boot=self.n_boot,
             units="Class",
-            x_bins=self.x_bins,
-            x_jitter=self.x_jitter,
+            x_bins=self.dist_bins,
+            x_jitter=self.dist_jitter,
             scatter_kws=dict(
                 s=(mpl.rcParams["lines.markersize"] ** 2) / 2, alpha=0.5, linewidths=0
             ),
@@ -437,14 +446,12 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
             _split = _splits[0]
             if self.r_group_classes:
                 data = data.groupby("Class").mean().reset_index()
-            _corr = (
-                data[["Test accuracy change", "Mean NN distance"]].corr().values[0, 1]
-            )
+            _corr = data[[acc_field, "Mean NN distance"]].corr().values[0, 1]
             _ax = plt.gca()
             _corr_text = f"$r={_corr:+.2f}$"
             _corr_text = "\n" * self.splits.index(_split) + _corr_text
             _color = self.plot.palette[0] if len(self.splits) == 1 else _palette[_split]
-            _ax.text(
+            _text_artist = _ax.text(
                 *self.plot_r_loc,
                 _corr_text,
                 transform=_ax.transAxes,
@@ -452,6 +459,7 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
                 va="top",
                 fontweight=("bold" if len(self.splits) > 1 else "normal"),
             )
+            _extra_artists.append(_text_artist)
 
         if self.plot_r:
             g.map_dataframe(annotate_with_corr)
@@ -470,24 +478,21 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
                 mpatches.Patch(color=_palette[_split], label=_split.title())
                 for _split in self.splits
             ]
-            _fig_xmax = g.figure.get_tightbbox().xmax
             _legend = g.figure.legend(
                 handles=_patch_splits,
-                loc="center left",
-                bbox_to_anchor=(1, 0.4),
+                loc="lower center",
+                bbox_to_anchor=(0.5, 1),
+                ncols=len(_patch_splits),
                 frameon=False,
             )
-            _legend_xmax = g.figure.get_tightbbox(bbox_extra_artists=[_legend]).xmax
-            _plot_size = self.plot.get_size()
-            g.figure.set_size_inches(
-                (_plot_size[0] / _legend_xmax) * _fig_xmax, _plot_size[1]
-            )
-            sns.move_legend(g.figure, loc="center right")
+            _extra_artists.append(_legend)
+            g.figure.set_size_inches(self.plot.get_size())
             if self.plot.file is not None:
                 g.figure.savefig(
                     self.plot.file,
                     format=Path(self.plot.file.name).suffix[1:],
-                    bbox_inches=Bbox([[0, 0], _plot_size]),
+                    bbox_extra_artists=_extra_artists,
+                    bbox_inches="tight",
                 )
         else:
             g.figure.set_size_inches(self.plot.get_size())
@@ -551,7 +556,7 @@ class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
             n_boot=self.n_boot,
             units="FID",
             kind="point",
-            facet_kws=dict(sharex=False, sharey=True),
+            facet_kws=dict(sharex=False, sharey=True, gridspec_kws=dict(wspace=0.05)),
             dodge=0.4,
             markers=["x", ".", "d", "*"],
         )
@@ -1416,6 +1421,7 @@ class PlotTemplateDeltas(BasePlotCmd):
 
 class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
     col_wrap: Optional[int] = None
+    label_rot: float = 0
 
     @staticmethod
     def _get_pred_status(_y, _yhat, _nns__per__fclass):
@@ -1608,6 +1614,7 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                             label_type="center",
                             fontsize="x-small",
                             color=self.plot.palette[0],
+                            rotation=self.label_rot,
                         )
                         _offset += _bar_height
                         if _model == "Baseline":

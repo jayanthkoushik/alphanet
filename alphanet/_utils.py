@@ -225,9 +225,14 @@ _BASE_RC = {
     "scatter.marker": ".",
     "legend.handletextpad": 0.25,
     "figure.constrained_layout.use": True,
-    "mathtext.default": "regular",
     "savefig.bbox": "standard",
     "savefig.transparent": True,
+    "mathtext.bf": "bf",
+    "mathtext.cal": "cursive",
+    "mathtext.it": "it",
+    "mathtext.rm": "rm",
+    "mathtext.sf": "sf",
+    "mathtext.tt": "monospace",
     "pgf.rcfonts": True,
     "pgf.preamble": "\n".join(
         [
@@ -277,6 +282,10 @@ class PlotFont(Corgy):
     ] = None
     cursive: Annotated[Optional[Sequence[str]], "cursive font family override"] = None
     fantasy: Annotated[Optional[Sequence[str]], "fantasy font family override"] = None
+    math: Annotated[
+        Optional[Literal["dejavusans", "dejavuserif", "cm", "stix", "stixsans"]],
+        "math font override",
+    ] = None
 
     def config(self, rc):
         if self.default is not None:
@@ -289,6 +298,8 @@ class PlotFont(Corgy):
             rc["font.monospace"] = self.monospace
         if self.fantasy is not None:
             rc["font.fantasy"] = self.fantasy
+        if self.math is not None:
+            rc["mathtext.fontset"] = self.math
 
 
 class PlottingConfig(Corgy, corgy_make_slots=False):
@@ -308,20 +319,16 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
         Literal["paper", "poster", "notebook", "talk"], "seaborn plotting context"
     ] = "paper"
     backend: Annotated[Optional[str], "matplotlib backend override"] = None
+    dpi: Annotated[Optional[int], "plot dpi"] = 72
     font: Annotated[PlotFont, "font config"] = PlotFont()
 
     DEFAULT_ASPECT_RATIO = 2
+    _scale_per_context = dict(paper=1, notebook=1.5, poster=2, talk=3.5)
     _default_half_width_per_context = {
-        "paper": 3.5,
-        "notebook": 3.375,
-        "poster": 8.5,
-        "talk": 8,
+        _context: 3.5 * _scale for _context, _scale in _scale_per_context.items()
     }
     _default_full_width_per_context = {
-        "paper": 6.5,
-        "notebook": 6.75,
-        "poster": 13,
-        "talk": 18,
+        _context: 6.5 * _scale for _context, _scale in _scale_per_context.items()
     }
 
     @cached_property
@@ -337,16 +344,48 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
 
     def config(self):
         """Apply configurations globally."""
-        _mpl_rc = _BASE_RC.copy()
+        _scale = self._scale_per_context[self.context]
+        _font_size = 10 * _scale
+        _small_font_size = 9 * _scale
+        _lw = 1.25 * _scale
+        _maj_tickw = 1 * _scale
+        _min_tickw = 0.75 * _scale
+        _maj_ticks = 5 * _scale
+        _min_ticks = 3 * _scale
+
+        _mpl_rc = {
+            "font.size": _font_size,
+            "axes.labelsize": _font_size,
+            "axes.titlesize": _font_size,
+            "xtick.labelsize": _small_font_size,
+            "ytick.labelsize": _small_font_size,
+            "legend.fontsize": _small_font_size,
+            "legend.title_fontsize": _font_size,
+            "axes.linewidth": _maj_tickw,
+            "grid.linewidth": _min_tickw,
+            "lines.linewidth": _lw,
+            "lines.markersize": _maj_ticks,
+            "patch.linewidth": _min_tickw,
+            "xtick.major.width": _maj_tickw,
+            "ytick.major.width": _maj_tickw,
+            "xtick.minor.width": _min_tickw,
+            "ytick.minor.width": _min_tickw,
+            "xtick.major.size": _maj_ticks,
+            "ytick.major.size": _maj_ticks,
+            "xtick.minor.size": _min_ticks,
+            "ytick.minor.size": _min_ticks,
+        }
+        _mpl_rc.update(_BASE_RC)
+
         if self.backend is not None:
             _mpl_rc["backend"] = self.backend
         self.font.config(_mpl_rc)
         _default_width = self._default_full_width_per_context[self.context]
         _default_height = _default_width / self.DEFAULT_ASPECT_RATIO
         _mpl_rc["figure.figsize"] = (_default_width, _default_height)
-        sns.set_theme(
-            context=self.context, style="ticks", palette=self.palette, rc=_mpl_rc
-        )
+        _mpl_rc["figure.dpi"] = self.dpi
+
+        sns.set_theme(style="ticks", palette=self.palette, rc=_mpl_rc)
         if self.theme == "dark":
             mpl.rcParams.update(_DARK_THEME_RC)
 
@@ -558,7 +597,7 @@ class ContextPlot(Plot, PlottingConfig):
             return self._default_half_width_per_context[self.context]
         if self.width.value == "full":
             return self._default_full_width_per_context[self.context]
-        return cast(int, self.width)
+        return self.width.value
 
     @contextmanager
     def open(self, close_fig_on_exit: bool = True, **kwargs):

@@ -86,6 +86,7 @@ class Main(Corgy):
         n_post_preds__per__fclass: Dict[int, int] = defaultdict(int)
         fclass__set: Set[int]
         test_ys: List[int]
+        nn_class__seq__per__fclass: Dict[int, List[int]]
 
         result_files = list(self.base_res_dir.glob(self.res_files_pattern))
         for _i, _res_file in enumerate(tqdm(result_files, desc="Loading", unit="file")):
@@ -102,6 +103,13 @@ class Main(Corgy):
             )
             if _i == 0:
                 test_ys = _TEST_DATA_CACHE[dataset_name].label__seq
+                nn_class__seq__per__fclass = _res.nn_info.nn_class__seq__per__fclass
+            else:
+                assert all(
+                    nn_class__seq__per__fclass[_fclass]
+                    == _res.nn_info.nn_class__seq__per__fclass[_fclass]
+                    for _fclass in nn_class__seq__per__fclass
+                )
 
             for _class, _class_acc in _test_acc__per__class.items():
                 test_post_acc__seq__per__class[_class].append(_class_acc)
@@ -173,7 +181,7 @@ class Main(Corgy):
 
         combo_builder = ComboBuilder(
             label_name__per__class,
-            baseline_res.nn_info.nn_class__seq__per__fclass,
+            nn_class__seq__per__fclass,
             alpha__vec__seq__per__fclass,
         )
 
