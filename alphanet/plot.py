@@ -34,10 +34,8 @@ from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 
 from alphanet._dataset import SplitLTDataGroup, SplitLTDataset
-from alphanet._utils import ContextPlot
+from alphanet._utils import ContextPlot, PlotParams
 from alphanet.train import TrainResult
-
-logging.root.setLevel(logging.INFO)
 
 _DEFAULT_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 _TEST_DATA_CACHE: Dict[str, SplitLTDataGroup] = {}
@@ -261,14 +259,21 @@ def _gradient_image(ax, extent, direction=0.3, cmap_range=(0, 1), **kwargs):
 
 
 class BasePlotCmd(Corgy, corgy_make_slots=False):
+    log_level: Literal["error", "warning", "info", "debug"] = "error"
     plot: ContextPlot
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        logging.root.setLevel(getattr(logging, self.log_level.upper()))
 
     def __call__(self) -> mpl.figure.Figure:
         raise NotImplementedError
 
-    def _save_figure(self, fig: mpl.figure.Figure) -> None:
+    def _save_figure(self, fig: mpl.figure.Figure, **kwargs) -> None:
         if self.plot.file is not None:
-            fig.savefig(self.plot.file, format=Path(self.plot.file.name).suffix[1:])
+            fig.savefig(
+                self.plot.file, format=Path(self.plot.file.name).suffix[1:], **kwargs
+            )
             self.plot.file.close()
 
 
@@ -304,14 +309,22 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
     col_wrap: Optional[int] = None
     sharex: bool = False
     sharey: bool = False
-    dist_bins: Optional[int] = None
-    dist_jitter: float = 0.1
     fit_reg: bool = True
     plot_r: bool = True
     r_group_classes: bool = False
     plot_r_loc: Tuple[float, float] = (0.75, 0.9)
+    r_font_size: Literal[
+        "xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"
+    ] = "x-small"
     dist_on_x: bool = True
     acc: Literal["baseline", "alphanet", "delta"] = "alphanet"
+    legend_ncols: Optional[int] = None
+    legend_loc: str = "lower center"
+    legend_bbox_to_anchor: Tuple[float, float] = (0.5, 1)
+    despine: bool = True
+    add_axes_guide: bool = False
+    rasterize_scatter: bool = False
+    plot_params: PlotParams = PlotParams()
 
     def __call__(self):
         if "base" in self.splits and ("many" in self.splits or "medium" in self.splits):
@@ -416,17 +429,11 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
             palette=_palette,
             col_wrap=self.col_wrap,
             aspect=1,
-            markers=".",
             legend=False,
-            scatter=True,
+            scatter=False,
             fit_reg=self.fit_reg,
             n_boot=self.n_boot,
             units="Class",
-            x_bins=self.dist_bins,
-            x_jitter=self.dist_jitter,
-            scatter_kws=dict(
-                s=(mpl.rcParams["lines.markersize"] ** 2) / 2, alpha=0.5, linewidths=0
-            ),
             line_kws=dict(
                 path_effects=[
                     pe.Stroke(
@@ -438,6 +445,20 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
                 ]
             ),
             facet_kws=dict(sharex=self.sharex, sharey=self.sharey),
+        )
+        g.map_dataframe(
+            sns.scatterplot,
+            x=x,
+            y=y,
+            hue="Split",
+            style="Split",
+            palette=_palette,
+            markers=dict(few=".", base="*", many="*", medium="d"),
+            legend=False,
+            s=(mpl.rcParams["lines.markersize"] ** 2) / 2,
+            alpha=0.5,
+            linewidths=0,
+            rasterized=self.rasterize_scatter,
         )
 
         def annotate_with_corr(data, **kwargs):
@@ -455,8 +476,10 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
                 *self.plot_r_loc,
                 _corr_text,
                 transform=_ax.transAxes,
+                fontsize=self.r_font_size,
                 color=_color,
                 va="top",
+                ha="right",
                 fontweight=("bold" if len(self.splits) > 1 else "normal"),
             )
             _extra_artists.append(_text_artist)
@@ -468,35 +491,91 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
             g.set_titles("")
         else:
             g.set_titles("{col_name}")
-        g.despine(left=True, right=True, top=True, bottom=True)
+        g.despine(
+            left=self.despine, right=self.despine, top=self.despine, bottom=self.despine
+        )
         for _ax in g.axes.flat:
+            self.plot_params.set_params(_ax)
             _ax.grid(visible=True, axis="both", which="major")
             _ax.tick_params(axis="both", which="major", length=0)
+            if self.add_axes_guide:
+                _ax.set_xlabel("")
+                _ax.set_ylabel("")
 
-        if len(self.splits) > 1:
+        if self.add_axes_guide:
+            _ax = g.figure.add_subplot(g._nrow, g._ncol, g._nrow * g._ncol)
+            _ax.set_aspect("equal")
+            for _del in [(0.9, 0), (0, 0.9)]:
+                _ax.arrow(
+                    0.05,
+                    0.05,
+                    *_del,
+                    lw=mpl.rcParams["axes.linewidth"],
+                    length_includes_head=True,
+                    head_width=0.02,
+                    head_length=0.02,
+                    fc=self.plot.palette[0],
+                    color=self.plot.palette[0],
+                    transform=_ax.transAxes,
+                )
+            _ax.text(
+                0.5,
+                0,
+                (x if self.plot_params.xlabel is None else self.plot_params.xlabel),
+                transform=_ax.transAxes,
+                va="top",
+                ha="center",
+                fontsize="x-small",
+            )
+            _ax.text(
+                0,
+                0.5,
+                (y if self.plot_params.xlabel is None else self.plot_params.ylabel),
+                transform=_ax.transAxes,
+                va="center",
+                ha="right",
+                rotation="vertical",
+                fontsize="x-small",
+            )
+            _ax.set_xticks([])
+            _ax.set_yticks([])
+            sns.despine(ax=_ax, left=True, right=True, top=True, bottom=True)
+
+        if len(self.splits) > 1 and self.legend_loc:
             _patch_splits = [
                 mpatches.Patch(color=_palette[_split], label=_split.title())
                 for _split in self.splits
             ]
             _legend = g.figure.legend(
                 handles=_patch_splits,
-                loc="lower center",
-                bbox_to_anchor=(0.5, 1),
-                ncols=len(_patch_splits),
+                loc=self.legend_loc,
+                bbox_to_anchor=self.legend_bbox_to_anchor,
+                ncols=(
+                    len(_patch_splits)
+                    if self.legend_ncols is None
+                    else self.legend_ncols
+                ),
                 frameon=False,
             )
             _extra_artists.append(_legend)
             g.figure.set_size_inches(self.plot.get_size())
+            _kwargs = {}
+            if self.rasterize_scatter:
+                _kwargs["dpi"] = 300
             if self.plot.file is not None:
                 g.figure.savefig(
                     self.plot.file,
                     format=Path(self.plot.file.name).suffix[1:],
                     bbox_extra_artists=_extra_artists,
                     bbox_inches="tight",
+                    **_kwargs,
                 )
         else:
             g.figure.set_size_inches(self.plot.get_size())
-            self._save_figure(g.figure)
+            _kwargs = {}
+            if self.rasterize_scatter:
+                _kwargs["dpi"] = 300
+            self._save_figure(g.figure, **_kwargs)
         return g.figure
 
 
@@ -543,49 +622,78 @@ class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
             assert all(
                 len(_s) == 1 for _s in df.groupby(self.col)[_notcol].agg(set).values
             )
-
-        self.plot.config()
-        g = sns.catplot(
-            df,
-            x="Experiment",
-            y=("Accuracy change" if self.y == "acc_delta" else "Accuracy"),
-            hue="Split",
-            hue_order=["Overall", "Few", "Medium", "Many"],
-            col=self.col,
-            col_wrap=self.col_wrap,
-            n_boot=self.n_boot,
-            units="FID",
-            kind="point",
-            facet_kws=dict(sharex=False, sharey=True, gridspec_kws=dict(wspace=0.05)),
-            dodge=0.4,
-            markers=["x", ".", "d", "*"],
-        )
-        if self.y == "acc_delta":
-            g.refline(y=0, ls="-", color=self.plot.palette[0], zorder=1)
-        if self.col is not None:
-            if len(df[self.col].unique()) > 1:
-                g.set_titles("{col_name}")
+            cols = list(df[self.col].unique())
+            ncols = len(cols)
+            if self.col_wrap is not None and ncols > self.col_wrap:
+                nrows = ceil(ncols / self.col_wrap)
+                ncols = self.col_wrap
             else:
-                g.set_titles("")
-        g.set_xlabels(self.xlabel)
-        g.despine(left=True, right=True, bottom=False, top=True)
-        if not self.legend_loc:
-            g.legend.remove()
+                nrows = 1
         else:
-            sns.move_legend(
-                g,
-                self.legend_loc,
-                ncols=4,
-                title="",
-                bbox_to_anchor=self.legend_bbox_to_anchor,
-            )
-        if self.y == "acc":
-            g.set(ylim=(0, 1.01), yticks=[0.2, 0.4, 0.6, 0.8, 1.0])
-        else:
-            g.set(ylim=(-0.25, 0.25), yticks=[-0.2, -0.1, 0, 0.1, 0.2])
-        g.figure.set_size_inches(self.plot.get_size())
-        self._save_figure(g.figure)
-        return g.figure
+            nrows = 1
+            ncols = 1
+
+        with self.plot.open(
+            nrows=nrows, ncols=ncols, squeeze=False, gridspec_kw=dict(wspace=0.05)
+        ) as (_fig, _axs):
+            for _i, (_col, _ax) in enumerate(
+                itertools.zip_longest(cols, _axs.flatten())
+            ):
+                if _col is None and self.col is not None:
+                    _ax.remove()
+                    continue
+
+                _col_df = df if self.col is None else df[df[self.col] == _col]
+                sns.pointplot(
+                    _col_df,
+                    x="Experiment",
+                    y=("Accuracy change" if self.y == "acc_delta" else "Accuracy"),
+                    hue="Split",
+                    hue_order=["Overall", "Few", "Medium", "Many"],
+                    n_boot=self.n_boot,
+                    units="FID",
+                    dodge=0.4,
+                    markers=["x", ".", "d", "*"],
+                    ax=_ax,
+                )
+                sns.despine(
+                    fig=_fig, ax=_ax, left=True, right=True, bottom=False, top=True
+                )
+
+                if self.col is not None and len(cols) > 1:
+                    _ax.set_title(_col)
+
+                _legend = _ax.legend()
+                if _i == 0:
+                    _legend_handles = _legend.legendHandles
+                _legend.remove()
+
+                if _i % ncols:
+                    _ax.set_ylabel("")
+
+                _ax.set_xlabel(self.xlabel)
+                _ax.xaxis.set_tick_params(direction="in")
+
+                if self.y == "acc":
+                    _ax.set_ylim(0, 1.01)
+                    _ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+                else:
+                    _ax.set_ylim(-0.25, 0.25)
+                    _ax.set_yticks([-0.2, -0.1, 0, 0.1, 0.2])
+                    _ax.axhline(y=0, ls="-", color=self.plot.palette[0], zorder=1)
+                if _i != 0:
+                    _ax.set_yticklabels([])
+
+            if self.legend_loc:
+                _fig.legend(
+                    handles=_legend_handles,
+                    ncols=4,
+                    title="",
+                    frameon=False,
+                    loc=self.legend_loc,
+                    bbox_to_anchor=self.legend_bbox_to_anchor,
+                )
+        return _fig
 
 
 class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
@@ -680,7 +788,7 @@ class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
                             pe.Normal(),
                         ],
                     )
-                    _ax.annotate(
+                    _ano = _ax.annotate(
                         f"$\\Delta={_acc_del:+.2f}$",
                         xy=(
                             _xticks[-1] * 0.98 if _acc_del > 0 else _xticks[-2] * 1.02,
@@ -689,7 +797,16 @@ class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
                         color=_color,
                         ha=("right" if _acc_del > 0 else "left"),
                         va=("bottom" if _acc_del > 0 else "top"),
-                        fontweight="bold",
+                        fontsize="x-small",
+                    )
+                    _ano.set_path_effects(
+                        [
+                            pe.Stroke(
+                                linewidth=(_ano.get_fontsize() / 15),
+                                foreground=self.plot.palette[0],
+                            ),
+                            pe.Normal(),
+                        ]
                     )
                     if _exp == _exps[-1]:
                         _ax.text(
@@ -721,14 +838,16 @@ class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
                 )
 
                 _title_text = _exp + "\n" if _n_exps > 1 else ""
-                _title_text += f"$\\Delta={_overall_del:+.2f}$"
+                _title_text += (
+                    f"Change in overall accuracy, $\\Delta={_overall_del:+.2f}$"
+                )
                 _ax.text(
-                    0.9,
+                    0.95,
                     0.75,
                     _title_text,
-                    horizontalalignment="center",
+                    horizontalalignment="right",
                     verticalalignment="bottom",
-                    fontweight="bold",
+                    fontsize="small",
                     transform=_ax.transAxes,
                 )
 
@@ -736,7 +855,7 @@ class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
                 _ax.set_xticklabels(["", ""])
                 _ax.set_xlabel("")
                 _ax.set_ylim(-0.6, 0.6)
-                _ax.set_ylabel("Change in test accuracy")
+                _ax.set_ylabel("Accuracy change")
                 _ax.set_yticks([-0.5, -0.25, 0, 0.25, 0.5])
                 _ax.axhline(y=0, ls="-", color=self.plot.palette[0], alpha=0.5)
                 _ax.axhline(
@@ -913,6 +1032,7 @@ class PlotAlphaDist(_BaseMultiExpPlotCmd, BasePlotCmd):
     col_wrap: Optional[int] = None
     legend_loc: Optional[str] = "center right"
     legend_bbox_to_anchor: Optional[Tuple[float, float]] = None
+    legend_ncols: Optional[int] = None
 
     def __call__(self):
         df_rows = []
@@ -930,7 +1050,7 @@ class PlotAlphaDist(_BaseMultiExpPlotCmd, BasePlotCmd):
                         "GID": _gid,
                         "Experiment": _exp_name,
                         "Target": _target,
-                        "Source": f"$\\alpha_{_source}$",
+                        "Source": f"$\\alpha_{{{_source}}}$",
                         "Alpha": _alpha__mat[_target, _source].item(),
                     }
                 )
@@ -979,11 +1099,16 @@ class PlotAlphaDist(_BaseMultiExpPlotCmd, BasePlotCmd):
             grid_linewidth=0,
         )
         if self.legend_loc:
+            if self.legend_ncols is not None:
+                _kwargs = dict(ncols=self.legend_ncols)
+            else:
+                _kwargs = {}
             sns.move_legend(
                 g,
                 loc=self.legend_loc,
                 title="",
                 bbox_to_anchor=self.legend_bbox_to_anchor,
+                **_kwargs,
             )
         else:
             g.legend.remove()
@@ -1422,6 +1547,9 @@ class PlotTemplateDeltas(BasePlotCmd):
 class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
     col_wrap: Optional[int] = None
     label_rot: float = 0
+    label_size: Literal[
+        "xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"
+    ] = "x-small"
 
     @staticmethod
     def _get_pred_status(_y, _yhat, _nns__per__fclass):
@@ -1612,7 +1740,7 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                             _bar,
                             labels=[_label],
                             label_type="center",
-                            fontsize="x-small",
+                            fontsize=self.label_size,
                             color=self.plot.palette[0],
                             rotation=self.label_rot,
                         )

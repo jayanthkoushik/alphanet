@@ -429,6 +429,9 @@ class PlotParams(Corgy, corgy_make_slots=False):
         "ticks for the y axis (if not specified, ticks will not be modified)",
     ] = None
 
+    xlabel: Annotated[Optional[str], "label for the x axis"] = None
+    ylabel: Annotated[Optional[str], "label for the y axis"] = None
+
     @corgyparser("xlim", "ylim", metavar="float")
     @staticmethod
     def _parse_lim(s: str) -> Optional[float]:
@@ -447,12 +450,18 @@ class PlotParams(Corgy, corgy_make_slots=False):
                 _ax.set_xscale("log")
             if self.log_yscale:
                 _ax.set_yscale("log")
-            _ax.set_xlim(*self.xlim)
-            _ax.set_ylim(*self.ylim)
+            if self.xlim != (None, None):
+                _ax.set_xlim(*self.xlim)
+            if self.ylim != (None, None):
+                _ax.set_ylim(*self.ylim)
             if self.xticks is not None:
                 _ax.set_xticks(self.xticks)
             if self.yticks is not None:
                 _ax.set_yticks(self.yticks)
+            if self.xlabel is not None:
+                _ax.set_xlabel(self.xlabel)
+            if self.ylabel is not None:
+                _ax.set_ylabel(self.ylabel)
 
 
 class Plot(Corgy, corgy_make_slots=False):
