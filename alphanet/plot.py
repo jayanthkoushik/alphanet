@@ -480,7 +480,6 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
                 color=_color,
                 va="top",
                 ha="right",
-                fontweight=("bold" if len(self.splits) > 1 else "normal"),
             )
             _extra_artists.append(_text_artist)
 
@@ -797,7 +796,7 @@ class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
                         color=_color,
                         ha=("right" if _acc_del > 0 else "left"),
                         va=("bottom" if _acc_del > 0 else "top"),
-                        fontsize="x-small",
+                        fontsize="small",
                     )
                     _ano.set_path_effects(
                         [
@@ -847,7 +846,6 @@ class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
                     _title_text,
                     horizontalalignment="right",
                     verticalalignment="bottom",
-                    fontsize="small",
                     transform=_ax.transAxes,
                 )
 

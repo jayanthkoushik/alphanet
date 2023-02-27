@@ -325,7 +325,7 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
     DEFAULT_ASPECT_RATIO = 2
     _scale_per_context = dict(paper=1, notebook=1.5, poster=2, talk=3.5)
     _default_half_width_per_context = {
-        _context: 3.5 * _scale for _context, _scale in _scale_per_context.items()
+        _context: 3.25 * _scale for _context, _scale in _scale_per_context.items()
     }
     _default_full_width_per_context = {
         _context: 6.5 * _scale for _context, _scale in _scale_per_context.items()
@@ -345,8 +345,8 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
     def config(self):
         """Apply configurations globally."""
         _scale = self._scale_per_context[self.context]
-        _font_size = 10 * _scale
-        _small_font_size = 9 * _scale
+        _font_size = 9 * _scale
+        _small_font_size = 8 * _scale
         _lw = 1.25 * _scale
         _maj_tickw = 1 * _scale
         _min_tickw = 0.75 * _scale
