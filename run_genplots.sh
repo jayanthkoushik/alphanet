@@ -3,7 +3,7 @@
 set -e
 
 N_BOOT=10000
-base_save_dir="figures"
+base_save_dir="paper/figures"
 REP="*"
 
 mkdir -p "${base_save_dir}"

@@ -1,0 +1,29 @@
+name: Build paper website and deploy to gh-pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    - master
+    paths:
+    - 'paper/*'
+    - '!paper/main.pdf'
+    - '.github/workflows/build-website.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: jayanthkoushik/paje@v3
+      with:
+        setupscript: |
+          cp paper/main.md /www/index.md
+          cp -r paper/sections /www/_includes/
+          cp -r paper/tables /www/_includes/
+          cp -r paper/figures/web /www/figures
+          cp paper/figures/model.png /www/figures/
+          cp paper/references.bib /www/_includes/
+        targetbranch: gh-pages
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

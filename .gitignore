@@ -1,3 +1,5 @@
+.shinymdc
+www
 results/**/*
 !/results/**/
 !results/**/summary.txt
