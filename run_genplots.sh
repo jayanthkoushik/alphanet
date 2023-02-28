@@ -34,11 +34,7 @@ for i in 0 1 2; do
 
     (set -x; python run_makeplot.py PlotClsAccDeltaBySplit --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "full" --plot:aspect 3 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --plot:file "${save_dir}/cls_deltas_imagenetlt_crt_rho_05${ext}";)
 
-    if [ ${i} -eq 0 ]; then
-        width="2.8"
-    else
-        width="4.2"
-    fi
+    if [ "${theme}" = "paper" ]; then width="2.8"; else width="3.36"; fi
 
     (set -x; python run_makeplot.py PlotSplitClsAccDeltaVsNNDist --base-res-dir "data/ImageNetLT/baselines" --exp-sub-dirs "" --res-files-pattern "resnext50_crt.pkl" --n-boot ${N_BOOT} --splits "few" --acc "baseline" --r-font-size "medium" --plot-r-loc 0.9 0.95 --plot:aspect 1 --plot:width "${width}" --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --rasterize-scatter --plot-params:xlim 8 20 --plot-params:xticks 10 12 14 16 18 --plot-params:ylim -0.1 0.9 --plot-params:yticks 0 0.2 0.4 0.6 0.8 --plot-params:ylabel "Accuracy" --plot:file "${save_dir}/cls_acc_vs_nndist_imagenetlt_crt_baseline${ext}")
 
