@@ -13,10 +13,9 @@ from corgy.types import InputDirectory
 from tqdm import tqdm
 
 from alphanet._dataset import SplitLTDataset
+from alphanet._utils import DEFAULT_DEVICE
 from alphanet.plot import _get_test_acc_per_class, _TEST_DATA_CACHE
 from alphanet.train import TrainResult
-
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class ComboBuilder:
@@ -107,7 +106,9 @@ class Main(Corgy):
 
         result_files = list(self.base_res_dir.glob(self.res_files_pattern))
         for _i, _res_file in enumerate(tqdm(result_files, desc="Loading", unit="file")):
-            _res = TrainResult.from_dict(torch.load(_res_file, map_location=DEVICE))
+            _res = TrainResult.from_dict(
+                torch.load(_res_file, map_location=DEFAULT_DEVICE)
+            )
 
             if _i == 0:
                 dataset_name = _res.train_data_info.dataset_name
@@ -140,11 +141,11 @@ class Main(Corgy):
             )
 
             _alphanet_classifier = _res.load_best_alphanet_classifier()
-            _alphanet_classifier = _alphanet_classifier.to(DEVICE).eval()
+            _alphanet_classifier = _alphanet_classifier.to(DEFAULT_DEVICE).eval()
             _alphas = _alphanet_classifier.get_learned_alpha_vecs()
             assert _alphas.shape[1] == _res.nn_info.n_neighbors + 1
             assert torch.allclose(
-                _alphas[:, 0], torch.ones(_alphas.shape[0], device=DEVICE)
+                _alphas[:, 0], torch.ones(_alphas.shape[0], device=DEFAULT_DEVICE)
             )
             for _class, _idx in enumerate(_res.fbclass_ordered_idx__vec):
                 if _class in fclass__set:
@@ -160,7 +161,7 @@ class Main(Corgy):
             }
 
         baseline_res = TrainResult.from_dict(
-            torch.load(dataset.baseline_eval_file_path, map_location=DEVICE)
+            torch.load(dataset.baseline_eval_file_path, map_location=DEFAULT_DEVICE)
         )
         assert len(label_name__per__class) == baseline_res.train_data_info.n_classes
         train_samples__per__class = baseline_res.train_data_info.n_imgs__per__class

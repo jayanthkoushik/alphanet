@@ -16,7 +16,7 @@ from typing_extensions import Annotated
 
 from alphanet._dataset import NNsResult, SplitLTDataGroupInfo, SplitLTDataset
 from alphanet._samplers import AllFewSampler, ClassBalancedBaseSampler, SamplerBuilder
-from alphanet._utils import log_alphas, log_metrics, PTOpt, TBLogs
+from alphanet._utils import DEFAULT_DEVICE, log_alphas, log_metrics, PTOpt, TBLogs
 from alphanet.alphanet import AlphaNet, AlphaNetClassifier
 
 logging.basicConfig(
@@ -24,8 +24,6 @@ logging.basicConfig(
     level=logging.INFO,
     datefmt="%H:%M:%S",
 )
-
-DEFAULT_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class TrainingConfig(Corgy):

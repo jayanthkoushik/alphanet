@@ -13,12 +13,22 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+import torch
 from corgy import Corgy, corgyparser
 from corgy.types import KeyValuePairs, OutputBinFile, SubClass
 from torch import Tensor
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler
 from typing_extensions import Annotated
+
+_default_device_name: str
+if torch.cuda.is_available():
+    _default_device_name = "cuda"
+# elif torch.backends.mps.is_built():
+#     _default_device_name = "mps"
+else:
+    _default_device_name = "cpu"
+DEFAULT_DEVICE = torch.device(_default_device_name)
 
 
 class PTOpt(Corgy):

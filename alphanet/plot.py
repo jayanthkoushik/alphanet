@@ -34,10 +34,9 @@ from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 
 from alphanet._dataset import SplitLTDataGroup, SplitLTDataset
-from alphanet._utils import ContextPlot, PlotParams
+from alphanet._utils import ContextPlot, DEFAULT_DEVICE, PlotParams
 from alphanet.train import TrainResult
 
-_DEFAULT_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 _TEST_DATA_CACHE: Dict[str, SplitLTDataGroup] = {}
 _NNDIST_PER_SPLIT_CLASS_CACHE: Dict[
     Tuple[SplitLTDataset, str, int, str, str],
@@ -206,7 +205,7 @@ def _get_test_acc_per_class(
     res: TrainResult, batch_size: int, return_preds=False
 ) -> Tuple[Dict[int, float], Optional[List[int]]]:
     alphanet_classifier = res.load_best_alphanet_classifier()
-    alphanet_classifier = alphanet_classifier.to(_DEFAULT_DEVICE).eval()
+    alphanet_classifier = alphanet_classifier.to(DEFAULT_DEVICE).eval()
     dataset = SplitLTDataset(res.train_data_info.dataset_name)
     try:
         test_datagrp = _TEST_DATA_CACHE[res.train_data_info.dataset_name]
@@ -221,7 +220,7 @@ def _get_test_acc_per_class(
     eval_engine = ignite.engine.create_supervised_evaluator(
         alphanet_classifier,
         {"accuracy": ignite.metrics.Accuracy()},  # for sanity check
-        _DEFAULT_DEVICE,
+        DEFAULT_DEVICE,
     )
     ignite.contrib.handlers.ProgressBar(
         desc="Generating test results for file", persist=False
@@ -283,7 +282,7 @@ def _get_test_acc_per_class(
 
 
 def _load_train_res(res_file: Path, batch_size: int) -> TrainResult:
-    res = TrainResult.from_dict(torch.load(res_file, map_location=_DEFAULT_DEVICE))
+    res = TrainResult.from_dict(torch.load(res_file, map_location=DEFAULT_DEVICE))
     if res.test_acc__per__class is None:
         res.test_acc__per__class, _ = _get_test_acc_per_class(res, batch_size)
         torch.save(res.as_dict(recursive=True), res_file)
@@ -1116,7 +1115,7 @@ class PlotAlphaDist(_BaseMultiExpPlotCmd, BasePlotCmd):
         df_rows = []
         for _gid, _exp_name, _dataset, _res in self._train_results():
             _alphanet_classifier = _res.load_best_alphanet_classifier()
-            _alphanet_classifier = _alphanet_classifier.to(_DEFAULT_DEVICE).eval()
+            _alphanet_classifier = _alphanet_classifier.to(DEFAULT_DEVICE).eval()
             _alpha__mat = _alphanet_classifier.get_learned_alpha_vecs()
             assert all(bool(_a0 == 1) for _a0 in _alpha__mat[:, 0])
 
@@ -1286,7 +1285,7 @@ class PlotTemplateDeltas(BasePlotCmd):
     def __call__(self):
         # Load result and baseline templates.
         alphanet_res = TrainResult.from_dict(
-            torch.load(self.res_file, map_location=_DEFAULT_DEVICE)
+            torch.load(self.res_file, map_location=DEFAULT_DEVICE)
         )
         if alphanet_res.training_config.n_neighbors > len(self.plot.palette) - 1:
             raise ValueError(
@@ -1296,14 +1295,14 @@ class PlotTemplateDeltas(BasePlotCmd):
 
         dataset = SplitLTDataset(alphanet_res.train_data_info.dataset_name)
         baseline_res = TrainResult.from_dict(
-            torch.load(dataset.baseline_eval_file_path, map_location=_DEFAULT_DEVICE)
+            torch.load(dataset.baseline_eval_file_path, map_location=DEFAULT_DEVICE)
         )
 
         _alphanet_classifier = alphanet_res.load_best_alphanet_classifier()
-        _alphanet_classifier = _alphanet_classifier.to(_DEFAULT_DEVICE).eval()
+        _alphanet_classifier = _alphanet_classifier.to(DEFAULT_DEVICE).eval()
         alphanet_template__mat = _alphanet_classifier.get_trained_templates()
 
-        _baseline_clf = dataset.load_classifier(_DEFAULT_DEVICE)
+        _baseline_clf = dataset.load_classifier(DEFAULT_DEVICE)
         baseline_template__mat = _baseline_clf.weight.data.detach()
 
         assert (
@@ -1339,11 +1338,11 @@ class PlotTemplateDeltas(BasePlotCmd):
                 alphanet_res.train_data_info.class__set__per__split["many"]
                 | alphanet_res.train_data_info.class__set__per__split["medium"]
             ),
-            device=_DEFAULT_DEVICE,
+            device=DEFAULT_DEVICE,
         )
         fclass_ordered__vec = torch.tensor(
             list(alphanet_res.train_data_info.class__set__per__split["few"]),
-            device=_DEFAULT_DEVICE,
+            device=DEFAULT_DEVICE,
         )
 
         # Separate 'base' and 'few' split templates.
@@ -1412,7 +1411,7 @@ class PlotTemplateDeltas(BasePlotCmd):
         ):
             _embed__mat = torch.from_numpy(
                 _alldata_embed__nmat[_n : _n + _mat.shape[0]]
-            ).to(device=_DEFAULT_DEVICE)
+            ).to(device=DEFAULT_DEVICE)
             _alldata_embed__mat__seq[_i] = _embed__mat
             _n += _mat.shape[0]
         (
@@ -1454,7 +1453,7 @@ class PlotTemplateDeltas(BasePlotCmd):
             torch.index_select(
                 _ftemplate_embed__mat,
                 0,
-                torch.tensor(selected_idx__seq, device=_DEFAULT_DEVICE),
+                torch.tensor(selected_idx__seq, device=DEFAULT_DEVICE),
             )
             for _ftemplate_embed__mat in [
                 baseline_ftemplate_embed__mat,
@@ -1474,7 +1473,7 @@ class PlotTemplateDeltas(BasePlotCmd):
             nn_btemplate_embed__mat__per__selected_fclass[_fclass] = torch.index_select(
                 btemplate_embed__mat,
                 0,
-                torch.tensor(_nn_idx__seq, device=_DEFAULT_DEVICE),
+                torch.tensor(_nn_idx__seq, device=DEFAULT_DEVICE),
             )
 
         # Get test projection embeddings for the selected classes.
@@ -1490,7 +1489,7 @@ class PlotTemplateDeltas(BasePlotCmd):
             test_proj_embed__mat__per__selected_fclass[_fclass] = torch.index_select(
                 test_proj_embed__mat,
                 0,
-                torch.tensor(_test_idx__seq, device=_DEFAULT_DEVICE),
+                torch.tensor(_test_idx__seq, device=DEFAULT_DEVICE),
             )
             (
                 alphanet_test_pred__seq__per__selected_fclass[_fclass],
@@ -1719,7 +1718,7 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
             except KeyError:
                 _baseline_res = TrainResult.from_dict(
                     torch.load(
-                        _dataset.baseline_eval_file_path, map_location=_DEFAULT_DEVICE
+                        _dataset.baseline_eval_file_path, map_location=DEFAULT_DEVICE
                     )
                 )
                 _, _baseline_test_yhats = _get_test_acc_per_class(

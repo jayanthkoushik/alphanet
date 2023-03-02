@@ -12,9 +12,8 @@ from corgy.types import InputDirectory
 from tqdm import trange
 
 from alphanet._dataset import SplitLTDataset
+from alphanet._utils import DEFAULT_DEVICE
 from alphanet.train import TrainResult
-
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class Args(Corgy):
@@ -49,7 +48,9 @@ for _i, _rel_exp_path in enumerate(args.rel_exp_paths):
         unit="file",
     )
     for _res_file in _exp_res_dir.glob(args.res_files_pattern):
-        _res = TrainResult.from_dict(torch.load(str(_res_file), map_location=DEVICE))
+        _res = TrainResult.from_dict(
+            torch.load(str(_res_file), map_location=DEFAULT_DEVICE)
+        )
         seen_datasets.add(_res.train_data_info.dataset_name)
         _res_dict = {
             "Experiment": _exp_name,
@@ -69,7 +70,7 @@ pbar = trange(len(seen_datasets), desc="Loading baselines", unit="dataset")
 for _dataset_name in seen_datasets:
     _dataset = SplitLTDataset(_dataset_name)
     _baseline_res = TrainResult.from_dict(
-        torch.load(str(_dataset.baseline_eval_file_path), map_location=DEVICE)
+        torch.load(str(_dataset.baseline_eval_file_path), map_location=DEFAULT_DEVICE)
     )
     _res_dict = {"Experiment": "Baseline", "Dataset": _dataset_name}
     for _split, _split_acc in _baseline_res.test_acc__per__split.items():
