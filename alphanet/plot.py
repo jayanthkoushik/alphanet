@@ -39,7 +39,10 @@ from alphanet.train import TrainResult
 
 _DEFAULT_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 _TEST_DATA_CACHE: Dict[str, SplitLTDataGroup] = {}
-_NNDIST_PER_BCLASS_CACHE: Dict[Tuple[SplitLTDataset, str, int], Dict[int, float]] = {}
+_NNDIST_PER_SPLIT_CLASS_CACHE: Dict[
+    Tuple[SplitLTDataset, str, int, str, str],
+    Tuple[Dict[int, float], Dict[int, List[int]]],
+] = {}
 _BASELINE_RES_CACHE: Dict[SplitLTDataset, TrainResult] = {}
 
 
@@ -49,16 +52,24 @@ def _get_split_test_acc(res: TrainResult, split: str) -> float:
     return res.test_acc__per__split[split.lower()]
 
 
-def _get_nn_dist_per_bclass(
-    dataset: SplitLTDataset, metric: str, k: int
-) -> Dict[int, float]:
+def _get_nn_dist_per_split_class(
+    dataset: SplitLTDataset,
+    metric: str,
+    k: int,
+    for_split: Literal["few", "base", "all"] = "base",
+    against_split: Literal["few", "base", "all"] = "few",
+) -> Tuple[Dict[int, float], Dict[int, List[int]]]:
     try:
-        return _NNDIST_PER_BCLASS_CACHE[dataset, metric, k]
+        return _NNDIST_PER_SPLIT_CLASS_CACHE[
+            dataset, metric, k, for_split, against_split
+        ]
     except KeyError:
         pass
 
     logging.info(
-        "generating bclass nn dists (dataset='%s', metric='%s', k='%d')",
+        "generating nn dists: '%s'->'%s' (dataset='%s', metric='%s', k='%d')",
+        for_split,
+        against_split,
         dataset,
         metric,
         k,
@@ -89,19 +100,33 @@ def _get_nn_dist_per_bclass(
         _class__seq__per__msplit[_msplit] = list(_class__seq)
         _mean_feat__mat__per__msplit[_msplit] = torch.stack(_mean_feat__mats)
 
+    _class__seq__per__msplit["all"] = (
+        _class__seq__per__msplit["few"] + _class__seq__per__msplit["base"]
+    )
+    _mean_feat__mat__per__msplit["all"] = torch.cat(
+        [_mean_feat__mat__per__msplit["few"], _mean_feat__mat__per__msplit["base"]]
+    )
+
     _n_many, _n_med, _n_few = [
         len(_train_data.info.class__set__per__split[_split])
         for _split in ("many", "medium", "few")
     ]
     _n_base = _n_many + _n_med
+    _n_all = _n_base + _n_few
     _n_feats = _train_data.info.n_features
     assert len(_class__seq__per__msplit["base"]) == _n_base
     assert _mean_feat__mat__per__msplit["base"].shape == (_n_base, _n_feats)
     assert len(_class__seq__per__msplit["few"]) == _n_few
     assert _mean_feat__mat__per__msplit["few"].shape == (_n_few, _n_feats)
+    assert len(_class__seq__per__msplit["all"]) == _n_all
+    assert _mean_feat__mat__per__msplit["all"].shape == (_n_all, _n_feats)
 
     _cdist__mat: torch.Tensor
-    _XA, _XB = (_mean_feat__mat__per__msplit[_msplit] for _msplit in ["base", "few"])
+    _n_dict = dict(few=_n_few, base=_n_base, all=_n_all)
+    _n_for = _n_dict[for_split]
+    _n_against = _n_dict[against_split]
+    _XA = _mean_feat__mat__per__msplit[for_split]
+    _XB = _mean_feat__mat__per__msplit[against_split]
     if metric == "euclidean":
         _cdist__mat = torch.cdist(_XA.unsqueeze(0), _XB.unsqueeze(0), p=2)
         _cdist__mat = _cdist__mat.squeeze(0)
@@ -109,17 +134,72 @@ def _get_nn_dist_per_bclass(
         _cdist__mat = 1 - (_XA @ _XB.t())
     else:
         raise AssertionError
-    assert _cdist__mat.shape == (_n_base, _n_few)
+    assert _cdist__mat.shape == (_n_for, _n_against)
 
-    _nndist__mat = _cdist__mat.sort(dim=1)[0][:, :k]
-    assert _nndist__mat.shape == (_n_base, k)
+    _nndist__mat, _nnidx__mat = _cdist__mat.sort(dim=1)
 
-    nn_dist__per__bclass = {
-        _bclass: _nndist__vec.mean().item()
-        for _bclass, _nndist__vec in zip(_class__seq__per__msplit["base"], _nndist__mat)
+    if against_split in ["all", for_split]:
+        assert all(
+            _class__seq__per__msplit[against_split][_nnidx__mat[_i, 0]]
+            == _class__seq__per__msplit[for_split][_i]
+            for _i in range(_n_for)
+        )
+        _nndist__mat = _nndist__mat[:, 1:]
+        _nnidx__mat = _nnidx__mat[:, 1:]
+
+    _nndist__mat, _nnidx__mat = _nndist__mat[:, :k], _nnidx__mat[:, :k]
+    assert _nndist__mat.shape == _nnidx__mat.shape == (_n_for, k)
+
+    nn_class__seq__per__class = {}
+    for (
+        _class,
+        _class_feat__vec,
+        _class_nndist__vec,
+        _class_dist__vec,
+        _nn_idx__vec,
+    ) in zip(
+        _class__seq__per__msplit[for_split],
+        _mean_feat__mat__per__msplit[for_split],
+        _nndist__mat,
+        _cdist__mat,
+        _nnidx__mat,
+    ):
+        _nn_class__seq = [
+            _class__seq__per__msplit[against_split][int(_idx)] for _idx in _nn_idx__vec
+        ]
+        nn_class__seq__per__class[_class] = _nn_class__seq
+
+        assert all(
+            torch.isclose(_class_dist__vec[int(_idx)], _class_nndist__vec[_i])
+            for _i, _idx in enumerate(_nn_idx__vec)
+        )
+
+        for _nn_class, _nn_class_dist in zip(_nn_class__seq, _class_nndist__vec):
+            _nn_class_feat__vec = next(
+                __mean_feat__vec
+                for __class, __mean_feat__vec in zip(
+                    _class__seq__per__msplit[against_split],
+                    _mean_feat__mat__per__msplit[against_split],
+                )
+                if __class == _nn_class
+            )
+            if metric == "euclidean":
+                _computed_dist = (_class_feat__vec - _nn_class_feat__vec).norm(p=2)
+            else:
+                _computed_dist = 1 - (_class_feat__vec @ _nn_class_feat__vec)
+            assert torch.isclose(_computed_dist, _nn_class_dist, atol=1e-3, rtol=1e-5)
+
+    nn_dist__per__class = {
+        _class: _nndist__vec.mean().item()
+        for _class, _nndist__vec in zip(
+            _class__seq__per__msplit[for_split], _nndist__mat
+        )
     }
-    _NNDIST_PER_BCLASS_CACHE[dataset, metric, k] = nn_dist__per__bclass
-    return nn_dist__per__bclass
+    _NNDIST_PER_SPLIT_CLASS_CACHE[dataset, metric, k, for_split, against_split] = (
+        nn_dist__per__class,
+        nn_class__seq__per__class,
+    )
+    return (nn_dist__per__class, nn_class__seq__per__class)
 
 
 def _get_test_acc_per_class(
@@ -364,7 +444,7 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
                 )
             assert set(_nn_dist__per__fclass.keys()) == _class__set__per__split["few"]
 
-            _nn_dist__per__bclass = _get_nn_dist_per_bclass(
+            _nn_dist__per__bclass, _ = _get_nn_dist_per_split_class(
                 _dataset, _metric, _res.nn_info.n_neighbors
             )
 
@@ -1548,12 +1628,14 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
     label_size: Literal[
         "xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"
     ] = "x-small"
+    split: Literal["few", "base"] = "few"
+    nn_split: Literal["few", "base", "all"] = "base"
 
     @staticmethod
-    def _get_pred_status(_y, _yhat, _nns__per__fclass):
+    def _get_pred_status(_y, _yhat, _nns__per__class):
         if _yhat == _y:
             return "Correct"
-        if _yhat in _nns__per__fclass[_y]:
+        if _yhat in _nns__per__class[_y]:
             return "Incorrect as NN"
         return "Incorrect as non-NN"
 
@@ -1650,12 +1732,19 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
             )
             _test_datagrp = _TEST_DATA_CACHE[str(_dataset)]
             _test_ys = _test_datagrp.label__seq
-            _fclass_nns = _res.nn_info.nn_class__seq__per__fclass
+
+            _, _nn__seq__per__split_class = _get_nn_dist_per_split_class(
+                _dataset,
+                _res.nn_info.nn_dist,
+                _res.nn_info.n_neighbors,
+                for_split=self.split,
+                against_split=self.nn_split,
+            )
 
             for _i, (_y, _baseline_yhat, _res_yhat) in enumerate(
                 zip(_test_ys, _baseline_test_yhats, _res_test_yhats)
             ):
-                if _y not in _fclass_nns:
+                if _y not in _nn__seq__per__split_class:
                     continue
                 df_rows.append(
                     {
@@ -1664,10 +1753,10 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                         "Experiment": _exp_name,
                         "Sample": _i,
                         "Baseline prediction": self._get_pred_status(
-                            _y, _baseline_yhat, _fclass_nns
+                            _y, _baseline_yhat, _nn__seq__per__split_class
                         ),
                         "AlphaNet prediction": self._get_pred_status(
-                            _y, _res_yhat, _fclass_nns
+                            _y, _res_yhat, _nn__seq__per__split_class
                         ),
                     }
                 )

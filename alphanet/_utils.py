@@ -322,7 +322,7 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
     dpi: Annotated[Optional[int], "plot dpi"] = 72
     font: Annotated[PlotFont, "font config"] = PlotFont()
 
-    DEFAULT_ASPECT_RATIO = 2
+    DEFAULT_ASPECT_RATIO = 2.0
     _scale_per_context = dict(paper=1, notebook=1.2, poster=2, talk=3.5)
     _default_half_width_per_context = {
         _context: 3.25 * _scale for _context, _scale in _scale_per_context.items()
