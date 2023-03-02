@@ -1644,7 +1644,7 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
             return "Correctly\nclassified"
         if status == "Incorrect as NN":
             return "Incorrectly\nclassified\nas a NN"
-        return "Incorrectly\nclassified\nas a non-NN"
+        return "Incorrectly\nclassified as\na non-NN"
 
     @staticmethod
     def _make_band(xl, xr, yl, yr, w):
@@ -1919,4 +1919,15 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                 _ax.set_yticks([])
                 _ax.xaxis.grid(visible=False)
                 _ax.yaxis.grid(visible=False)
+
+                _rect = mpatches.Rectangle(
+                    (_xcoords[0] - (_bar_width / 2) + 0.002, 0),
+                    _xcoords[1] - _xcoords[0] + _bar_width - 0.004,
+                    1,
+                    fill=False,
+                    lw=(1 * mpl.rcParams["lines.linewidth"]),
+                    color=self.plot.palette[0],
+                    transform=_ax.transData,
+                )
+                _ax.add_patch(_rect)
         return _fig
