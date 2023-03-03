@@ -1,5 +1,5 @@
 ---
-title: "A Simple Strategy to Address Imbalanced Long-tail Classification Accuracies"
+title: "A Simple Strategy to Address Imbalanced Long-tail Classification Accuracies (TODO: rethink title)"
 
 author:
   - name: Nadine Chang
@@ -7,20 +7,24 @@ author:
     - 1
     email: "nchang1@cs.cmu.edu"
     equalcontrib: true
+
   - name: Jayanth Koushik
     affiliation:
     - 1
     email: "jkoushik@andrew.cmu.edu"
     equalcontrib: true
     corresponding: true
+
   - name: Michael J. Tarr
     affiliation:
     - 1
     email: "michaeltarr@cmu.edu"
+
   - name: Martial Hebert
     affiliation:
     - 1
     email: "hebert@cs.cmu.edu"
+
   - name: Yu-Xiong Wang
     affiliation:
     - 2
@@ -29,27 +33,28 @@ author:
 institute:
   - id: 1
     name: Carnegie Mellon University
+
   - id: 2
     name: University of Illinois at Urbana-Champaign
 
-abstract: Methods in long-tail learning focus on improving performance for
-  data-poor (rare) classes; however, performance for such classes remains much
-  lower than performance for more data-rich (frequent) classes. This is a
-  problem for applications such as autonomous vehicle systems or medical
-  imaging, where balanced performance across all classes is desirable. We
-  propose a simple method that can be applied to existing models, performing a
-  _post hoc_ correction, which leads to much higher accuracy on rare classes
-  with negligible change to overall accuracy. Starting with a pre-trained model,
-  we find frequent classes that are closest to rare classes in the model's
-  representation space and use their classifiers in linear combination,
-  improving rare class accuracy while preserving overall accuracy. This
-  straightforward method is extremely fast to train and can be applied to any
-  model without requiring changes to the base classifiers which may be
-  restricted for a variety of reasons (e.g., ethical considerations, privacy
-  concerns, or intellectual property rights). We observe that our simple
-  correction improves performance for rare classes by up to 10 points on the
-  ImageNet-LT dataset. At the same time, overall accuracy is preserved, leading
-  to more balanced performance across all classes.
+abstract: Methods in long-tail learning focus on improving performance
+  for data-poor (rare) classes; however, performance for such classes
+  remains much lower than performance for more data-rich (frequent)
+  classes. Analyzing the predictions of long-tail methods on rare
+  classes reveals that a large number of errors are due to
+  misclassification as visually similar frequent classes. To address
+  this problem, we devise a method, AlphaNet, that can be applied to
+  existing models, performing a _post hoc_ correction on classifiers of
+  rare classes. Starting with a pre-trined model, we find frequent
+  classes that are closest to rare classes in the model's representation
+  space, and learn weights to update rare classifiers with a linear
+  combination of frequent classifiers. AlphaNet, applied on several
+  different models, greatly improves test accuracy for rare classes in
+  multiple long-tail datasets. We then analyze predictions from
+  AlphaNet, and find that a number of mistakes are to _semantically_
+  similar classes. Evaluating with such classes grouped together,
+  AlphaNet improves overall accuracy, showing it to be a practically
+  useful method for long-tail classification problems.
 
 appendices:
 - 'sections/a_appendix.md'
