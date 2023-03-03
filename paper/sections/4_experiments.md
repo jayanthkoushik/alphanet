@@ -31,7 +31,7 @@ proposed method, and we omitted the dataset from our experiments.
 
 ### Training data sampling
 
-In order to prevent overfitting on the 'few' split samples, we used a class
+In order to prevent over-fitting on the 'few' split samples, we used a class
 balanced sampling approach, using all 'few' split samples, and a portion of the
 'base' split samples. Given $F$ 'few' split samples, and a ratio $\rho$, every
 epoch, $\rho F$ samples were drawn from the 'base' split, with sample weights
@@ -164,7 +164,7 @@ features, with $k=10$ nearest neighbors by Euclidean distance. In each chart,
 the bars on the left show the distribution of predictions for 'few' split test
 samples, by the baseline model; and the bars on the right show the distribution
 for AlphaNet. The predictions are grouped into three categories: 1) correct
-predictions, 2) incorrect predicitons where the prediction was a nearest
+predictions, 2) incorrect predictions where the prediction was a nearest
 neighbor of the original class (e.g., predicting 'Malamute' for 'Husky'), and 3)
 all other incorrect predictions. The "flow" bands from left to right show the
 changes in individual sample predictions. There is a large improvement for
@@ -186,7 +186,7 @@ produced similar results, and per-split accuracies plateaued around $k=5$.
 
 ![Per-split test accuracy for AlphaNet training of cRT model on ImageNet-LT,
 versus the number of nearest neighbors used for each 'few' split class. There is
-little change in acccuracies beyond $k=5$.](figures/split_acc_vs_k){#fig:split_acc_vs_k} -->
+little change in accuracies beyond $k=5$.](figures/split_acc_vs_k){#fig:split_acc_vs_k} -->
 
 <!-- ![alphas](figures/alphas.pdf){#fig:alphas} -->
 

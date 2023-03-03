@@ -1,0 +1,19 @@
+{
+  "maxDuplicateProblems": 1,
+  "languageId": "latex",
+  "ignoreRegExpList": [
+    "/@.*/",
+    "/- name: .*/",
+    "/equalcontrib: true/",
+    "/\\{%.*%\\}/",
+    "/\\{#.*\\}/",
+    "/(?<=\\])\\(.*\\)(?=\\{)/",
+    "/(?<=\\))\\{.*\\}/",
+    "/<div .*>/"
+  ],
+  "words": [
+    "CIFAR",
+    "SVM",
+    "softmax"
+  ]
+}

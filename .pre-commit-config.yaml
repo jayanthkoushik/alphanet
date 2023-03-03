@@ -43,3 +43,8 @@ repos:
     entry: poetry run jupyter nbconvert --inplace --ClearMetadataPreprocessor.enabled=True
     language: system
     types: [jupyter]
+  - id: cspell
+    name: spell check paper
+    language: system
+    files: "paper/main\\.md|paper/sections/.*\\.md"
+    entry: "npx cspell"
