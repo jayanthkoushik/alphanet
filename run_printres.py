@@ -102,7 +102,7 @@ for _dataset_name in seen_datasets:
             + 3  # format characters (<mean>^±<std>^)
         )
         _split_title = "Med." if _split == "Medium" else _split
-        hdr_str += f"{_split_title:{_split_hdr_size + 2}}"  # 2 spaces between columns
+        hdr_str += f"{_split_title:>{_split_hdr_size}}  "  # 2 spaces between columns
         sep_str += f"{'-' * _split_hdr_size}  "
 
     print(f"\n\n{_dataset_name}:")
@@ -117,11 +117,11 @@ for _dataset_name in seen_datasets:
         row_str = f"{_exp:{max_exp_name_len + 2}}"
         for _split in ("Few", "Medium", "Many", "Overall"):
             _mu, _sig = _mrow[_split], _srow[_split]
-            row_str += f"{_mu:4.1f}"
+            _mu_str = f"{_mu:4.1f}"
             if not isnan(_sig):
-                row_str += f"^±{_sig:{_sig_width__per__split[_split]}.2f}^"
+                row_str += f"{_mu_str}^±{_sig:{_sig_width__per__split[_split]}.2f}^"
             else:
-                row_str += " " * (_sig_width__per__split[_split] + 3)
+                row_str += " " * (_sig_width__per__split[_split] + 3) + _mu_str
             row_str += "  "
         print(row_str.rstrip())
 
