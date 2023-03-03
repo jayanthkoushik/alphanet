@@ -105,8 +105,9 @@ for _dataset_name in seen_datasets:
         hdr_str += f"{_split_title:>{_split_hdr_size}}  "  # 2 spaces between columns
         sep_str += f"{'-' * _split_hdr_size}  "
 
-    print(f"\n\n{_dataset_name}:")
-    print(f"{'=' * (len(_dataset_name) + 1)}\n")
+    _dataset_proper_name = SplitLTDataset(_dataset_name).proper_name
+    print(f"\n\n{_dataset_proper_name}:")
+    print(f"{'=' * (len(_dataset_proper_name) + 1)}\n")
     print(hdr_str)
     print(sep_str)
 
