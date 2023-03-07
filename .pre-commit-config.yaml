@@ -48,3 +48,9 @@ repos:
     language: system
     files: "paper/main\\.md|paper/sections/.*\\.md"
     entry: "npx cspell"
+  - id: mdc
+    name: build paper pdf
+    language: system
+    files: "paper/.*"
+    pass_filenames: false
+    entry: sh -c "(cd paper && poetry run shinymdc -o main.pdf -b references.bib main.md)"
