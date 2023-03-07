@@ -1,8 +1,8 @@
 # Related work {#sec:relwork}
 
 Combining, creating, modifying, and learning model weights are concepts
-that are implemented in many earlier models. As we review below, these
-concepts appear frequently in transfer learning, meta-learning,
+that have been implemented in many earlier models. As we review below,
+these concepts appear frequently in transfer learning, meta-learning,
 zero-shot/low-shot learning, and long-tail learning.
 
 ## Classifier creation {#sec:relwork:creation}
@@ -22,8 +22,8 @@ different network[@1993.Schmidhuber.Schmidhuber;
 modifying networks, they create entirely new networks exclusively from
 training samples[@2013.Ng.Socher; @2015.Salakhutdinov.Ba;
 @2016.Han.Noh]. In contrast, AlphaNet only combines existing
-classifiers, without having to create new classifiers or networks from
-scratch.
+classifiers, without having to create new classifiers or train networks
+from scratch.
 
 ## Classifier or feature composition {#sec:relwork:composition}
 
@@ -39,21 +39,22 @@ for combination in the datasets of interest. Such a structure is
 typically not guaranteed nor provided in long-tailed datasets.
 Additional \ac{SVM} work uses regularized minimization to learn the
 coefficients necessary to combine patches from other
-classifiers[@2012.Zisserman.Aytar]. While these approaches are
-conceptually similar to AlphaNet, AlphaNet has the additional advantage
-of _learning_ the compositional coefficients without any
-hyper-parameters and tuning. Specifically, different novel classes will
-have their own sets of composition coefficients, and similar novel
-classes will naturally have similar coefficients. Learning such varying
-sets of coefficients is difficult in previous classical approaches,
-which either learn a fixed set of alphas for all novel classes or are
-forced to introduce more complex group sparsity-like constraints.
-Finally, in zero-shot learning there exist methods which compose
-classifiers of known visual concepts to learn a completely new
-classifier[@2013.Elgammal.Elhoseiny; @2017.Hebert.Misra;
-@2015.Salakhutdinov.Ba; @2016.Sha.Changpinyo]. However, such composition
-is often guided by additional attribute supervision or textual
-description--two factors on which AlphaNet does not depend.
+classifiers[@2012.Zisserman.Aytar].
+
+While these approaches are conceptually similar to our method, AlphaNet
+has the additional advantage of *learning* the compositional
+coefficients without any hyper-parameters and tuning. Specifically,
+different novel classes will have their own sets of composition
+coefficients, and similar novel classes will naturally have similar
+coefficients. Learning such varying sets of coefficients is difficult in
+previous classical approaches, which either learn a fixed set of alphas
+for all novel classes or are forced to introduce more complex group
+sparsity-like constraints. Finally, in zero-shot learning there exist
+methods which compose classifiers of known visual concepts to learn a
+completely new classifier[@2013.Elgammal.Elhoseiny; @2017.Hebert.Misra;
+@2015.Salakhutdinov.Ba; @2016.Sha.Changpinyo]. However, such
+composition is often guided by additional attribute supervision or
+textual description -- two factors on which AlphaNet does not depend.
 
 ## Learning transformations between models and classes {#sec:relwork:transformation}
 
@@ -65,9 +66,9 @@ show the existence of a generic nonlinear transformation from
 small-sample to large-sample models for different types of feature
 spaces and classifier models. Finally, @2016.Poczos.Du provide
 theoretical guarantees on performance when one learns the transformation
-from the source function to a related target function. In AlphaNet we
-likewise infer that our target classifier is a transformation from a set
-of source classifiers.
+from the source function to a related target function. AlphaNet is
+similar in that we likewise infer that our target classifier is a
+transformation from a set of source classifiers.
 
 ## Zero-shot/low-shot learning {#sec:relwork:lowshot}
 
@@ -88,27 +89,26 @@ information.
 
 ## Long-tailed learning {#sec:relwork:longtail}
 
-The restrictions on low-shot learning have directly led to the new
+These restrictions on low-shot learning have directly led to the new
 paradigm referred to as long-tailed learning, where data samples are
 continuously decreasing and the data distribution closely models that of
 the visual world. Recent work achieves state-of-the-art performance on
 long-tailed recognition by learning multiple experts[@2021.Hwang.Cai;
-@2020.Yu.Wang]. Both these complex ensemble methods require a two-stage
-training method. A somewhat different approach re-balances the samples
-at different stages of model training[@2019.Ma.Cao], while another study
-attempts to transfer features from common classes to rare
-classes[@2019.Yu.Liu], or transfer intra-class
-variance[@2019.Chandraker.Yin]. However, both these approaches to
-knowledge transfer require complex architectures, such as a specialized
-attention mechanism and memory models, as in the work of @2019.Yu.Liu.
-While most studies have largely focused on representation space
-transferability or complex ensembles, recent work establishes a strong
-baseline by exploring the potential of operating in classifier
+@2020.Yu.Wang]. Both of these complex ensemble methods require a
+two-stage training method. A somewhat different approach re-balances the
+samples at different stages of model training[@2019.Ma.Cao], attempts to
+transfer features from common classes to rare classes[@2019.Yu.Liu], or
+transfers intra-class variance[@2019.Chandraker.Yin]. However,
+approaches to knowledge transfer require complex architectures, such as
+a specialized attention mechanism and memory models, as in the work of
+@2019.Yu.Liu. While most studies have largely focused on representation
+space transferability or complex ensembles, recent work establishes a
+strong baseline by exploring the potential of operating in classifier
 space[@2019.Kalantidis.Kang]. Results suggest that decoupling model
 representation learning and classifier learning is a more efficient way
 to approach long-tailed learning. Specifically, methods normalizing
 classifiers and adjusting classifiers only using re-sampling strategies
 achieve good performance. Such successes in working only with
 classifiers support our general concept that combining strong
-classifiers is a natural and direct way to improve upon weak
+classifiers in AlphaNet is a natural and direct way to improve upon weak
 classifiers.

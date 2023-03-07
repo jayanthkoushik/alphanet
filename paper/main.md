@@ -42,19 +42,20 @@ abstract: Methods in long-tail learning focus on improving performance
   remains much lower than performance for more data-rich (frequent)
   classes. Analyzing the predictions of long-tail methods on rare
   classes reveals that a large number of errors are due to
-  misclassification as visually similar frequent classes. To address
-  this problem, we devise a method, AlphaNet, that can be applied to
-  existing models, performing a _post hoc_ correction on classifiers of
-  rare classes. Starting with a pre-trined model, we find frequent
-  classes that are closest to rare classes in the model's representation
-  space, and learn weights to update rare classifiers with a linear
-  combination of frequent classifiers. AlphaNet, applied on several
-  different models, greatly improves test accuracy for rare classes in
-  multiple long-tail datasets. We then analyze predictions from
-  AlphaNet, and find that a number of mistakes are to _semantically_
-  similar classes. Evaluating with such classes grouped together,
-  AlphaNet improves overall accuracy, showing it to be a practically
-  useful method for long-tail classification problems.
+  misclassification of rare items as visually similar frequent classes.
+  To address this problem, we introduce AlphaNet, a method that can be
+  applied to existing models, performing _post hoc_ correction on
+  classifiers of rare classes. Starting with a pre-trained model, we
+  find frequent classes that are closest to rare classes in the model's
+  representation space and learn weights to update rare classifiers with
+  a linear combination of frequent classifiers. AlphaNet, applied on
+  several different models, greatly _improves test accuracy for rare
+  classes_ in multiple long-tail datasets. We then analyze predictions
+  from AlphaNet and find that remaining errors are to often due to
+  separations among semantically similar classes. Evaluating with
+  semantically similar classes grouped together, AlphaNet also _improves
+  overall accuracy_, showing that the method is practical for long-tail
+  classification problems.
 
 appendices:
 - 'sections/a_appendix.md'
