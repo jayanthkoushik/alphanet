@@ -60,8 +60,9 @@ appendices:
 - 'sections/a_appendix.md'
 ---
 
-\acrodef{LWS}{learnable weight scaling}
-\acrodef{cRT}{classifier re-training}
+{% include utils/acronyms.md %}
+
+{% include utils/commands.md %}
 
 {% include sections/1_intro.md %}
 
