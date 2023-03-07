@@ -44,10 +44,10 @@ two classes as the distance between their average training set
 representation. Given a classification model, let $f$ be the function
 mapping images to vectors in $\R^d$ (typically, this is the output of
 the penultimate layer in convolutional networks). For a class $c$ with
-training samples $I^c_1, \dots, I^c_{n_c}$, let $x^c \equiv (1/n_c)
-\sumnl_i f(I^c_i)$. Given a distance metric $\mu: \R^d \times \R^d \to
-\R$, for classes $c_1$ and $c_2$, we define $m_\mu(c_1, c_2) \equiv
-\mu(x^{c_1}, x^{c_2})$.
+training samples $I^c_1, \dots, I^c_{n_c}$, let $\v{x}^c \equiv
+(1/n_c) \sumnl_i f(I^c_i)$. Given a distance metric $\mu: \R^d \times
+\R^d \to \R$, for classes $c_1$ and $c_2$, we define $m_\mu(c_1, c_2)
+\equiv \mu(\v{x}^{c_1}, \v{x}^{c_2})$.
 
 To understand the poor rare class performance of long-tail models, we
 analyzed the predictions of the \ac{RIDE} model[@ride] on 'few' split
@@ -57,9 +57,9 @@ have 50 samples), and as noted earlier, the \ac{RIDE} model achieves an
 accuracy of xx.xx% on this split. To categorize predictions, for each
 class in the 'few' split of ImageNet-LT, we found the 10 nearest
 neighbors in the 'base' split (all classes not in the 'few' split) using
-Euclidean distance ($\mu(a, b) = \norm{a - b}$) between features from
-the \ac{RIDE} model. For any class, we will refer to its nearest
-neighbors as visually similar classes. @fig:analysis:bins shows
+Euclidean distance ($\mu(\v{a}, \v{b}) = \norm{\v{a} - \v{b}}$) between
+features from the \ac{RIDE} model. For any class, we will refer to its
+nearest neighbors as visually similar classes. @fig:analysis:bins shows
 predictions on the test set binned into three groups: 1) samples
 predicted correctly, 2) samples incorrectly predicted as a visually
 similar class (e.g., predicting 'husky' instead of 'malamute'), and 3)
@@ -84,12 +84,12 @@ Based on the previous analysis, we designed a method, AlphaNet, to
 improve classifiers for rare classes using information from visually
 similar frequent classes. We will use the term 'classifier' to denote
 the linear mapping from feature vectors to class scores. For a class
-$c$, this is a vector $w_c \in R^d$ (in convolutional networks, the last
-layer is generally a matrix of all individual classifiers). Given a
-feature vector $z = f(I)$ for some image $I$, $w_c^T z$ is the
-prediction score for class $c$ (the bias term is omitted here for
+$c$, this is a vector $\v{w}_c \in R^d$ (in convolutional networks, the
+last layer is generally a matrix of all individual classifiers). Given a
+feature vector $\v{z} = f(I)$ for some image $I$, $\v{w}_c^T \v{z}$ is
+the prediction score for class $c$ (the bias term is omitted here for
 simplicity), and the model's class prediction for $I$ is given by
-$\argmax_c w_c^T f(I)$.
+$\argmax_c \v{w}_c^T f(I)$.
 
 @fig:pipeline shows the overview of our method. At a high level,
 AlphaNet can be seen as moving the classifiers for rare classes based on

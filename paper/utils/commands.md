@@ -17,7 +17,7 @@
 \newcommand{\set}[1]{\left\{#1\right\}}
 
 \renewcommand{\c}[1]{\overline{#1}}
-\renewcommand{\v}[1]{\mathbf{\mathrm{#1}}}
+\renewcommand{\v}[1]{\bm{#1}}
 \newcommand{\shat}[1]{\vphantom{#1}\smash[t]{\hat{#1}}}
 \newcommand{\ts}[1]{^\mathrm{#1}}
 
