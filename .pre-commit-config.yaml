@@ -46,7 +46,7 @@ repos:
   - id: cspell
     name: spell check paper
     language: system
-    files: "paper/main\\.md|paper/sections/.*\\.md"
+    files: "paper/.*\\.md"
     entry: "npx cspell"
   - id: mdc
     name: build paper pdf
