@@ -21,6 +21,7 @@ jobs:
           cp paper/main.md /www/index.md
           cp -r paper/sections /www/_includes/
           cp -r paper/tables /www/_includes/
+          cp -r paper/utils /www/_includes/
           cp -r paper/figures/web /www/figures
           cp paper/figures/model.png /www/figures/
           cp paper/references.bib /www/_includes/
