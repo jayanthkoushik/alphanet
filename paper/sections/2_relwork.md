@@ -33,7 +33,7 @@ classification scores as useful features[@2012.Forsyth.Wang]. However,
 these approaches do not attempt to compose classifiers nor do they
 address the long-tail problem. Within non-deep methods in classic
 transfer learning, there have been attempts to use and combine
-\acp{SVM}. In the work of @2005.Singer.Tsochantaridis, \acp{SVM} are
+\acp{SVMs}. In the work of @2005.Singer.Tsochantaridis, \acp{SVMs} are
 trained per object instance, and a hierarchical structure is required
 for combination in the datasets of interest. Such a structure is
 typically not guaranteed nor provided in long-tailed datasets.
