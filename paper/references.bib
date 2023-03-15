@@ -1,3 +1,61 @@
+@inproceedings{buolamwini2018gender,
+  title={Gender shades: Intersectional accuracy disparities in commercial gender classification},
+  author={Buolamwini, Joy and Gebru, Timnit},
+  booktitle={Conference on fairness, accountability and transparency},
+  pages={77--91},
+  year={2018},
+  organization={PMLR}
+}
+
+@inproceedings{2016.Farhadi.Redmon,
+  title={You only look once: Unified, real-time object detection},
+  author={Redmon, Joseph and Divvala, Santosh and Girshick, Ross and Farhadi, Ali},
+  booktitle={Proceedings of the IEEE conference on computer vision and pattern recognition},
+  pages={779--788},
+  year={2016}
+}
+@article{2021.Ghassemi.Seyyed,
+  title={Underdiagnosis bias of artificial intelligence algorithms applied to chest radiographs in under-served patient populations},
+  author={Seyyed-Kalantari, Laleh and Zhang, Haoran and McDermott, Matthew BA and Chen, Irene Y and Ghassemi, Marzyeh},
+  journal={Nature medicine},
+  volume={27},
+  number={12},
+  pages={2176--2182},
+  year={2021},
+  publisher={Nature Publishing Group US New York}
+}
+@inproceedings{2021.King.Puyol,
+  title={Fairness in cardiac MR image analysis: an investigation of bias due to data imbalance in deep learning based segmentation},
+  author={Puyol-Ant{\'o}n, Esther and Ruijsink, Bram and Piechnik, Stefan K and Neubauer, Stefan and Petersen, Steffen E and Razavi, Reza and King, Andrew P},
+  booktitle={Medical Image Computing and Computer Assisted Intervention--MICCAI 2021: 24th International Conference, Strasbourg, France, September 27--October 1, 2021, Proceedings, Part III 24},
+  pages={413--423},
+  year={2021},
+  organization={Springer}
+}
+@article{2022.Guo.Yang,
+  title={A survey on long-tailed visual recognition},
+  author={Yang, Lu and Jiang, He and Song, Qing and Guo, Jun},
+  journal={International Journal of Computer Vision},
+  volume={130},
+  number={7},
+  pages={1837--1872},
+  year={2022},
+  publisher={Springer}
+}
+@article{2018.Malla.Narayanan,
+  title={Semi-supervised learning: Fusion of self-supervised, supervised learning, and multimodal cues for tactical driver behavior detection},
+  author={Narayanan, Athma and Chen, Yi-Ting and Malla, Srikanth},
+  journal={arXiv preprint arXiv:1807.00864},
+  year={2018}
+}
+@inproceedings{2022.Bian.Yang,
+  title={ProCo: Prototype-Aware Contrastive Learning for Long-Tailed Medical Image Classification},
+  author={Yang, Zhixiong and Pan, Junwen and Yang, Yanzhan and Shi, Xiaozhou and Zhou, Hong-Yu and Zhang, Zhicheng and Bian, Cheng},
+  booktitle={Medical Image Computing and Computer Assisted Intervention--MICCAI 2022: 25th International Conference, Singapore, September 18--22, 2022, Proceedings, Part VIII},
+  pages={173--182},
+  year={2022},
+  organization={Springer}
+}
 @article{2012.Crair.Ackman,
 year = {2012},
 title = {Retinal waves coordinate patterned activity throughout the developing visual system},
@@ -115,7 +173,6 @@ author = {Wang, Xudong and Lian, Long and Miao, Zhongqi and Liu, Ziwei and Yu, S
 journal = {arXiv},
 doi = {10.48550/arxiv.2010.01809},
 eprint = {2010.01809},
-abstract = {Natural data are often long-tail distributed over semantic classes. Existing recognition methods tackle this imbalanced classification by placing more emphasis on the tail data, through class re-balancing/re-weighting or ensembling over different data groups, resulting in increased tail accuracies but reduced head accuracies. We take a dynamic view of the training data and provide a principled model bias and variance analysis as the training data fluctuates: Existing long-tail classifiers invariably increase the model variance and the head-tail model bias gap remains large, due to more and larger confusion with hard negatives for the tail. We propose a new long-tailed classifier called RoutIng Diverse Experts (RIDE). It reduces the model variance with multiple experts, reduces the model bias with a distribution-aware diversity loss, reduces the computational cost with a dynamic expert routing module. RIDE outperforms the state-of-the-art by 5\% to 7\% on CIFAR100-LT, ImageNet-LT and iNaturalist 2018 benchmarks. It is also a universal framework that is applicable to various backbone networks, long-tailed algorithms, and training mechanisms for consistent performance gains. Our code is available at: https://github.com/frank-xwang/RIDE-LongTailRecognition.}
 }
 @article{2011.Denk.Briggman,
 year = {2011},
@@ -264,12 +321,13 @@ number = {6912},
 volume = {420},
 keywords = {},
 }
-@inproceedings{Salakhutdinov.Koch,
-author = {Koch, Gregory and Zemel, Richard and Salakhutdinov, Ruslan},
-title = {Siamese neural networks for one-shot image recognition},
-booktitle = {ICML deep learning workshop},
-pages = {0},
-volume = {2},
+@inproceedings{2015.Salakhutdinov.Koch,
+  title={Siamese neural networks for one-shot image recognition},
+  author={Koch, Gregory and Zemel, Richard and Salakhutdinov, Ruslan and others},
+  booktitle={ICML deep learning workshop},
+  volume={2},
+  year={2015},
+  organization={Lille}
 }
 @article{2014.Li.Dudík,
 year = {2014-11},
@@ -305,7 +363,6 @@ author = {Santoro, Adam and Bartunov, Sergey and Botvinick, Matthew and Wierstra
 journal = {arXiv},
 doi = {10.48550/arxiv.1605.06065},
 eprint = {1605.06065},
-abstract = {Despite recent breakthroughs in the applications of deep neural networks, one setting that presents a persistent challenge is that of "one-shot learning." Traditional gradient-based networks require a lot of data to learn, often through extensive iterative training. When new data is encountered, the models must inefficiently relearn their parameters to adequately incorporate the new information without catastrophic interference. Architectures with augmented memory capacities, such as Neural Turing Machines (NTMs), offer the ability to quickly encode and retrieve new information, and hence can potentially obviate the downsides of conventional models. Here, we demonstrate the ability of a memory-augmented neural network to rapidly assimilate new data, and leverage this data to make accurate predictions after only a few samples. We also introduce a new method for accessing an external memory that focuses on memory content, unlike previous methods that additionally use memory location-based focusing mechanisms.}
 }
 @article{2017.Hutter.Loshchilov,
 year = {2017},
@@ -314,7 +371,6 @@ author = {Loshchilov, Ilya and Hutter, Frank},
 journal = {arXiv},
 doi = {10.48550/arxiv.1711.05101},
 eprint = {1711.05101},
-abstract = {L\$\_2\$ regularization and weight decay regularization are equivalent for standard stochastic gradient descent (when rescaled by the learning rate), but as we demonstrate this is \textbackslashemph\{not\} the case for adaptive gradient algorithms, such as Adam. While common implementations of these algorithms employ L\$\_2\$ regularization (often calling it "weight decay" in what may be misleading due to the inequivalence we expose), we propose a simple modification to recover the original formulation of weight decay regularization by \textbackslashemph\{decoupling\} the weight decay from the optimization steps taken w.r.t. the loss function. We provide empirical evidence that our proposed modification (i) decouples the optimal choice of weight decay factor from the setting of the learning rate for both standard SGD and Adam and (ii) substantially improves Adam's generalization performance, allowing it to compete with SGD with momentum on image classification datasets (on which it was previously typically outperformed by the latter). Our proposed decoupled weight decay has already been adopted by many researchers, and the community has implemented it in TensorFlow and PyTorch; the complete source code for our experiments is available at https://github.com/loshchil/AdamW-and-SGDW}
 }
 @article{2019.Ma.Cao,
 year = {2019},
@@ -323,7 +379,6 @@ author = {Cao, Kaidi and Wei, Colin and Gaidon, Adrien and Arechiga, Nikos and M
 journal = {arXiv},
 doi = {10.48550/arxiv.1906.07413},
 eprint = {1906.07413},
-abstract = {Deep learning algorithms can fare poorly when the training dataset suffers from heavy class-imbalance but the testing criterion requires good generalization on less frequent classes. We design two novel methods to improve performance in such scenarios. First, we propose a theoretically-principled label-distribution-aware margin (LDAM) loss motivated by minimizing a margin-based generalization bound. This loss replaces the standard cross-entropy objective during training and can be applied with prior strategies for training with class-imbalance such as re-weighting or re-sampling. Second, we propose a simple, yet effective, training schedule that defers re-weighting until after the initial stage, allowing the model to learn an initial representation while avoiding some of the complications associated with re-weighting or re-sampling. We test our methods on several benchmark vision tasks including the real-world imbalanced dataset iNaturalist 2018. Our experiments show that either of these methods alone can already improve over existing techniques and their combination achieves even better performance gains.}
 }
 @article{2019.Tuytelaars.Aljundi,
 year = {2019},
@@ -400,7 +455,6 @@ author = {Andrychowicz, Marcin and Denil, Misha and Gomez, Sergio and Hoffman, M
 journal = {arXiv},
 doi = {10.48550/arxiv.1606.04474},
 eprint = {1606.04474},
-abstract = {The move from hand-designed features to learned features in machine learning has been wildly successful. In spite of this, optimization algorithms are still designed by hand. In this paper we show how the design of an optimization algorithm can be cast as a learning problem, allowing the algorithm to learn to exploit structure in the problems of interest in an automatic way. Our learned algorithms, implemented by LSTMs, outperform generic, hand-designed competitors on the tasks for which they are trained, and also generalize well to new tasks with similar structure. We demonstrate this on a number of tasks, including simple convex problems, training neural networks, and styling images with neural art.}
 }
 @article{1991.Grinvald.Bonhoeffer,
 year = {1991},
@@ -600,10 +654,11 @@ volume = {22},
 language = {English},
 keywords = {},
 }
-@article{2009.Hinton.Krizhevsky,
+@techreport{2009.Hinton.Krizhevsky,
 year = {2009},
 title = {Learning multiple layers of features from tiny images},
 author = {Krizhevsky, Alex and Hinton, Geoffrey},
+institution = {University of Toronto},
 }
 @article{2010.Usunier.Weston,
 year = {2010},
@@ -642,7 +697,6 @@ author = {Bertinetto, Luca and Henriques, João F and Valmadre, Jack and Torr, P
 journal = {arXiv},
 doi = {10.48550/arxiv.1606.05233},
 eprint = {1606.05233},
-abstract = {One-shot learning is usually tackled by using generative models or discriminative embeddings. Discriminative methods based on deep learning, which are very effective in other learning scenarios, are ill-suited for one-shot learning as they need large amounts of training data. In this paper, we propose a method to learn the parameters of a deep model in one shot. We construct the learner as a second deep network, called a learnet, which predicts the parameters of a pupil network from a single exemplar. In this manner we obtain an efficient feed-forward one-shot learner, trained end-to-end by minimizing a one-shot classification objective in a learning to learn formulation. In order to make the construction feasible, we propose a number of factorizations of the parameters of the pupil network. We demonstrate encouraging results by learning characters from single exemplars in Omniglot, and by tracking visual objects from a single initial exemplar in the Visual Object Tracking benchmark.}
 }
 @article{2020.Liang.Kumar,
 year = {2020},
@@ -835,12 +889,15 @@ journal = {arXiv},
 eprint = {2004.13513},
 keywords = {},
 }
-@article{1998.Thrun.Thrun,
-year = {1998},
-title = {Learning to Learn},
+@inbook{1998.Thrun.Thrun,
+title = {Lifelong Learning Algorithms},
+booktitle = {Learning to Learn},
 author = {Thrun, Sebastian},
-doi = {10.1007/978-1-4615-5529-2\_8},
+chapter = {8},
 pages = {181--209},
+year = {1998},
+doi = {10.1007/978-1-4615-5529-2\_8},
+publisher = {Springer},
 }
 @article{2016.Alonso.Kremkow,
 year = {2016},
@@ -1025,7 +1082,6 @@ author = {Sinha, Abhishek and Sarkar, Mausoom and Mukherjee, Aahitagni and Krish
 journal = {arXiv},
 doi = {10.48550/arxiv.1704.04959},
 eprint = {1704.04959},
-abstract = {Neural Networks are function approximators that have achieved state-of-the-art accuracy in numerous machine learning tasks. In spite of their great success in terms of accuracy, their large training time makes it difficult to use them for various tasks. In this paper, we explore the idea of learning weight evolution pattern from a simple network for accelerating training of novel neural networks. We use a neural network to learn the training pattern from MNIST classification and utilize it to accelerate training of neural networks used for CIFAR-10 and ImageNet classification. Our method has a low memory footprint and is computationally efficient. This method can also be used with other optimizers to give faster convergence. The results indicate a general trend in the weight evolution during training of neural networks.}
 }
 @article{2017.Vedaldi.Rebuffi,
 year = {2017},
@@ -1034,7 +1090,6 @@ author = {Rebuffi, Sylvestre-Alvise and Bilen, Hakan and Vedaldi, Andrea},
 journal = {arXiv},
 doi = {10.48550/arxiv.1705.08045},
 eprint = {1705.08045},
-abstract = {There is a growing interest in learning data representations that work well for many different types of problems and data. In this paper, we look in particular at the task of learning a single visual representation that can be successfully utilized in the analysis of very different types of images, from dog breeds to stop signs and digits. Inspired by recent work on learning networks that predict the parameters of another, we develop a tunable deep network architecture that, by means of adapter residual modules, can be steered on the fly to diverse visual domains. Our method achieves a high degree of parameter sharing while maintaining or even improving the accuracy of domain-specific representations. We also introduce the Visual Decathlon Challenge, a benchmark that evaluates the ability of representations to capture simultaneously ten very different visual domains and measures their ability to recognize well uniformly.}
 }
 @article{2018.Belongie.Horn,
 year = {2018},
@@ -1291,7 +1346,6 @@ author = {Snell, Jake and Swersky, Kevin and Zemel, Richard S},
 journal = {arXiv},
 doi = {10.48550/arxiv.1703.05175},
 eprint = {1703.05175},
-abstract = {We propose prototypical networks for the problem of few-shot classification, where a classifier must generalize to new classes not seen in the training set, given only a small number of examples of each new class. Prototypical networks learn a metric space in which classification can be performed by computing distances to prototype representations of each class. Compared to recent approaches for few-shot learning, they reflect a simpler inductive bias that is beneficial in this limited-data regime, and achieve excellent results. We provide an analysis showing that some simple design decisions can yield substantial improvements over recent approaches involving complicated architectural choices and meta-learning. We further extend prototypical networks to zero-shot learning and achieve state-of-the-art results on the CU-Birds dataset.}
 }
 @article{2017.Tamaazousti.Tamaazousti,
 year = {2017},
@@ -1656,7 +1710,6 @@ author = {Vinyals, Oriol and Blundell, Charles and Lillicrap, Timothy and Kavukc
 journal = {arXiv},
 doi = {10.48550/arxiv.1606.04080},
 eprint = {1606.04080},
-abstract = {Learning from a few examples remains a key challenge in machine learning. Despite recent advances in important domains such as vision and language, the standard supervised deep learning paradigm does not offer a satisfactory solution for learning new concepts rapidly from little data. In this work, we employ ideas from metric learning based on deep neural features and from recent advances that augment neural networks with external memories. Our framework learns a network that maps a small labelled support set and an unlabelled example to its label, obviating the need for fine-tuning to adapt to new class types. We then define one-shot learning problems on vision (using Omniglot, ImageNet) and language tasks. Our algorithm improves one-shot accuracy on ImageNet from 87.6\% to 93.2\% and from 88.0\% to 93.8\% on Omniglot compared to competing approaches. We also demonstrate the usefulness of the same model on language modeling by introducing a one-shot task on the Penn Treebank.}
 }
 @article{1991.Taylor.Tanaka,
 year = {1991},
@@ -1712,10 +1765,11 @@ number = {3},
 volume = {18},
 keywords = {},
 }
-@article{2016.Larochelle.Ravi,
-year = {2016},
-title = {Optimization as a model for few-shot learning},
-author = {Ravi, Sachin and Larochelle, Hugo},
+@inproceedings{2017.Larochelle.Ravi,
+  title={Optimization as a model for few-shot learning},
+  author={Ravi, Sachin and Larochelle, Hugo},
+  booktitle={International conference on learning representations},
+  year={2017}
 }
 @article{2020.Makedon.Jaiswalzfj,
 year = {2020},
@@ -1758,7 +1812,6 @@ author = {Finn, Chelsea and Xu, Kelvin and Levine, Sergey},
 journal = {arXiv},
 doi = {10.48550/arxiv.1806.02817},
 eprint = {1806.02817},
-abstract = {Meta-learning for few-shot learning entails acquiring a prior over previous tasks and experiences, such that new tasks be learned from small amounts of data. However, a critical challenge in few-shot learning is task ambiguity: even when a powerful prior can be meta-learned from a large number of prior tasks, a small dataset for a new task can simply be too ambiguous to acquire a single model (e.g., a classifier) for that task that is accurate. In this paper, we propose a probabilistic meta-learning algorithm that can sample models for a new task from a model distribution. Our approach extends model-agnostic meta-learning, which adapts to new tasks via gradient descent, to incorporate a parameter distribution that is trained via a variational lower bound. At meta-test time, our algorithm adapts via a simple procedure that injects noise into gradient descent, and at meta-training time, the model is trained such that this stochastic adaptation procedure produces samples from the approximate model posterior. Our experimental results show that our method can sample plausible classifiers and regressors in ambiguous few-shot learning problems. We also show how reasoning about ambiguity can also be used for downstream active learning problems.}
 }
 @article{2001.Noë.O'Regan,
 year = {2001},
@@ -1868,7 +1921,6 @@ author = {Ha, David and Dai, Andrew and Le, Quoc V},
 journal = {arXiv},
 doi = {10.48550/arxiv.1609.09106},
 eprint = {1609.09106},
-abstract = {This work explores hypernetworks: an approach of using a one network, also known as a hypernetwork, to generate the weights for another network. Hypernetworks provide an abstraction that is similar to what is found in nature: the relationship between a genotype - the hypernetwork - and a phenotype - the main network. Though they are also reminiscent of HyperNEAT in evolution, our hypernetworks are trained end-to-end with backpropagation and thus are usually faster. The focus of this work is to make hypernetworks useful for deep convolutional networks and long recurrent networks, where hypernetworks can be viewed as relaxed form of weight-sharing across layers. Our main result is that hypernetworks can generate non-shared weights for LSTM and achieve near state-of-the-art results on a variety of sequence modelling tasks including character-level language modelling, handwriting generation and neural machine translation, challenging the weight-sharing paradigm for recurrent networks. Our results also show that hypernetworks applied to convolutional networks still achieve respectable results for image recognition tasks compared to state-of-the-art baseline models while requiring fewer learnable parameters.}
 }
 @article{2016.Lampert.Rebuffi,
 year = {2016},
@@ -1923,18 +1975,13 @@ author = {Li, Tianhao and Wang, Limin and Wu, Gangshan},
 journal = {arXiv},
 doi = {10.48550/arxiv.2109.04075},
 eprint = {2109.04075},
-abstract = {Deep learning has achieved remarkable progress for visual recognition on large-scale balanced datasets but still performs poorly on real-world long-tailed data. Previous methods often adopt class re-balanced training strategies to effectively alleviate the imbalance issue, but might be a risk of over-fitting tail classes. The recent decoupling method overcomes over-fitting issues by using a multi-stage training scheme, yet, it is still incapable of capturing tail class information in the feature learning stage. In this paper, we show that soft label can serve as a powerful solution to incorporate label correlation into a multi-stage training scheme for long-tailed recognition. The intrinsic relation between classes embodied by soft labels turns out to be helpful for long-tailed recognition by transferring knowledge from head to tail classes. Specifically, we propose a conceptually simple yet particularly effective multi-stage training scheme, termed as Self Supervised to Distillation (SSD). This scheme is composed of two parts. First, we introduce a self-distillation framework for long-tailed recognition, which can mine the label relation automatically. Second, we present a new distillation label generation module guided by self-supervision. The distilled labels integrate information from both label and data domains that can model long-tailed distribution effectively. We conduct extensive experiments and our method achieves the state-of-the-art results on three long-tailed recognition benchmarks: ImageNet-LT, CIFAR100-LT and iNaturalist 2018. Our SSD outperforms the strong LWS baseline by from \$2.7\textbackslash\%\$ to \$4.5\textbackslash\%\$ on various datasets. The code is available at https://github.com/MCG-NJU/SSD-LT.}
 }
-@article{1993.SHAH.BROMLEY,
-year = {1993},
-title = {SIGNATURE VERIFICATION USING A “SIAMESE” TIME DELAY NEURAL NETWORK},
-author = {BROMLEY, JANE and BENTZ, JAMES W and BOTTOU, LÉON and GUYON, ISABELLE and LECUN, YANN and MOORE, CLIFF and SÄCKINGER, EDUARD and SHAH, ROOPAK},
-journal = {International Journal of Pattern Recognition and Artificial Intelligence},
-issn = {0218-0014},
-doi = {10.1142/s0218001493000339},
-pages = {669--688},
-number = {04},
-volume = {07},
+@article{1993.Shah.Bromley,
+  title={Signature verification using a" siamese" time delay neural network},
+  author={Bromley, Jane and Guyon, Isabelle and LeCun, Yann and S{\"a}ckinger, Eduard and Shah, Roopak},
+  journal={Advances in neural information processing systems},
+  volume={6},
+  year={1993}
 }
 @article{1999.Katz.Crowley,
 year = {1999},
@@ -2019,7 +2066,6 @@ author = {Li, Zhizhong and Hoiem, Derek},
 journal = {arXiv},
 doi = {10.48550/arxiv.1606.09282},
 eprint = {1606.09282},
-abstract = {When building a unified vision system or gradually adding new capabilities to a system, the usual assumption is that training data for all tasks is always available. However, as the number of tasks grows, storing and retraining on such data becomes infeasible. A new problem arises where we add new capabilities to a Convolutional Neural Network (CNN), but the training data for its existing capabilities are unavailable. We propose our Learning without Forgetting method, which uses only new task data to train the network while preserving the original capabilities. Our method performs favorably compared to commonly used feature extraction and fine-tuning adaption techniques and performs similarly to multitask learning that uses original task data we assume unavailable. A more surprising observation is that Learning without Forgetting may be able to replace fine-tuning with similar old and new task datasets for improved new task performance.}
 }
 @article{2019.Hopfield.Krotov,
 year = {2019},
@@ -2491,7 +2537,6 @@ author = {Du, Simon Shaolei and Koushik, Jayanth and Singh, Aarti and Poczos, Ba
 journal = {arXiv},
 doi = {10.48550/arxiv.1612.01020},
 eprint = {1612.01020},
-abstract = {We consider the Hypothesis Transfer Learning (HTL) problem where one incorporates a hypothesis trained on the source domain into the learning procedure of the target domain. Existing theoretical analysis either only studies specific algorithms or only presents upper bounds on the generalization error but not on the excess risk. In this paper, we propose a unified algorithm-dependent framework for HTL through a novel notion of transformation function, which characterizes the relation between the source and the target domains. We conduct a general risk analysis of this framework and in particular, we show for the first time, if two domains are related, HTL enjoys faster convergence rates of excess risks for Kernel Smoothing and Kernel Ridge Regression than those of the classical non-transfer learning settings. Experiments on real world data demonstrate the effectiveness of our framework.}
 }
 @article{2020.Ni.Wang,
 year = {2020},
@@ -2564,7 +2609,6 @@ author = {Socher, Richard and Ganjoo, Milind and Sridhar, Hamsa and Bastani, Osb
 journal = {arXiv},
 doi = {10.48550/arxiv.1301.3666},
 eprint = {1301.3666},
-abstract = {This work introduces a model that can recognize objects in images even if no training data is available for the objects. The only necessary knowledge about the unseen categories comes from unsupervised large text corpora. In our zero-shot framework distributional information in language can be seen as spanning a semantic basis for understanding what objects look like. Most previous zero-shot learning models can only differentiate between unseen classes. In contrast, our model can both obtain state of the art performance on classes that have thousands of training images and obtain reasonable performance on unseen classes. This is achieved by first using outlier detection in the semantic space and then two separate recognition models. Furthermore, our model does not require any manually defined semantic features for either words or images.}
 }
 @article{2021.Vasconcelos.Cheng,
 year = {2021},
