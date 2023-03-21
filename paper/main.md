@@ -62,6 +62,8 @@ abstract: Methods in long-tail learning focus on improving performance
   together, AlphaNet also improves overall accuracy, showing that the
   method is practical for long-tail classification problems.
 
+bibliography: references.bib
+
 # appendices:
 # - appendix/main.md
 ---
