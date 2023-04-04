@@ -13,7 +13,7 @@ from corgy.types import InputDirectory
 from tqdm import tqdm
 
 from alphanet._dataset import SplitLTDataset
-from alphanet._utils import DEFAULT_DEVICE
+from alphanet._pt import DEFAULT_DEVICE
 from alphanet.plot import _get_test_acc_per_class, _TEST_DATA_CACHE
 from alphanet.train import TrainResult
 

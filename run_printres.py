@@ -12,7 +12,7 @@ from corgy.types import InputDirectory
 from tqdm import trange
 
 from alphanet._dataset import SplitLTDataset
-from alphanet._utils import DEFAULT_DEVICE
+from alphanet._pt import DEFAULT_DEVICE
 from alphanet.train import TrainResult
 
 

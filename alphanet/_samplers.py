@@ -363,7 +363,7 @@ class SamplerBuilder(Corgy):
         "it is used for all samplers",
     ] = (KeyValuePairs(""),)
 
-    def as_dict(self, recursive=False):
+    def as_dict(self, recursive=False):  # pylint: disable=arguments-differ
         return {
             "sampler_classes": tuple(
                 _s.which if isinstance(_s, SubClass) else _s

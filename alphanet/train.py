@@ -15,8 +15,9 @@ from torch.utils.data import DataLoader, TensorDataset
 from typing_extensions import Annotated
 
 from alphanet._dataset import NNsResult, SplitLTDataGroupInfo, SplitLTDataset
+from alphanet._pt import DEFAULT_DEVICE, PTOpt, TBLogs
 from alphanet._samplers import AllFewSampler, ClassBalancedBaseSampler, SamplerBuilder
-from alphanet._utils import DEFAULT_DEVICE, log_alphas, log_metrics, PTOpt, TBLogs
+from alphanet._utils import log_alphas, log_metrics
 from alphanet.alphanet import AlphaNet, AlphaNetClassifier
 
 logging.basicConfig(
@@ -66,7 +67,7 @@ class TrainingConfig(Corgy):
         if self.train_epochs < self.min_epochs:
             raise ValueError("`train_epochs` should be less than `min_epochs`")
 
-    def as_dict(self, recursive=False):
+    def as_dict(self, recursive=False):  # pylint: disable=arguments-differ
         d = super().as_dict(recursive)
         del d["tb_logs"]
         return d
@@ -100,7 +101,7 @@ class TrainResult(Corgy):
     test_acc__per__split: Dict[str, float]
     test_acc__per__class: Optional[Dict[int, float]] = None
 
-    def as_dict(self, recursive=False):
+    def as_dict(self, recursive=False):  # pylint: disable=arguments-differ
         d = super().as_dict(recursive)
         if recursive:
             d["epoch_data__seq"] = [
@@ -109,7 +110,7 @@ class TrainResult(Corgy):
         return d
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d):  # pylint: disable=arguments-differ
         o = super().from_dict(d)
         o.epoch_data__seq = [
             EpochData.from_dict(_epoch_data_dict)

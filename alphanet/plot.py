@@ -12,7 +12,6 @@ import ignite.contrib.handlers
 import ignite.engine
 import ignite.metrics
 import matplotlib as mpl
-import nltk
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -26,7 +25,6 @@ from matplotlib import (
     pyplot as plt,
 )
 from matplotlib.ticker import MultipleLocator
-from nltk.corpus import wordnet
 from scipy.spatial.distance import cosine, euclidean
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
@@ -36,11 +34,10 @@ from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 
 from alphanet._dataset import SplitLTDataGroup, SplitLTDataset
-from alphanet._utils import ContextPlot, DEFAULT_DEVICE, PlotParams
+from alphanet._plotwrap import ContextPlot, PlotParams
+from alphanet._pt import DEFAULT_DEVICE
+from alphanet._wordnet import get_wordnet_nns_per_class
 from alphanet.train import TrainResult
-
-nltk.download("wordnet", download_dir=".nltk")
-nltk.data.path.append(".nltk")
 
 _TEST_DATA_CACHE: Dict[str, SplitLTDataGroup] = {}
 _NNDIST_PER_SPLIT_CLASS_CACHE: Dict[
@@ -48,57 +45,6 @@ _NNDIST_PER_SPLIT_CLASS_CACHE: Dict[
     Tuple[Dict[int, float], Dict[int, List[int]]],
 ] = {}
 _BASELINE_RES_CACHE: Dict[SplitLTDataset, TrainResult] = {}
-
-
-def _get_wordnet_nns_per_class(level: int, for_split: Literal["few", "base", "all"]):
-    label_name__per__class = {}
-    with open("data/ImageNetLT/label_names.txt", encoding="utf-8") as _f:
-        for _i, _line in enumerate(_f):
-            label_name__per__class[_i] = _line.strip()
-    assert len(label_name__per__class) == 1000
-
-    with open("data/ImageNetLT/splits/few.txt", encoding="utf-8") as _f:
-        few_split_class__set = {int(_line.strip()) for _line in _f}
-    logging.info("few split classes: %d", len(few_split_class__set))
-
-    synset__per__class = {}
-    with open("data/ImageNetLT/labels_full.txt", encoding="utf-8") as _f:
-        for _i, _line in enumerate(_f):
-            _lid, _label_full = _line.strip().split(" ", maxsplit=1)
-            assert _label_full.split(",")[0] == label_name__per__class[_i]
-            _synset = wordnet.synset_from_pos_and_offset(_lid[0], int(_lid[1:]))
-            synset__per__class[_i] = _synset
-    assert len(synset__per__class) == 1000
-
-    nn__seq__per__class: Dict[int, List[int]] = defaultdict(list)
-    for _class, _synset in tqdm(
-        synset__per__class.items(), desc="Computing WordNet NNs"
-    ):
-        if for_split != "all":
-            if for_split == "few" and _class not in few_split_class__set:
-                continue
-            if for_split == "base" and _class in few_split_class__set:
-                continue
-
-        _hypernym_paths = [list(reversed(_p)) for _p in _synset.hypernym_paths()]
-        for _oclass, _osynset in synset__per__class.items():
-            if _class == _oclass:
-                continue
-            _lchs = _synset.lowest_common_hypernyms(_osynset)
-            _min_idx = float("inf")
-            for _lch in _lchs:
-                for _hypernym_path in _hypernym_paths:
-                    try:
-                        _idx = _hypernym_path.index(_lch)
-                    except ValueError:
-                        continue
-                    if _idx < _min_idx:
-                        _min_idx = _idx
-            assert not math.isinf(_min_idx)
-            if _min_idx <= level:
-                nn__seq__per__class[_class].append(_oclass)
-
-    return nn__seq__per__class
 
 
 def _get_split_test_acc(res: TrainResult, split: str) -> float:
@@ -1865,7 +1811,7 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
 
         if self.nn_split == "semantic":
             assert self.semantic_nns_level is not None
-            wordnet_nn__seq__per__split_class = _get_wordnet_nns_per_class(
+            wordnet_nn__seq__per__split_class = get_wordnet_nns_per_class(
                 self.semantic_nns_level, self.split
             )
 
