@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: jayanthkoushik/paje@v5
+    - uses: jayanthkoushik/paje@master
       with:
         setupscript: |
           cp paper/main.md /www/index.md
@@ -23,7 +23,7 @@ jobs:
           cp -r paper/sections /www/_includes/
           cp -r paper/tables /www/_includes/
           cp -r paper/utils /www/_includes/
-          cp -r paper/figures/web /www/figures
+          cp -r paper/figures/_www /www/figures
         targetbranch: gh-pages
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -12,6 +12,7 @@ import ignite.contrib.handlers
 import ignite.engine
 import ignite.metrics
 import matplotlib as mpl
+import nltk
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -25,6 +26,7 @@ from matplotlib import (
     pyplot as plt,
 )
 from matplotlib.ticker import MultipleLocator
+from nltk.corpus import wordnet
 from scipy.spatial.distance import cosine, euclidean
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
@@ -37,12 +39,66 @@ from alphanet._dataset import SplitLTDataGroup, SplitLTDataset
 from alphanet._utils import ContextPlot, DEFAULT_DEVICE, PlotParams
 from alphanet.train import TrainResult
 
+nltk.download("wordnet", download_dir=".nltk")
+nltk.data.path.append(".nltk")
+
 _TEST_DATA_CACHE: Dict[str, SplitLTDataGroup] = {}
 _NNDIST_PER_SPLIT_CLASS_CACHE: Dict[
     Tuple[SplitLTDataset, str, int, str, str],
     Tuple[Dict[int, float], Dict[int, List[int]]],
 ] = {}
 _BASELINE_RES_CACHE: Dict[SplitLTDataset, TrainResult] = {}
+
+
+def _get_wordnet_nns_per_class(level: int, for_split: Literal["few", "base", "all"]):
+    label_name__per__class = {}
+    with open("data/ImageNetLT/label_names.txt", encoding="utf-8") as _f:
+        for _i, _line in enumerate(_f):
+            label_name__per__class[_i] = _line.strip()
+    assert len(label_name__per__class) == 1000
+
+    with open("data/ImageNetLT/splits/few.txt", encoding="utf-8") as _f:
+        few_split_class__set = {int(_line.strip()) for _line in _f}
+    logging.info("few split classes: %d", len(few_split_class__set))
+
+    synset__per__class = {}
+    with open("data/ImageNetLT/labels_full.txt", encoding="utf-8") as _f:
+        for _i, _line in enumerate(_f):
+            _lid, _label_full = _line.strip().split(" ", maxsplit=1)
+            assert _label_full.split(",")[0] == label_name__per__class[_i]
+            _synset = wordnet.synset_from_pos_and_offset(_lid[0], int(_lid[1:]))
+            synset__per__class[_i] = _synset
+    assert len(synset__per__class) == 1000
+
+    nn__seq__per__class: Dict[int, List[int]] = defaultdict(list)
+    for _class, _synset in tqdm(
+        synset__per__class.items(), desc="Computing WordNet NNs"
+    ):
+        if for_split != "all":
+            if for_split == "few" and _class not in few_split_class__set:
+                continue
+            if for_split == "base" and _class in few_split_class__set:
+                continue
+
+        _hypernym_paths = [list(reversed(_p)) for _p in _synset.hypernym_paths()]
+        for _oclass, _osynset in synset__per__class.items():
+            if _class == _oclass:
+                continue
+            _lchs = _synset.lowest_common_hypernyms(_osynset)
+            _min_idx = float("inf")
+            for _lch in _lchs:
+                for _hypernym_path in _hypernym_paths:
+                    try:
+                        _idx = _hypernym_path.index(_lch)
+                    except ValueError:
+                        continue
+                    if _idx < _min_idx:
+                        _min_idx = _idx
+            assert not math.isinf(_min_idx)
+            if _min_idx <= level:
+                nn__seq__per__class[_class].append(_oclass)
+
+    return nn__seq__per__class
 
 
 def _get_split_test_acc(res: TrainResult, split: str) -> float:
@@ -1621,14 +1677,109 @@ class PlotTemplateDeltas(BasePlotCmd):
         return _fig
 
 
+class PlotPredCounts(_BaseMultiExpPlotCmd, BasePlotCmd):
+    col_wrap: Optional[int] = None
+    split: Literal["few", "base"] = "few"
+    nn_split: Literal["few", "base", "all"] = "base"
+
+    @staticmethod
+    def _get_pred_status(_y, _yhat, _nns__per__class):
+        if _yhat == _y:
+            return "Correct"
+        if _yhat in _nns__per__class[_y]:
+            return "Incorrect as NN"
+        return "Incorrect as non-NN"
+
+    @staticmethod
+    def _get_status_label(status):
+        if status == "Correct":
+            return "Correctly\nclassified"
+        if status == "Incorrect as NN":
+            return "Incorrectly\nclassified\nas a NN"
+        return "Incorrectly\nclassified as\na non-NN"
+
+    def __call__(self):
+        df_rows = []
+
+        for _gid, _exp_name, _dataset, _res in self._train_results():
+            _, _res_test_yhats = _get_test_acc_per_class(
+                _res, self.eval_batch_size, return_preds=True
+            )
+            _test_datagrp = _TEST_DATA_CACHE[str(_dataset)]
+            _test_ys = _test_datagrp.label__seq
+
+            _, _nn__seq__per__split_class = _get_nn_dist_per_split_class(
+                _dataset,
+                _res.nn_info.nn_dist,
+                _res.nn_info.n_neighbors,
+                for_split=self.split,
+                against_split=self.nn_split,
+            )
+
+            for _i, (_y, _res_yhat) in enumerate(zip(_test_ys, _res_test_yhats)):
+                if _y not in _nn__seq__per__split_class:
+                    continue
+                df_rows.append(
+                    {
+                        "GID": _gid,
+                        "Dataset": _dataset.proper_name,
+                        "Experiment": _exp_name,
+                        "Sample": _i,
+                        "Prediction status": self._get_status_label(
+                            self._get_pred_status(
+                                _y, _res_yhat, _nn__seq__per__split_class
+                            )
+                        ),
+                    }
+                )
+
+        df = pd.DataFrame(df_rows)
+        logging.info("loaded dataframe:\n%s", df)
+        assert all(
+            len(_s) == 1
+            for _s in df.groupby("Experiment")["Dataset"].aggregate(set).values
+        )
+
+        self.plot.config()
+        g = sns.catplot(
+            df,
+            x="Prediction status",
+            order=list(
+                map(
+                    self._get_status_label,
+                    ["Correct", "Incorrect as NN", "Incorrect as non-NN"],
+                )
+            ),
+            col="Dataset",
+            col_wrap=self.col_wrap,
+            estimator=None,
+            errorbar=None,
+            kind="count",
+            palette=[self.plot.palette[3], self.plot.palette[2], self.plot.palette[1]],
+            facet_kws=dict(sharex=True, sharey=True),
+        )
+        if len(df["Dataset"].unique()) > 1:
+            g.set_titles("{col_name}")
+        else:
+            g.set_titles("")
+        g.set_xlabels("")
+        g.set_ylabels("")
+        g.despine(top=True, left=True, right=True, bottom=False, trim=False)
+        g.tick_params(axis="x", which="major", top=False, bottom=False)
+        g.figure.set_size_inches(self.plot.get_size())
+        self._save_figure(g.figure)
+        return g.figure
+
+
 class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
     col_wrap: Optional[int] = None
     label_rot: float = 0
     label_size: Literal[
         "xx-small", "x-small", "small", "medium", "large", "x-large", "xx-large"
     ] = "x-small"
-    split: Literal["few", "base"] = "few"
-    nn_split: Literal["few", "base", "all"] = "base"
+    split: Literal["few", "base", "all"] = "few"
+    nn_split: Literal["few", "base", "all", "semantic"] = "base"
+    semantic_nns_level: Optional[int] = None
 
     @staticmethod
     def _get_pred_status(_y, _yhat, _nns__per__class):
@@ -1712,7 +1863,15 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
         df_rows = []
         baseline_test_yhats__per__dataset = {}
 
+        if self.nn_split == "semantic":
+            assert self.semantic_nns_level is not None
+            wordnet_nn__seq__per__split_class = _get_wordnet_nns_per_class(
+                self.semantic_nns_level, self.split
+            )
+
         for _gid, _exp_name, _dataset, _res in self._train_results():
+            if self.nn_split == "semantic":
+                assert str(_dataset).startswith("imagenetlt")
             try:
                 _baseline_test_yhats = baseline_test_yhats__per__dataset[_dataset]
             except KeyError:
@@ -1732,13 +1891,16 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
             _test_datagrp = _TEST_DATA_CACHE[str(_dataset)]
             _test_ys = _test_datagrp.label__seq
 
-            _, _nn__seq__per__split_class = _get_nn_dist_per_split_class(
-                _dataset,
-                _res.nn_info.nn_dist,
-                _res.nn_info.n_neighbors,
-                for_split=self.split,
-                against_split=self.nn_split,
-            )
+            if self.nn_split == "semantic":
+                _nn__seq__per__split_class = wordnet_nn__seq__per__split_class
+            else:
+                _, _nn__seq__per__split_class = _get_nn_dist_per_split_class(
+                    _dataset,
+                    _res.nn_info.nn_dist,
+                    _res.nn_info.n_neighbors,
+                    for_split=self.split,
+                    against_split=self.nn_split,
+                )
 
             for _i, (_y, _baseline_yhat, _res_yhat) in enumerate(
                 zip(_test_ys, _baseline_test_yhats, _res_test_yhats)
@@ -1886,12 +2048,15 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                         _band_roffset__per__status[_rstatus] += _band_w
 
                     assert torch.isclose(
-                        torch.tensor(data=_band_yl),
+                        torch.tensor(data=float(_band_yl)),
                         torch.tensor(
-                            data=sum(
-                                _status_to_baseline_n[_s] for _s in _statuses[: _j + 1]
+                            data=float(
+                                sum(
+                                    _status_to_baseline_n[_s]
+                                    for _s in _statuses[: _j + 1]
+                                )
+                                / _n_preds
                             )
-                            / _n_preds
                         ),
                     )
                     assert torch.isclose(
