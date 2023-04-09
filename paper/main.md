@@ -15,11 +15,6 @@ author:
   equalcontrib: true
   corresponding: true
 
-- name: Yu-Xiong Wang
-  affiliation:
-  - 2
-  email: "yxw@illinois.edu"
-
 - name: Aarti Singh
   affiliation:
   - 1
@@ -29,6 +24,11 @@ author:
   affiliation:
   - 1
   email: "hebert@cs.cmu.edu"
+
+- name: Yu-Xiong Wang
+  affiliation:
+  - 2
+  email: "yxw@illinois.edu"
 
 - name: Michael J. Tarr
   affiliation:
@@ -69,16 +69,13 @@ includes:
 - utils/commands.md
 - utils/acronyms.md
 
-#appendices:
-#- appendix.md
+sections:
+- sections/1_intro.md
+- sections/2_related.md
+- sections/3_method.md
+- sections/4_experiments.md
+- sections/5_conclusion.md
+
+appendices:
+- appendix.md
 ---
-
-{% include sections/1_intro.md %}
-
-{% include sections/2_relwork.md %}
-
-{% include sections/3_method.md %}
-
-{% include sections/4_experiments.md %}
-
-{% include sections/5_conclusion.md %}
