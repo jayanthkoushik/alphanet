@@ -19,6 +19,7 @@ jobs:
       with:
         setupscript: |
           cp paper/main.md /www/index.md
+          cp paper/appendix.mc /www/_includes/
           cp paper/references.bib /www/_includes/
           cp -r paper/sections /www/_includes/
           cp -r paper/tables /www/_includes/
