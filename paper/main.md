@@ -40,7 +40,7 @@ institute:
   name: Carnegie Mellon University
 
 - id: 2
-  name: University of Illinois at Urbana-Champaign
+  name: University of Illinois Urbana-Champaign
 
 abstract: Methods in long-tail learning focus on improving performance
   for data-poor (rare) classes; however, performance for such classes

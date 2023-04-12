@@ -36,7 +36,8 @@ nearest neighbor? Do we have a clean explanation to include somewhere?}
 
 ![Predictions from cRT model on test samples from 'few' split of ImageNet-LT. A
 large number of samples are misclassified as a visually similar 'base' split
-class.](figures/pred_counts_imagenetlt_crt_baseline){#fig:analysis:bins}
+class.](figures/pred_counts_imagenetlt_crt_baseline){#fig:analysis:bins
+width=2in}
 
 ![Sample images from two classes in ImageNet-LT. 'Lhasa' is a 'few' split
 class, and 'Tibetan terrier' is a 'base' split
@@ -45,7 +46,7 @@ class.](figures/doggies.png){#fig:analysis:egs width=2in height=1.5in darksrc=""
 ![Per-class test accuracy of cRT model on 'few' split of ImageNet-LT versus the
 mean distance to 10 nearest neighbors from 'base' split. The line is a
 bootstrapped linear regression fit, and $r$ (top right) is Pearson
-correlation.](figures/cls_acc_vs_nndist_imagenetlt_crt_baseline){#fig:analysis:acc_vs_dist}
+correlation.](figures/cls_acc_vs_nndist_imagenetlt_crt_baseline){#fig:analysis:acc_vs_dist width=2in}
 
 Analysis of test accuracy for 'few' split of ImageNet-LT.
 </div>
