@@ -15,4 +15,4 @@ AlphaNet ($\rho=1.75$)  32.3^1.42^  44.4^0.32^  60.3^0.18^  48.9^0.14^
 AlphaNet ($\rho=2$)     31.5^1.99^  44.7^0.46^  60.5^0.30^  49.0^0.12^
 AlphaNet ($\rho=3$)     29.0^2.05^  45.1^0.36^  60.9^0.28^  49.0^0.08^
 
-: AlphaNet with \ac{cRT} baseline on ImageNet-LT. {#tbl:imgnetlt_crt_full}
+: AlphaNet with \acs{cRT} baseline on ImageNet-LT. {#tbl:imgnetlt_crt_full}

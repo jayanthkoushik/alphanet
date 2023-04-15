@@ -15,4 +15,4 @@ AlphaNet ($\rho=1.75$)  25.4^1.32^  36.5^0.29^  41.5^0.23^  36.2^0.11^
 AlphaNet ($\rho=2$)     24.9^1.38^  36.6^0.49^  41.5^0.20^  36.1^0.10^
 AlphaNet ($\rho=3$)     22.3^1.56^  37.3^0.28^  41.9^0.20^  36.1^0.14^
 
-: AlphaNet with \ac{cRT} baseline on Places-LT. {#tbl:placeslt_crt_full}
+: AlphaNet with \acs{cRT} baseline on Places-LT. {#tbl:placeslt_crt_full}

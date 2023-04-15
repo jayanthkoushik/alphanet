@@ -15,4 +15,4 @@ AlphaNet ($\rho=1.75$)  42.7^0.70^  30.0^4.75^  56.5^3.51^  43.1^2.93^
 AlphaNet ($\rho=2$)     43.1^0.79^  28.4^1.86^  55.4^1.59^  42.2^1.39^
 AlphaNet ($\rho=3$)     43.2^0.93^  28.0^2.00^  55.3^1.45^  42.1^1.43^
 
-: AlphaNet with \ac{LTR} baseline on CIFAR-100-LT. {#tbl:cifarlt_ltr_full}
+: AlphaNet with \acs{LTR} baseline on CIFAR-100-LT. {#tbl:cifarlt_ltr_full}
