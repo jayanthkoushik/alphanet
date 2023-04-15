@@ -6,7 +6,7 @@ on:
     branches:
     - master
     paths:
-    - 'paper/*'
+    - 'paper/**'
     - '!paper/main.pdf'
     - '.github/workflows/build-website.yml'
 
