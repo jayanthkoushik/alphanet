@@ -1,31 +1,31 @@
 # Introduction {#sec:intro}
 
 The significance of long-tailed distributions in real-world applications (such
-as autonomous driving\ [@2018.Malla.Narayanan] and medical image analysis
-analysis\ [@2022.Bian.Yang]) has spurred a variety of approaches for long-tail
-classification\ [@2022.Guo.Yang]. Learning in this setting is challenging
+as autonomous driving[@2018.Malla.Narayanan] and medical image analysis
+analysis[@2022.Bian.Yang]) has spurred a variety of approaches for long-tail
+classification[@2022.Guo.Yang]. Learning in this setting is challenging
 because many classes are "rare" -- having only a small number of training
 samples. Some methods re-sample more data for rare classes in an effort to
-address data imbalances\ [@2019.Belongie.Cui; @2019.Ma.Cao], while other methods
+address data imbalances[@2019.Belongie.Cui; @2019.Ma.Cao], while other methods
 adjust learned classifiers to re-weight them in favor of rare
-classes\ [@2019.Kalantidis.Kang]. Both re-sampling and re-weighting methods
+classes[@2019.Kalantidis.Kang]. Both re-sampling and re-weighting methods
 provide strong baselines for long-tail classification tasks. However,
 state-of-the-art results are achieved by more complex methods that, for
-example, learn multiple experts\ [@2020.Yu.Wang; @2021.Hwang.Cai], perform
-multi-stage distillation\ [@2021.Wu.Li], or use a combination of weight
-balancing, data re-sampling, and loss decay\ [@2022.Kong.Alshammari].
+example, learn multiple experts[@2020.Yu.Wang; @2021.Hwang.Cai], perform
+multi-stage distillation[@2021.Wu.Li], or use a combination of weight
+balancing, data re-sampling, and loss decay[@2022.Kong.Alshammari].
 
 Despite these advances, accuracy on rare classes continues to be significantly
 worse than overall accuracy using these methods. For example, on the
-ImageNet-LT dataset, the 6-expert ensemble \ac{RIDE} model\ [@2020.Yu.Wang] has
+ImageNet-LT dataset, the 6-expert ensemble \ac{RIDE} model[@2020.Yu.Wang] has
 an average accuracy of 68.9\% on frequent classes, but an average accuracy of
 36.5\% on rare classes. In addition to significantly reducing overall accuracy,
 such performance imbalances raise ethical concerns in contexts where unequal
 accuracy leads to biased outcomes, for instance in medical
-imaging\ [@2022.Ferrante.Lara] or face detection\ [@buolamwini2018gender]. For
+imaging[@2022.Ferrante.Lara] or face detection[@buolamwini2018gender]. For
 example, models trained on chest X-rays consistently under-diagnosed minority
-groups\ [@2021.Ghassemi.Seyyed]. Similarly, cardiac image segmentation showed
-significant differences between racial groups\ [@2021.King.Puyol]. For these
+groups[@2021.Ghassemi.Seyyed]. Similarly, cardiac image segmentation showed
+significant differences between racial groups[@2021.King.Puyol]. For these
 reasons, our method is aimed at directly improving the accuracy for rare
 classes in long-tail classification. \aarti{This description might raise the
 question - why does alphaNet learn weights that are not [1,0,0, ..., 0] which
@@ -52,8 +52,8 @@ Analysis of test accuracy for 'few' split of ImageNet-LT.
 </div>
 
 To understand the poor rare class performance of long-tail models, we analyzed
-the predictions of the \ac{RIDE} model\ [@2020.Yu.Wang] on 'few' split test
-samples -- classes with limited training samples -- in ImageNet-LT\ [@2019.Yu.Liu].
+the predictions of the \ac{RIDE} model[@2020.Yu.Wang] on 'few' split test
+samples -- classes with limited training samples -- in ImageNet-LT[@2019.Yu.Liu].
 @fig:analysis:bins shows predictions binned into three groups: 1) samples
 predicted correctly; 2) samples incorrectly predicted as a visually similar
 class (e.g., predicting 'husky' instead of 'malamute'); and 3) samples

@@ -12,33 +12,33 @@ learning.
 
 The process of creating new classifiers is captured within meta-learning
 concepts such as learning-to-learn, transfer learning, and multi-task learning
-learning\ [@1998.Thrun.Thrun; @1997.Wiering.Schmidhuber; @2009.Yang.Pandzsm;
+learning[@1998.Thrun.Thrun; @1997.Wiering.Schmidhuber; @2009.Yang.Pandzsm;
 @1997.Caruana.Caruana; @2016.Lillicrap.Santoro]. These approaches generalize to
 novel tasks by learning shared information from a set of related tasks. Many
 studies find that shared information is embedded within model weights, and,
 thus, aim to learn structure within learned models to directly modify the
-weights of a different network\ [@1993.Schmidhuber.Schmidhuber;
+weights of a different network[@1993.Schmidhuber.Schmidhuber;
 @1992.Schmidhuber.Schmidhuber; @2016.Vedaldi.Bertinetto; @2016.Le.Ha;
 @2018.Levine.Finn; @2017.Vedaldi.Rebuffi; @2017.Krishnamurthy.Sinha;
 @2017.Yu.Munkhdalai]. Other studies go even further and instead of modifying
 networks, they create entirely new networks exclusively from training samples
-samples\ [@2013.Ng.Socher; @2015.Salakhutdinov.Ba; @2016.Han.Noh]. In contrast,
+samples[@2013.Ng.Socher; @2015.Salakhutdinov.Ba; @2016.Han.Noh]. In contrast,
 AlphaNet only combines existing classifiers, without having to create new
 classifiers or train networks from scratch.
 
 ## Classifier or feature composition {#sec:relwork:composition}
 
 In various classical approaches, there has been work that learns better
-embedding spaces for image annotation\ [@2010.Usunier.Weston], or uses
-classification scores as useful features\ [@2012.Forsyth.Wang]. However, these
+embedding spaces for image annotation[@2010.Usunier.Weston], or uses
+classification scores as useful features[@2012.Forsyth.Wang]. However, these
 approaches do not attempt to compose classifiers nor do they address the
 long-tail problem. Within non-deep methods in classic transfer learning, there
-have been attempts to use and combine \acp{SVM}. In one method\ [@2005.Singer.Tsochantaridis],
+have been attempts to use and combine \acp{SVM}. In one method[@2005.Singer.Tsochantaridis],
 \acp{SVM} are trained per object instance, and a hierarchical structure is
 required for combination in the datasets of interest. Such a structure is
 typically not guaranteed nor provided in long-tailed datasets. Another \ac{SVM}
 method uses regularized minimization to learn the coefficients necessary to
-combine patches from other classifiers\ [@2012.Zisserman.Aytar].
+combine patches from other classifiers[@2012.Zisserman.Aytar].
 
 While these approaches are conceptually similar to our method, AlphaNet has the
 additional advantage of _learning_ the compositional coefficients without any
@@ -50,7 +50,7 @@ of alphas \aarti{alphas $\rightarrow$ coefficients} for all novel classes or
 are forced to introduce more complex group sparsity-like constraints
 \aarti{ref?}. Finally, in zero-shot learning there exist methods which compose
 classifiers of known visual concepts to learn a completely new
-classifier\ [@2013.Elgammal.Elhoseiny; @2017.Hebert.Misra; @2015.Salakhutdinov.Ba;
+classifier[@2013.Elgammal.Elhoseiny; @2017.Hebert.Misra; @2015.Salakhutdinov.Ba;
 @2016.Sha.Changpinyo]. However, such composition is often guided by additional
 attribute supervision or textual description, which are not needed by AlphaNet.
 
@@ -58,25 +58,25 @@ attribute supervision or textual description, which are not needed by AlphaNet.
 
 Other studies have demonstrated different ways of learning transformations to
 modify model weights in an attempt to learn these transformations with \ac{SGD}
-optimization\ [@2016.Freitas.Andrychowicz; @2017.Larochelle.Ravi]. Additionally,
-there is empirical evidence\ [@2016.Hebert.Wang] showing the existence of a
+optimization[@2016.Freitas.Andrychowicz; @2017.Larochelle.Ravi]. Additionally,
+there is empirical evidence[@2016.Hebert.Wang] showing the existence of a
 generic nonlinear transformation from small-sample to large-sample models for
 different types of feature spaces and classifier models. Finally, in the case
 where one learns the transformation from the source function to a related
-target function, there are theoretical guarantees on performance\ [@2016.Poczos.Du].
+target function, there are theoretical guarantees on performance[@2016.Poczos.Du].
 \aarti{update ref to NIPS17}AlphaNet is similar in that we likewise infer that
 our target classifier is a transformation from a set of source classifiers.
 
 ## Zero-shot/low-shot learning {#sec:relwork:lowshot}
 
 Meta-learning, transfer learning, and learning-to-learn are frequently applied
-to the domain of low-shot learning\ [@2006.Perona.Fei-Fei;
+to the domain of low-shot learning[@2006.Perona.Fei-Fei;
 @2015.Salakhutdinov.Koch; @2015.Tenenbaum.Lake; @2016.Lillicrap.Santoro;
 @2016.Hebert.Wang; @2016.Hoiem.Li; @2017.Girshick.Hariharan;
 @1993.Shah.Bromley; @2017.Zemel.Snell; @2017.Phoenix.George;
 @2017.Hebert.Wangpln; @2015.Schmid.Akata]. A wide variety of prior studies have
 attempted to transfer knowledge from tasks with abundant data to completely
-novel tasks\ [@2016.Wierstra.Vinyals; @2017.Larochelle.Ravi;
+novel tasks[@2016.Wierstra.Vinyals; @2017.Larochelle.Ravi;
 @2016.Vedaldi.Bertinetto]. However, the explicit nature of low-shot learning
 consisting of tasks with small fixed samples means that these approaches do not
 generalize well beyond the arbitrary few tasks. This is a significant problem
@@ -91,16 +91,16 @@ referred to as long-tail learning, where data samples are continuously
 decreasing \aarti{with increasing number of classes} and the data distribution
 closely models that of the visual world. Recent work achieves state-of-the-art
 performance on long-tailed recognition by learning multiple
-experts\ [@2021.Hwang.Cai; @2020.Yu.Wang]. Both of these complex ensemble methods
+experts[@2021.Hwang.Cai; @2020.Yu.Wang]. Both of these complex ensemble methods
 require a two-stage training method. A somewhat different approach re-balances
-the samples at different stages of model training\ [@2019.Ma.Cao], attempts to
-transfer features from common classes to rare classes\ [@2019.Yu.Liu], or
-transfers intra-class variance\ [@2019.Chandraker.Yin]. However, approaches to
+the samples at different stages of model training[@2019.Ma.Cao], attempts to
+transfer features from common classes to rare classes[@2019.Yu.Liu], or
+transfers intra-class variance[@2019.Chandraker.Yin]. However, approaches to
 knowledge transfer require complex architectures, such as a specialized
-attention mechanism and memory models\ [@2019.Yu.Liu]. While most studies have
+attention mechanism and memory models[@2019.Yu.Liu]. While most studies have
 largely focused on representation space transferability or complex ensembles,
 recent work establishes a strong baseline by exploring the potential of
-operating in classifier space\ [@2019.Kalantidis.Kang]. Results suggest that
+operating in classifier space[@2019.Kalantidis.Kang]. Results suggest that
 decoupling model representation learning and classifier learning is a more
 efficient way to approach long-tailed learning. Specifically, methods
 normalizing classifiers and adjusting classifiers only using re-sampling

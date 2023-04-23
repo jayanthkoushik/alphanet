@@ -5,7 +5,7 @@ depends on learning over specific examples. Most long-tailed methods tend to
 have high overall accuracy, but with unbalanced accuracies where frequent
 classes are learned well with high accuracies and rare classes are learned
 poorly with low accuracies. As such, the long-tailed world represents one
-source of potential bias\ [@2022.Ferrante.Lara]. To address this problem,
+source of potential bias[@2022.Ferrante.Lara]. To address this problem,
 typical approaches resort to re-sampling or re-weighting of rare classes but
 still focus on achieving the highest overall accuracy. Consequently, these
 methods continue to suffer from low accuracy for data-poor classes, and an

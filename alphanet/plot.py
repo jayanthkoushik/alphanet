@@ -17,7 +17,7 @@ import pandas as pd
 import seaborn as sns
 import torch
 from corgy import Corgy
-from corgy.types import InputBinFile, InputDirectory
+from corgy.types import InputBinFile, InputDirectory, OutputTextFile
 from matplotlib import (
     patches as mpatches,
     path as mpath,
@@ -36,7 +36,7 @@ from tqdm import tqdm
 from alphanet._dataset import SplitLTDataGroup, SplitLTDataset
 from alphanet._plotwrap import ContextPlot, PlotParams
 from alphanet._pt import DEFAULT_DEVICE
-from alphanet._wordnet import get_wordnet_nns_per_class
+from alphanet._wordnet import get_wordnet_nns_per_imgnet_class
 from alphanet.train import TrainResult
 
 _TEST_DATA_CACHE: Dict[str, SplitLTDataGroup] = {}
@@ -1726,6 +1726,8 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
     split: Literal["few", "base", "all"] = "few"
     nn_split: Literal["few", "base", "all", "semantic"] = "base"
     semantic_nns_level: Optional[int] = None
+    imagenet_data_root: Optional[Path] = None
+    save_semantic_nns_file: Optional[OutputTextFile] = None
 
     @staticmethod
     def _get_pred_status(_y, _yhat, _nns__per__class):
@@ -1811,8 +1813,14 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
 
         if self.nn_split == "semantic":
             assert self.semantic_nns_level is not None
-            wordnet_nn__seq__per__split_class = get_wordnet_nns_per_class(
-                self.semantic_nns_level, self.split
+            assert self.imagenet_data_root is not None
+            wordnet_nn__seq__per__split_class = get_wordnet_nns_per_imgnet_class(
+                self.semantic_nns_level,
+                self.split,
+                str(self.imagenet_data_root / "splits" / "few.txt"),
+                str(self.imagenet_data_root / "label_names.txt"),
+                str(self.imagenet_data_root / "labels_full.txt"),
+                self.save_semantic_nns_file,
             )
 
         for _gid, _exp_name, _dataset, _res in self._train_results():
@@ -1847,6 +1855,7 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                     for_split=self.split,
                     against_split=self.nn_split,
                 )
+            fclass__set = _res.train_data_info.class__set__per__split["few"]
 
             for _i, (_y, _baseline_yhat, _res_yhat) in enumerate(
                 zip(_test_ys, _baseline_test_yhats, _res_test_yhats)
@@ -1859,6 +1868,8 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                         "Dataset": _dataset.proper_name,
                         "Experiment": _exp_name,
                         "Sample": _i,
+                        "Class": _y,
+                        "mSplit": ("Few" if _y in fclass__set else "Base"),
                         "Baseline prediction": self._get_pred_status(
                             _y, _baseline_yhat, _nn__seq__per__split_class
                         ),
@@ -1883,6 +1894,21 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
         else:
             _n_cols = self.col_wrap
             _n_rows = ceil(len(_exps) / self.col_wrap)
+
+        if self.nn_split == "semantic":
+            palette = ["#e5ae39", "#179be8", "#4f9e89"]
+            # palette__per__split = {
+            #     "few": ["#ffd67f", "#7fc1e8", "#66ccb0"],
+            #     "base": ["#bf8200", "#0079bf", "#007f5d"],
+            #     "all": ["#e5ae39", "#179be8", "#4f9e89"],
+            # }
+            # palette = list(
+            #     itertools.chain.from_iterable(palette__per__split.values())
+            # )
+            hatch_palette = ["#ffd67f", "#7fc1e8", "#66ccb0"]
+        else:
+            palette = self.plot.palette[1:4]
+            hatch_palette = ["#e5cfa0", "#b9d7e8", "#00cc95"]
 
         with self.plot.open(
             close_fig_on_exit=False, nrows=_n_rows, ncols=_n_cols, squeeze=False
@@ -1919,25 +1945,63 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                             _exp_df[_exp_df[f"{_model} prediction"] == _status]
                         )
                         _bar_height = _n_status / _n_preds
-                        _bar = _ax.bar(
+                        _ax.bar(
                             _i,
                             _bar_height,
                             width=_bar_width,
                             bottom=_offset,
-                            color=self.plot.palette[_j + 1],
+                            color=palette[_j],
                             linewidth=0,
                         )
-                        _label = f"$n = {_n_status}$"
+
+                        if self.split == "all":
+                            _n_few_status = len(
+                                _exp_df[
+                                    (_exp_df[f"{_model} prediction"] == _status)
+                                    & (_exp_df["mSplit"] == "Few")
+                                ]
+                            )
+
+                            _few_bar_height = _n_few_status / _n_preds
+                            _ax.bar(
+                                _i,
+                                _few_bar_height,
+                                width=_bar_width,
+                                bottom=_offset,
+                                color=palette[_j],
+                                hatch="////",
+                                linewidth=0,
+                                edgecolor=hatch_palette[_j],
+                            )
+
+                        _y = _offset + (_bar_height / 2)
                         if (_axno % _n_cols) == 0 and _model == "Baseline":
-                            _label = self._get_status_label(_status) + "\n\n" + _label
-                        _ax.bar_label(
-                            _bar,
-                            labels=[_label],
-                            label_type="center",
+                            _va = "top"
+                        else:
+                            _va = "center"
+                        _ax.text(
+                            _i,
+                            _y,
+                            str(_n_status),
+                            ha="center",
+                            va=_va,
                             fontsize=self.label_size,
                             color=self.plot.palette[0],
                             rotation=self.label_rot,
                         )
+
+                        if (_axno % _n_cols) == 0 and _model == "Baseline":
+                            _ax.text(
+                                (_i - (_bar_width / 2) + (_bar_width / 7)),
+                                _y + 0.01,
+                                self._get_status_label(_status),
+                                ha="left",
+                                va="bottom",
+                                fontsize=self.label_size,
+                                color=self.plot.palette[0],
+                                rotation=self.label_rot,
+                            )
+
                         _offset += _bar_height
                         if _model == "Baseline":
                             _status_to_baseline_n[_status] = _n_status
@@ -1982,8 +2046,7 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                             ),
                             direction=1,
                             cmap=sns.blend_palette(
-                                [self.plot.palette[_j + 1], self.plot.palette[_k + 1]],
-                                as_cmap=True,
+                                [palette[_j], palette[_k]], as_cmap=True
                             ),
                             alpha=0.75,
                             aspect="auto",

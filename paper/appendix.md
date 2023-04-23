@@ -1,7 +1,7 @@
 # Additional Results
 
 This section contains additional analysis, as well as results on the
-\ac{LTR} model\ [@2022.Kong.Alshammari]. The included results are
+\ac{LTR} model[@2022.Kong.Alshammari]. The included results are
 
 * Per-split accuracy with varying number of nearest numbers computed
   using Euclidean and cosine distance

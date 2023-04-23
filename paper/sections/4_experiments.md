@@ -3,10 +3,10 @@
 ## Experimental setup {#sec:exp:setup}
 
 **Datasets.** We evaluated our method using three long-tailed datasets:
-ImageNet-LT, Places-LT\ [@2019.Yu.Liu], and CIFAR-100-LT\ [@2022.Kong.Alshammari].
+ImageNet-LT, Places-LT[@2019.Yu.Liu], and CIFAR-100-LT[@2022.Kong.Alshammari].
 These Datasets are sampled from their respective original datasets,
-ImageNet\ [@2015.Fei-Fei.Russakovsky], Places365\ [@2017.Torralba.Zhou], and
-CIFAR-100\ [@2009.Hinton.Krizhevsky] such that the new distributions follow a
+ImageNet[@2015.Fei-Fei.Russakovsky], Places365[@2017.Torralba.Zhou], and
+CIFAR-100[@2009.Hinton.Krizhevsky] such that the new distributions follow a
 standard long-tailed distribution. For CIFAR-100-LT, we used an imbalance
 factor of 100.
 
@@ -19,7 +19,7 @@ samples for each class. We use the term 'base' split to refer to the combined
 'many' and 'medium' splits.
 
 Note: Another popular dataset used for testing long-tail models is
-iNaturalist\ [@2018.Belongie.Horn]. Results for this dataset, however, are much
+iNaturalist[@2018.Belongie.Horn]. Results for this dataset, however, are much
 more balanced across splits. So it does not represent a valid use case for our
 proposed method, and we omitted the dataset from our experiments.
 
@@ -36,11 +36,11 @@ a range of $\rho$ values; results for $\rho=0.5$, $\rho=1$, and $\rho=1.5$ are
 shown in the following section, and the full set of results is in the appendix.
 
 **Training.** All experiments used an AlphaNet module with three 32 unit
-layers, and Leaky-ReLU activation\ [@2016.Farhadi.Redmon]. Unless stated
+layers, and Leaky-ReLU activation[@2016.Farhadi.Redmon]. Unless stated
 otherwise, euclidean distance was used to find $k=5$ nearest neighbors for each
 'few' split class. Models were trained for 25 epochs to minimize cross-entropy
 loss computed using mini-batches of 64 samples. Optimization was performed
-using AdamW\ [@2017.Hutter.Loshchilov] with a learning rate of 0.001, decayed
+using AdamW[@2017.Hutter.Loshchilov] with a learning rate of 0.001, decayed
 by a factor of 10, every 10 epochs. Model weights were saved after each epoch,
 and after training, the weights with the best accuracy on validation data were
 used to report results on the test set. All experiments were repeated 10 times,
@@ -51,7 +51,7 @@ and we report mean and standard deviation of accuracies across trials.
 {% include tables/imagenetlt_placeslt_baselines.md %}
 
 **Baseline models.** First, we applied AlphaNet on several strong baseline
-methods\ [@2019.Kalantidis.Kang] \aarti{call them out - its not just cRT and
+methods[@2019.Kalantidis.Kang] \aarti{call them out - its not just cRT and
 LWS but also cross entropy, NCM (include full form) and $\tau$-normalized with
 references}. These methods have good overall accuracy, but accuracy for 'few'
 split classes is much lower. On the ImageNet-LT dataset, average accuracy for
@@ -74,7 +74,7 @@ these with grouping semantically similar classes as discussed in intro?}
 {% include tables/imagenetlt_cifarlt_ride_short.md %}
 
 **Expert model.** Next, we applied AlphaNet on the 6-expert ensemble \ac{RIDE}
-model\ [@2020.Yu.Wang]. We provided the combined feature vectors from all 6
+model[@2020.Yu.Wang]. We provided the combined feature vectors from all 6
 experts as input to AlphaNet. The learned 'few' split classifiers were split
 into 6, and used to update the experts. Prediction scores from the experts were
 averaged to produce the final predictions, as in the original model. For
@@ -136,14 +136,14 @@ improvement in test accuracy.
 
 ![Predictions on 'few' split classes, with nearest neighbors selected from
 'base' split
-classes.](figures/pred_changes_imagenetlt_crt_rho_05_few){#fig:pred_changes:few}
+classes.](figures/pred_changes_imagenetlt_crt_rho_05_few_nn_base){#fig:pred_changes:few}
 
 ![Predictions on 'base' split classes, with nearest neighbors selected from
 'few' split
-classes.](figures/pred_changes_imagenetlt_crt_rho_05_base){#fig:pred_changes:base}
+classes.](figures/pred_changes_imagenetlt_crt_rho_05_base_nn_few){#fig:pred_changes:base}
 
 ![All predictions, with nearest neighbors selected from all
-classes.](figures/pred_changes_imagenetlt_crt_rho_05_all){#fig:pred_changes:all}
+classes.](figures/pred_changes_imagenetlt_crt_rho_05_all_nn_all){#fig:pred_changes:all}
 
 Change in sample predictions for AlphaNet applied for \ac{cRT} features, with
 $k=10$ nearest neighbors by Euclidean distance. The bars on the left show the
@@ -175,14 +175,14 @@ neighbors from all classes.
 
 ![Predictions on 'few' split classes, with nearest neighbors selected from
 'base' split
-classes.](figures/pred_changes_imagenetlt_crt_rho_05_semantic_few){#fig:pred_changes_semantic:few}
+classes.](figures/pred_changes_imagenetlt_crt_rho_05_few_nn_semantic){#fig:pred_changes_semantic:few}
 
 ![Predictions on 'base' split classes, with nearest neighbors selected from
 'few' split
-classes.](figures/pred_changes_imagenetlt_crt_rho_05_semantic_base){#fig:pred_changes_semantic:base}
+classes.](figures/pred_changes_imagenetlt_crt_rho_05_base_nn_semantic){#fig:pred_changes_semantic:base}
 
 ![All predictions, with nearest neighbors selected from all
-classes.](figures/pred_changes_imagenetlt_crt_rho_05_semantic_all){#fig:pred_changes_semantic:all}
+classes.](figures/pred_changes_imagenetlt_crt_rho_05_all_nn_semantic){#fig:pred_changes_semantic:all}
 
 Change in sample predictions for AlphaNet applied for \ac{cRT} features,
 with nearest neighbors identified using WordNet categories. This figure

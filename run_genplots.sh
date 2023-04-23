@@ -4,8 +4,7 @@ set -e
 
 N_BOOT=10000
 REP="*"
-
-base_save_dir="paper/figures"
+BASE_SAVE_DIR="paper/figures"
 
 for i in 0 1 2; do
     if [ ${i} -eq 0 ]; then
@@ -14,7 +13,7 @@ for i in 0 1 2; do
         mfont="cm"
         theme="light"
         ext=".pdf"
-        save_dir="${base_save_dir}"
+        save_dir="${BASE_SAVE_DIR}"
     else
         context="notebook"
         dfont="Latin Modern Sans"
@@ -26,21 +25,23 @@ for i in 0 1 2; do
             theme="dark"
             ext="_dark.svg"
         fi
-        save_dir="${base_save_dir}/_www"
+        save_dir="${BASE_SAVE_DIR}/_www"
     fi
 
-    if [ "${context}" = "paper" ]; then width="2.25"; else width="2.7"; fi
+    if [ "${context}" = "paper" ]; then width="2.25"; else width="2.8125"; fi
     (set -x; python run_makeplot.py PlotPredCounts --base-res-dir "data/ImageNetLT/baselines" --exp-sub-dirs "" --res-files-pattern "resnext50_crt.pkl" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect 1.25 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --plot:file "${save_dir}/pred_counts_imagenetlt_crt_baseline${ext}";)
 
-    if [ "${context}" = "paper" ]; then width="2"; else width="2.4"; fi
-    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect 1:2 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "few" --nn-split "base" --plot:file "${save_dir}/pred_changes_imagenetlt_crt_rho_05_few${ext}";)
-    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect 1:2 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "base" --nn-split "few" --plot:file "${save_dir}/pred_changes_imagenetlt_crt_rho_05_base${ext}";)
-    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect 1:2 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "all" --nn-split "all" --plot:file "${save_dir}/pred_changes_imagenetlt_crt_rho_05_all${ext}";)
-    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect 1:2 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "few" --nn-split "semantic" --semantic-nns-level 4 --plot:file "${save_dir}/pred_changes_imagenetlt_crt_rho_05_semantic_few${ext}";)
-    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect 1:2 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "base" --nn-split "semantic" --semantic-nns-level 4 --plot:file "${save_dir}/pred_changes_imagenetlt_crt_rho_05_semantic_base${ext}";)
-    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect 1:2 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "all" --nn-split "semantic" --semantic-nns-level 4 --plot:file "${save_dir}/pred_changes_imagenetlt_crt_rho_05_semantic_all${ext}";)
+    if [ "${context}" = "paper" ]; then width="2"; else width="2.5"; fi
+    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect "1:2" --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "few" --nn-split "base" --plot:file "${save_dir}/pred_changes_imagenetlt_crt_rho_05_few_nn_base${ext}";)
+    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect "1:2" --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "few" --nn-split "all" --plot:file "${save_dir}/pred_changes_imagenetlt_crt_rho_05_few_nn_all${ext}";)
+    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect "1:2" --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "base" --nn-split "few" --plot:file "${save_dir}/pred_changes_imagenetlt_crt_rho_05_base_nn_few${ext}";)
+    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect "1:2" --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "base" --nn-split "all" --plot:file "${save_dir}/pred_changes_imagenetlt_crt_rho_05_base_nn_all${ext}";)
+    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect "1:2" --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "all" --nn-split "all" --plot:file "${save_dir}/pred_changes_imagenetlt_crt_rho_05_all_nn_all${ext}";)
+    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect "1:2" --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "few" --nn-split "semantic" --semantic-nns-level 4 --imagenet-data-root "data/ImageNetLT" --plot:file "${save_dir}/pred_changes_imagenetlt_crt_rho_05_few_nn_semantic${ext}";)
+    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect "1:2" --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "base" --nn-split "semantic" --semantic-nns-level 4 --imagenet-data-root "data/ImageNetLT" --plot:file "${save_dir}/pred_changes_imagenetlt_crt_rho_05_base_nn_semantic${ext}";)
+    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect "1:2" --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "all" --nn-split "semantic" --semantic-nns-level 4 --imagenet-data-root "data/ImageNetLT" --plot:file "${save_dir}/pred_changes_imagenetlt_crt_rho_05_all_nn_semantic${ext}";)
 
-    if [ "${context}" = "paper" ]; then width="2.25"; else width="2.7"; fi
+    if [ "${context}" = "paper" ]; then width="2.25"; else width="2.8125"; fi
     (set -x; python run_makeplot.py PlotSplitClsAccDeltaVsNNDist --base-res-dir "data/ImageNetLT/baselines" --exp-sub-dirs "" --res-files-pattern "resnext50_crt.pkl" --n-boot ${N_BOOT} --splits "few" --acc "baseline" --r-font-size "medium" --plot-r-loc 0.9 0.95 --plot:aspect 1 --plot:width "${width}" --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --rasterize-scatter --plot-params:xlim 8 20 --plot-params:xticks 10 12 14 16 18 --plot-params:ylim -0.1 0.9 --plot-params:yticks 0 0.2 0.4 0.6 0.8 --plot-params:ylabel "Accuracy" --plot:file "${save_dir}/cls_acc_vs_nndist_imagenetlt_crt_baseline${ext}")
     (set -x; python run_makeplot.py PlotSplitClsAccDeltaVsNNDist --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --splits "few" --acc "delta" --r-font-size "medium" --plot-r-loc 0.9 0.95 --plot:aspect 1 --plot:width "${width}" --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --rasterize-scatter --plot-params:xlim 8 20 --plot-params:xticks 10 12 14 16 18 --plot-params:ylim -0.2 0.6 --plot-params:yticks -0.1 0 0.1 0.2 0.3 0.4 0.5 --plot:file "${save_dir}/cls_delta_vs_nndist_imagenetlt_crt_rho_05${ext}";)
 
@@ -64,5 +65,12 @@ for i in 0 1 2; do
         (set -x; python run_makeplot.py PlotAlphaDist --base-res-dir "results/main/${dataset}" --exp-sub-dirs "rho_0.1" "rho_0.25" "rho_0.5" "rho_0.75" "rho_1" "rho_1.25" "rho_1.5" "rho_1.75" "rho_2" --exp-names "$\\rho=0.1$" "$\\rho=0.25$" "$\\rho=0.5$" "$\\rho=0.75$" "$\\rho=1$" "$\\rho=1.25$" "$\\rho=1.5$" "$\\rho=1.75$" "$\\rho=2$" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --col-wrap 5 --legend-loc "center" --legend-bbox-to-anchor 0.9 0.25 --legend-ncols 2 --plot:width "full" --plot:aspect 2.5 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --plot:file "${save_dir}/appendix/rhos_alpha_dists_${dname}${ext}";)
 
         (set -x; python run_makeplot.py PlotSplitClsAccDeltaVsNNDist --base-res-dir "results/main/${dataset}" --exp-sub-dirs "rho_0.1" "rho_0.25" "rho_0.5" "rho_0.75" "rho_1" "rho_1.25" "rho_1.5" "rho_1.75" "rho_2" --exp-names "$\\rho=0.1$" "$\\rho=0.25$" "$\\rho=0.5$" "$\\rho=0.75$" "$\\rho=1$" "$\\rho=1.25$" "$\\rho=1.5$" "$\\rho=1.75$" "$\\rho=2$" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --splits "few" "base" --col-wrap 5 --acc "delta" --plot:width "full" --plot:aspect "5:2" --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --rasterize-scatter --plot-params:xticks --plot-params:yticks --plot-r-loc 0.99 0.99 --legend-loc "upper right" --legend-bbox-to-anchor 1 0.5 --legend-ncols 1 --add-axes-guide --no-despine --plot-params:ylabel "Accuracy change" --plot:file "${save_dir}/appendix/rhos_cls_delta_vs_nndist_${dname}${ext}";)
+
+        (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/${dataset}" --exp-sub-dirs "rho_0.5" "rho_1" "rho_2" --exp-names "$\\rho=0.5$" "$\\rho=1$" "$\\rho=2$" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "full" --plot:aspect 3:2 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "all" --nn-split "all" --plot:file "${save_dir}/appendix/rhos_pred_changes_${dname}_all_nn_all${ext}";)
+
+        droot=$(echo ${dataset} | cut -d_ -f1)
+        if [ "${droot}" = "imagenetlt" ]; then
+            (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/${dataset}" --exp-sub-dirs "rho_0.5" "rho_1" "rho_2" --exp-names "$\\rho=0.5$" "$\\rho=1$" "$\\rho=2$" --res-files-pattern "rep_${REP}/result.pth" --n-boot ${N_BOOT} --plot:width "full" --plot:aspect 3:2 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "all" --nn-split "semantic" --semantic-nns-level 4 --imagenet-data-root "data/ImageNetLT" --plot:file "${save_dir}/appendix/rhos_pred_changes_${dname}_all_nn_semantic${ext}";)
+        fi
     done
 done
