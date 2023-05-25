@@ -4,7 +4,7 @@
 nearest neighbors (visually similar) examples from frequent classes and then
 update each rare classifier using learned $\alpha$'s for each nearest neighbor.
 The result is an improved classifier for each rare
-class.](figures/pipeline.png){#fig:alphanet width=7in darksrc=""}
+class.](figures/pipeline){#fig:alphanet width=7.25in}
 
 ## Notation {#sec:method:notation}
 

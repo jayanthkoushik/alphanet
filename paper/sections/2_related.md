@@ -4,7 +4,7 @@ Combining, creating, modifying, and learning model weights are concepts that
 have been implemented in many earlier models. As we review below, these
 concepts appear frequently in \aarti{ensemble methods (boosting, bagging,
 etc.) - where do these belong below? I suspect classifier composition, so we
-should mention there? And boosting does learn the compositional weights},
+should mention there? And boosting does learn the compositional weights}
 transfer learning, meta-learning, zero-shot/low-shot learning, and long-tail
 learning.
 
@@ -21,7 +21,7 @@ weights of a different network[@1993.Schmidhuber.Schmidhuber;
 @1992.Schmidhuber.Schmidhuber; @2016.Vedaldi.Bertinetto; @2016.Le.Ha;
 @2018.Levine.Finn; @2017.Vedaldi.Rebuffi; @2017.Krishnamurthy.Sinha;
 @2017.Yu.Munkhdalai]. Other studies go even further and instead of modifying
-networks, they create entirely new networks exclusively from training samples
+networks, they create entirely new networks exclusively from training
 samples[@2013.Ng.Socher; @2015.Salakhutdinov.Ba; @2016.Han.Noh]. In contrast,
 AlphaNet only combines existing classifiers, without having to create new
 classifiers or train networks from scratch.
