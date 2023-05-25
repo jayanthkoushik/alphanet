@@ -28,7 +28,7 @@ for i in 0 1 2; do
         save_dir="${BASE_SAVE_DIR}/_www"
     fi
 
-    if [ "${context}" = "paper" ]; then width="2.25"; else width="2.8125"; fi
+    if [ "${context}" = "paper" ]; then width="2"; else width="2.5"; fi
     (set -x; python run_makeplot.py PlotPredCounts --base-res-dir "data/ImageNetLT/baselines" --exp-sub-dirs "" --res-files-pattern "resnext50_crt.pkl" --n-boot ${N_BOOT} --plot:width "${width}" --plot:aspect 1.25 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --plot:file "${save_dir}/pred_counts_imagenetlt_crt_baseline${ext}";)
 
     if [ "${context}" = "paper" ]; then width="2"; else width="2.5"; fi

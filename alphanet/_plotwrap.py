@@ -5,7 +5,7 @@ import shutil
 from contextlib import contextmanager, ExitStack
 from functools import cached_property
 from pathlib import Path
-from typing import cast, Literal, Optional, Sequence, Tuple, Union
+from typing import cast, Dict, Literal, Optional, Sequence, Tuple, Union
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -34,6 +34,8 @@ _BASE_RC = {
     "axes.spines.right": False,
     "axes.spines.top": False,
     "axes.spines.bottom": False,
+    "axes.prop_cycle": mpl.cycler("color", CUD_PALETTE),
+    "lines.color": "C0",
     "ytick.direction": "out",
     "xtick.direction": "out",
     "ytick.major.size": 0,
@@ -42,12 +44,15 @@ _BASE_RC = {
     "figure.constrained_layout.use": True,
     "savefig.bbox": "standard",
     "savefig.transparent": True,
+    "savefig.edgecolor": "auto",
+    "savefig.facecolor": "auto",
     "mathtext.bf": "bf",
     "mathtext.cal": "cursive",
     "mathtext.it": "it",
     "mathtext.rm": "rm",
     "mathtext.sf": "sf",
     "mathtext.tt": "monospace",
+    "pdf.fonttype": 42,
     "pgf.rcfonts": True,
     "pgf.preamble": "\n".join(
         [
@@ -62,28 +67,31 @@ _BASE_RC = {
     ),
 }
 
-_DARK_THEME_BG = "#212529"
-_DARK_THEME_FG = "#adb5bd"
-_DARK_THEME_RC = {
-    "axes.edgecolor": _DARK_THEME_FG,
-    "axes.facecolor": _DARK_THEME_BG,
-    "axes.labelcolor": _DARK_THEME_FG,
-    "boxplot.boxprops.color": _DARK_THEME_FG,
-    "boxplot.capprops.color": _DARK_THEME_FG,
-    "boxplot.flierprops.color": _DARK_THEME_FG,
-    "boxplot.flierprops.markeredgecolor": _DARK_THEME_FG,
-    "boxplot.whiskerprops.color": _DARK_THEME_FG,
-    "figure.edgecolor": _DARK_THEME_BG,
-    "figure.facecolor": _DARK_THEME_BG,
-    "grid.color": _DARK_THEME_FG,
-    "lines.color": _DARK_THEME_FG,
-    "patch.edgecolor": _DARK_THEME_FG,
-    "savefig.edgecolor": _DARK_THEME_BG,
-    "savefig.facecolor": _DARK_THEME_BG,
-    "text.color": _DARK_THEME_FG,
-    "xtick.color": _DARK_THEME_FG,
-    "ytick.color": _DARK_THEME_FG,
-}
+_bg_per_theme = {"dark": "#212529", "light": "#ffffff"}
+_fg_primary_per_theme = {"dark": "#adb5bd", "light": "#212529"}
+_fg_secondary_per_theme = {"dark": "#495057", "light": "#adb5bd"}
+_THEME_RC: Dict[str, Dict[str, str]] = {}
+for _theme in ["dark", "light"]:
+    _bg = _bg_per_theme[_theme]
+    _fg_primary = _fg_primary_per_theme[_theme]
+    _fg_secondary = _fg_secondary_per_theme[_theme]
+    _THEME_RC[_theme] = {
+        "axes.edgecolor": _fg_primary,
+        "axes.facecolor": _bg,
+        "axes.labelcolor": _fg_primary,
+        "boxplot.boxprops.color": _fg_primary,
+        "boxplot.capprops.color": _fg_primary,
+        "boxplot.flierprops.color": _fg_primary,
+        "boxplot.flierprops.markeredgecolor": _fg_primary,
+        "boxplot.whiskerprops.color": _fg_primary,
+        "figure.edgecolor": _bg,
+        "figure.facecolor": _bg,
+        "grid.color": _fg_secondary,
+        "patch.edgecolor": _fg_primary,
+        "text.color": _fg_primary,
+        "xtick.color": _fg_primary,
+        "ytick.color": _fg_primary,
+    }
 
 
 class PlotFont(Corgy):
@@ -201,8 +209,7 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
         _mpl_rc["figure.dpi"] = self.dpi
 
         sns.set_theme(style="ticks", palette=self.palette, rc=_mpl_rc)
-        if self.theme == "dark":
-            mpl.rcParams.update(_DARK_THEME_RC)
+        mpl.rcParams.update(_THEME_RC[self.theme])
 
     @cached_property
     def palette(self):
