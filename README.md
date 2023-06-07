@@ -18,6 +18,17 @@ $ poetry install --only main  # install dependencies
 ```
 <!-- cspell: enable -->
 
+### Dev setup
+For development, get [npm](https://www.npmjs.com), then
+install dev dependencies, and enable pre-commit hooks.
+
+<!-- cspell: disable -->
+```bash
+$ poetry install
+$ pre-commit install -t pre-commit
+```
+<!-- cspell: enable -->
+
 ## Data setup
 
 **Pre-formatted data for all datasets used in the paper are available
