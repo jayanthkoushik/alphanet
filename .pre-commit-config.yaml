@@ -44,9 +44,9 @@ repos:
     language: system
     types: [jupyter]
   - id: cspell
-    name: spell check paper
+    name: spell check
     language: system
-    files: "paper/.*\\.md"
+    files: "paper/.*\\.md|README\\.md"
     entry: "npx cspell"
   - id: mdc
     name: build paper pdf

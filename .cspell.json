@@ -16,6 +16,7 @@
     "CIFAR",
     "softmax",
     "convolutional",
-    "Cauchy-Schwarz"
+    "Cauchy-Schwarz",
+    "AlphaNet"
   ]
 }
