@@ -65,11 +65,14 @@ class TrainingConfig(Corgy):
         if not self.val_datagrp:
             self.val_datagrp = None
         if self.train_epochs < self.min_epochs:
-            raise ValueError("`train_epochs` should be less than `min_epochs`")
+            raise ValueError("`train_epochs` should not be less than `min_epochs`")
 
     def as_dict(self, recursive=False):  # pylint: disable=arguments-differ
         d = super().as_dict(recursive)
         del d["tb_logs"]
+        d["sampler_builder"]["sampler_args"] = [
+            dict(_arg) for _arg in d["sampler_builder"]["sampler_args"]
+        ]
         return d
 
 
