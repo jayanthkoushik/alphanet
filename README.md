@@ -357,6 +357,6 @@ Top AlphaNet misclassifications:
 <!-- cSpell: enable -->
 
 ## Generating plots
-`run_genplots.sh` generates all plots used in the paper and the website.
-To generate individual plots, use the `run_makeplot.py` script. Refer to
-the script and command line help for more details.
+`run_genplots.sh` (run without any arguments) generates all plots used
+in the paper.  To generate individual plots, use the `run_makeplot.py`
+script. Refer to the script and command line help for more details.
