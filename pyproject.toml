@@ -9,6 +9,7 @@ python = "^3.8"
 corgy = { git = "https://github.com/jayanthkoushik/corgy.git", rev="889f11c", extras = ["colors", "toml"] }
 torch = "^1.13.0"
 torchvision = "^0.14.0"
+torcheval = "^0.0.6"
 tqdm = "^4.64.1"
 matplotlib = "^3.6.2"
 seaborn = "^0.12.1"

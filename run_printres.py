@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from argparse import SUPPRESS
+from collections import defaultdict
 from math import isnan
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -9,10 +10,18 @@ import pandas as pd
 import torch
 from corgy import Corgy
 from corgy.types import InputDirectory
+from torch.utils.data import DataLoader, TensorDataset
+from torcheval.metrics import MulticlassAccuracy
 from tqdm import trange
 
 from alphanet._dataset import SplitLTDataset
 from alphanet._pt import DEFAULT_DEVICE
+from alphanet._wordnet import get_wordnet_nns_per_imgnet_class
+from alphanet.plot import (
+    _get_nn_dist_per_split_class,
+    _get_test_acc_per_class,
+    _TEST_DATA_CACHE,
+)
 from alphanet.train import TrainResult
 
 
@@ -23,12 +32,123 @@ class Args(Corgy):
     res_files_pattern: str = "**/*.pth"
     exp_prefix: str = ""
     exp_suffix: str = ""
+    acc_k: int = 1
+    show_adjusted_acc: bool = False
+    adjusted_acc_semantic: bool = False
+    adjusted_acc_semantic_nns_level: Optional[int] = None
+    imagenet_data_root: Optional[Path] = None
+    eval_batch_size: int = 1024
 
 
 args = Args.parse_from_cmdline(usage=SUPPRESS)
 table_rows: List[Dict[str, Any]] = []
 max_exp_name_len = len("Experiment")
 seen_datasets = set()
+
+
+if args.show_adjusted_acc and args.adjusted_acc_semantic:
+    assert args.adjusted_acc_semantic_nns_level is not None
+    assert args.imagenet_data_root is not None
+    wordnet_nn__seq__per__split_class = get_wordnet_nns_per_imgnet_class(
+        args.adjusted_acc_semantic_nns_level,
+        "all",
+        str(args.imagenet_data_root / "splits" / "few.txt"),
+        str(args.imagenet_data_root / "label_names.txt"),
+        str(args.imagenet_data_root / "labels_full.txt"),
+    )
+
+
+def _get_adjusted_accs(_train_res: TrainResult, _args: Args) -> Dict[str, float]:
+    _dataset = SplitLTDataset(_train_res.train_data_info.dataset_name)
+    _, _res_test_yhats = _get_test_acc_per_class(
+        _train_res, _args.eval_batch_size, return_preds=True
+    )
+    _test_datagrp = _TEST_DATA_CACHE[str(_dataset)]
+    _test_ys = _test_datagrp.label__seq
+
+    if args.adjusted_acc_semantic:
+        _nn__seq__per__split_class = wordnet_nn__seq__per__split_class
+    else:
+        _, _nn__seq__per__split_class = _get_nn_dist_per_split_class(
+            _dataset,
+            _train_res.nn_info.nn_dist,
+            _train_res.nn_info.n_neighbors,
+            for_split="all",
+            against_split="all",
+        )
+
+    _correct__per__split: Dict[str, int] = defaultdict(int)
+    _total__per__split: Dict[str, int] = defaultdict(int)
+    assert _res_test_yhats is not None
+    for _y, _res_yhat in zip(_test_ys, _res_test_yhats):
+        for (
+            _split,
+            _split_class__set,
+        ) in _train_res.train_data_info.class__set__per__split.items():
+            if _y in _split_class__set:
+                break
+        else:
+            raise AssertionError
+
+        if _res_yhat == _y or _res_yhat in _nn__seq__per__split_class[_y]:
+            _correct__per__split[_split] += 1
+        _total__per__split[_split] += 1
+    assert sum(_total__per__split.values()) == len(_test_ys)
+
+    _res_dict = {}
+    for _split in _correct__per__split:
+        _res_dict[_split.title()] = (
+            _correct__per__split[_split] / _total__per__split[_split] * 100
+        )
+    _res_dict["Overall"] = sum(_correct__per__split.values()) / len(_test_ys) * 100
+    return _res_dict
+
+
+def _get_topk_acc(_train_res: TrainResult, _args: Args):
+    _alphanet_classifier = _train_res.load_best_alphanet_classifier()
+    _dataset = SplitLTDataset(_train_res.train_data_info.dataset_name)
+    try:
+        _test_datagrp = _TEST_DATA_CACHE[str(_dataset)]
+    except KeyError:
+        _test_datagrp = _dataset.load_data("test")
+        _TEST_DATA_CACHE[str(_dataset)] = _test_datagrp
+    _test_dataset = TensorDataset(
+        _test_datagrp.feat__mat, torch.tensor(_test_datagrp.label__seq)
+    )
+    _data_loader = DataLoader(_test_dataset, args.eval_batch_size)
+
+    _topk_metric = MulticlassAccuracy(k=args.acc_k)
+    _topk_metric__per__split = {
+        _split: MulticlassAccuracy(k=args.acc_k) for _split in ["many", "medium", "few"]
+    }
+
+    _pbar = trange(
+        len(_test_dataset), desc=f"Computing top-{args.acc_k} accuracy", unit="sample"
+    )
+    for _X_batch, _y_batch in _data_loader:
+        _X_batch, _y_batch = _X_batch.to(DEFAULT_DEVICE), _y_batch.to(DEFAULT_DEVICE)
+        _yhat_batch = _alphanet_classifier(_X_batch)
+        _topk_metric.update(_yhat_batch, _y_batch)
+        for _yhat_i, _yi in zip(_yhat_batch, _y_batch):
+            for (
+                _split,
+                _split_class__set,
+            ) in _train_res.train_data_info.class__set__per__split.items():
+                if int(_yi) in _split_class__set:
+                    break
+            else:
+                raise AssertionError
+            _topk_metric__per__split[_split].update(
+                _yhat_i.unsqueeze(0), _yi.unsqueeze(0)
+            )
+        _pbar.update(len(_X_batch))
+    _pbar.close()
+
+    _res_dict = {"Overall": _topk_metric.compute() * 100}
+    for _split, _split_topk_metric in _topk_metric__per__split.items():
+        _res_dict[_split.title()] = _split_topk_metric.compute() * 100
+    return _res_dict
+
 
 pbar = trange(len(args.rel_exp_paths), desc="Loading", unit="experiment")
 for _i, _rel_exp_path in enumerate(args.rel_exp_paths):
@@ -56,9 +176,20 @@ for _i, _rel_exp_path in enumerate(args.rel_exp_paths):
             "Experiment": _exp_name,
             "Dataset": _res.train_data_info.dataset_name,
         }
-        for _split, _split_acc in _res.test_acc__per__split.items():
-            _res_dict[_split.title()] = _split_acc * 100
-        _res_dict["Overall"] = _res.test_metrics["accuracy"] * 100
+        if not args.show_adjusted_acc:
+            if args.acc_k != 1:
+                _res_dict.update(_get_topk_acc(_res, args))
+            else:
+                for _split, _split_acc in _res.test_acc__per__split.items():
+                    _res_dict[_split.title()] = _split_acc * 100
+                _res_dict["Overall"] = _res.test_metrics["accuracy"] * 100
+                # for _split, _split_acc in _get_topk_acc(_res, args).items():
+                #     assert torch.isclose(
+                #         torch.tensor(data=_res_dict[_split]), _split_acc
+                #     )
+        else:
+            _res_dict.update(_get_adjusted_accs(_res, args))
+
         table_rows.append(_res_dict)
         _sub_pbar.update(1)
     _sub_pbar.close()
@@ -73,9 +204,12 @@ for _dataset_name in seen_datasets:
         torch.load(str(_dataset.baseline_eval_file_path), map_location=DEFAULT_DEVICE)
     )
     _res_dict = {"Experiment": "Baseline", "Dataset": _dataset_name}
-    for _split, _split_acc in _baseline_res.test_acc__per__split.items():
-        _res_dict[_split.title()] = _split_acc * 100
-    _res_dict["Overall"] = _baseline_res.test_metrics["accuracy"] * 100
+    if not args.show_adjusted_acc:
+        for _split, _split_acc in _baseline_res.test_acc__per__split.items():
+            _res_dict[_split.title()] = _split_acc * 100
+        _res_dict["Overall"] = _baseline_res.test_metrics["accuracy"] * 100
+    else:
+        _res_dict.update(_get_adjusted_accs(_baseline_res, args))
 
     table_rows.insert(0, _res_dict)
     pbar.update(1)

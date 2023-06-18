@@ -1,8 +1,11 @@
 .shinymdc
 www
 results/**/*
-!/results/**/
+!results/**/
 !results/**/summary.txt
+!results/**/summary_top5.txt
+!results/**/summary_nn_adjusted.txt
+!results/**/summary_nn_semantic_*.txt
 !results/**/split_acc_delta_vs_rho.svg
 !results/**/split_acc_vs_k.svg
 config/datasets.toml
