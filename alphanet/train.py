@@ -1,7 +1,7 @@
 import logging
 from collections import Counter, defaultdict
 from copy import deepcopy
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Optional
 
 import ignite.contrib.handlers
 import ignite.engine
@@ -12,7 +12,7 @@ from corgy import Corgy
 from corgy.types import KeyValuePairs, OutputBinFile, OutputDirectory
 from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Literal
 
 from alphanet._dataset import NNsResult, SplitLTDataGroupInfo, SplitLTDataset
 from alphanet._pt import DEFAULT_DEVICE, PTOpt, TBLogs

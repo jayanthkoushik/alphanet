@@ -24,12 +24,13 @@ from matplotlib import (
     patheffects as pe,
     pyplot as plt,
 )
-from matplotlib.ticker import MultipleLocator
+from matplotlib.ticker import MultipleLocator, PercentFormatter
 from scipy.spatial.distance import cosine, euclidean
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
+from torch.nn import functional as F
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 
@@ -123,7 +124,7 @@ def _get_nn_dist_per_split_class(
     assert _mean_feat__mat__per__msplit["all"].shape == (_n_all, _n_feats)
 
     _cdist__mat: torch.Tensor
-    _n_dict = dict(few=_n_few, base=_n_base, all=_n_all)
+    _n_dict = {"few": _n_few, "base": _n_base, "all": _n_all}
     _n_for = _n_dict[for_split]
     _n_against = _n_dict[against_split]
     _XA = _mean_feat__mat__per__msplit[for_split]
@@ -132,7 +133,9 @@ def _get_nn_dist_per_split_class(
         _cdist__mat = torch.cdist(_XA.unsqueeze(0), _XB.unsqueeze(0), p=2)
         _cdist__mat = _cdist__mat.squeeze(0)
     elif metric == "cosine":
-        _cdist__mat = 1 - (_XA @ _XB.t())
+        _nXA = F.normalize(_XA)
+        _nXB = F.normalize(_XB)
+        _cdist__mat = 1 - (_nXA @ _nXB.t())
     else:
         raise AssertionError
     assert _cdist__mat.shape == (_n_for, _n_against)
@@ -187,7 +190,9 @@ def _get_nn_dist_per_split_class(
             if metric == "euclidean":
                 _computed_dist = (_class_feat__vec - _nn_class_feat__vec).norm(p=2)
             else:
-                _computed_dist = 1 - (_class_feat__vec @ _nn_class_feat__vec)
+                _norm_class_feat__vec = F.normalize(_class_feat__vec, dim=0)
+                _norm_nn_class_feat__vec = F.normalize(_nn_class_feat__vec, dim=0)
+                _computed_dist = 1 - (_norm_class_feat__vec @ _norm_nn_class_feat__vec)
             assert torch.isclose(_computed_dist, _nn_class_dist, atol=1e-3, rtol=1e-5)
 
     nn_dist__per__class = {
@@ -515,8 +520,8 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
             fit_reg=self.fit_reg,
             n_boot=self.n_boot,
             units="Class",
-            line_kws=dict(
-                path_effects=[
+            line_kws={
+                "path_effects": [
                     pe.Stroke(
                         linewidth=(mpl.rcParams["lines.linewidth"] * 1.75),
                         foreground=self.plot.palette[0],
@@ -524,8 +529,8 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
                     ),
                     pe.Normal(),
                 ]
-            ),
-            facet_kws=dict(sharex=self.sharex, sharey=self.sharey),
+            },
+            facet_kws={"sharex": self.sharex, "sharey": self.sharey},
         )
         g.map_dataframe(
             sns.scatterplot,
@@ -534,7 +539,7 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
             hue="Split",
             style="Split",
             palette=_palette,
-            markers=dict(few=".", base="*", many="*", medium="d"),
+            markers={"few": ".", "base": "*", "many": "*", "medium": "d"},
             legend=False,
             s=(mpl.rcParams["lines.markersize"] ** 2) / 2,
             alpha=0.5,
@@ -714,7 +719,7 @@ class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
             ncols = 1
 
         with self.plot.open(
-            nrows=nrows, ncols=ncols, squeeze=False, gridspec_kw=dict(wspace=0.05)
+            nrows=nrows, ncols=ncols, squeeze=False, gridspec_kw={"wspace": 0.05}
         ) as (_fig, _axs):
             for _i, (_col, _ax) in enumerate(
                 itertools.zip_longest(cols, _axs.flatten())
@@ -829,7 +834,7 @@ class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
             nrows=_n_exps,
             ncols=1,
             squeeze=False,
-            gridspec_kw=dict(hspace=0.1),
+            gridspec_kw={"hspace": 0.1},
         ) as (_fig, _axs):
             for _exp, _ax in zip(_exps, _axs[:, 0]):
                 _exp_df = df[df["Experiment"] == _exp]
@@ -1024,7 +1029,7 @@ class PlotClsAccAndSamples(_BaseMultiExpPlotCmd, BasePlotCmd):
             ncols=_n_cols,
             squeeze=False,
             sharey=True,
-            gridspec_kw=dict(hspace=0.2),
+            gridspec_kw={"hspace": 0.2},
         ) as (_fig, _axs):
             for _i, (_exp, _ax) in enumerate(
                 itertools.zip_longest(_exps, _axs.flatten())
@@ -1159,7 +1164,7 @@ class PlotAlphaDist(_BaseMultiExpPlotCmd, BasePlotCmd):
             legend=True,
             palette=_palette,
             aspect=1,
-            facet_kws=dict(sharex=True, sharey=False),
+            facet_kws={"sharex": True, "sharey": False},
         )
         if _n_exps > 1:
             g.set_titles("{col_name}")
@@ -1179,7 +1184,7 @@ class PlotAlphaDist(_BaseMultiExpPlotCmd, BasePlotCmd):
         )
         if self.legend_loc:
             if self.legend_ncols is not None:
-                _kwargs = dict(ncols=self.legend_ncols)
+                _kwargs = {"ncols": self.legend_ncols}
             else:
                 _kwargs = {}
             sns.move_legend(
@@ -1702,12 +1707,16 @@ class PlotPredCounts(_BaseMultiExpPlotCmd, BasePlotCmd):
             errorbar=None,
             kind="count",
             palette=[self.plot.palette[3], self.plot.palette[2], self.plot.palette[1]],
-            facet_kws=dict(sharex=True, sharey=True),
+            facet_kws={"sharex": True, "sharey": True},
         )
         if len(df["Dataset"].unique()) > 1:
             g.set_titles("{col_name}")
         else:
             g.set_titles("")
+        for facet_name, ax in g.axes_dict.items():
+            ax_df = df[df["Dataset"] == facet_name]
+            ax.yaxis.set_major_formatter(PercentFormatter(xmax=len(ax_df)))
+            ax.set_yticks([int(len(ax_df) * _p / 100) for _p in [15, 30, 45]])
         g.set_xlabels("")
         g.set_ylabels("")
         g.despine(top=True, left=True, right=True, bottom=False, trim=False)
@@ -1846,6 +1855,7 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
             _test_ys = _test_datagrp.label__seq
 
             if self.nn_split == "semantic":
+                # pylint: disable=used-before-assignment
                 _nn__seq__per__split_class = wordnet_nn__seq__per__split_class
             else:
                 _, _nn__seq__per__split_class = _get_nn_dist_per_split_class(
