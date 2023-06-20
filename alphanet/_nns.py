@@ -3,6 +3,7 @@ from typing import List, Literal, Tuple
 
 import torch
 from torch import cdist, Tensor
+from torch.nn import functional as F
 
 
 def get_nearest_neighbors(
@@ -62,7 +63,9 @@ def get_nearest_neighbors(
             for__mat.unsqueeze(0), neighbors__mat.unsqueeze(0), p=2
         ).squeeze(0)
     elif dist_fn == "cosine":
-        cdist__mat = 1 - (for__mat @ neighbors__mat.t())
+        norm_for__mat = F.normalize(for__mat, p=2, dim=1)
+        norm_neighbors__mat = F.normalize(neighbors__mat, p=2, dim=1)
+        cdist__mat = 1 - (norm_for__mat @ norm_neighbors__mat.t())
     elif dist_fn == "random":
         cdist__mat = torch.rand(for__mat.shape[0], neighbors__mat.shape[0])
     else:
