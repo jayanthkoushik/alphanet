@@ -70,6 +70,8 @@ class TrainingConfig(Corgy):
     def as_dict(self, recursive=False):  # pylint: disable=arguments-differ
         d = super().as_dict(recursive)
         del d["tb_logs"]
+        d["ptopt"]["optim_params"] = dict(d["ptopt"]["optim_params"])
+        d["ptopt"]["lr_sched_params"] = dict(d["ptopt"]["lr_sched_params"])
         d["sampler_builder"]["sampler_args"] = [
             dict(_arg) for _arg in d["sampler_builder"]["sampler_args"]
         ]
