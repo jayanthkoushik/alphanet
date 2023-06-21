@@ -1,0 +1,15 @@
+Experiment                     Few         Med.         Many      Overall
+---------------------  -----------  -----------  -----------  -----------
+Baseline                      27.4         46.2         61.8         49.6
+AlphaNet (_k_\ =\ 1)   23.0^28.61^  33.0^18.09^  47.4^19.51^  37.2^12.28^
+AlphaNet (_k_\ =\ 2)   29.9^ 1.82^  43.8^ 0.45^  59.6^ 0.46^  48.0^ 0.16^
+AlphaNet (_k_\ =\ 3)   30.9^ 1.86^  44.2^ 0.35^  60.1^ 0.29^  48.5^ 0.16^
+AlphaNet (_k_\ =\ 4)   31.2^ 2.05^  44.5^ 0.40^  60.3^ 0.39^  48.8^ 0.21^
+AlphaNet (_k_\ =\ 5)   33.1^ 1.45^  44.3^ 0.31^  60.2^ 0.32^  48.9^ 0.15^
+AlphaNet (_k_\ =\ 6)   32.0^ 1.68^  44.7^ 0.34^  60.5^ 0.21^  49.1^ 0.07^
+AlphaNet (_k_\ =\ 7)   32.3^ 1.38^  44.8^ 0.31^  60.6^ 0.25^  49.2^ 0.14^
+AlphaNet (_k_\ =\ 8)   32.2^ 1.70^  44.8^ 0.38^  60.6^ 0.28^  49.2^ 0.11^
+AlphaNet (_k_\ =\ 9)   32.4^ 1.22^  44.8^ 0.29^  60.6^ 0.18^  49.2^ 0.07^
+AlphaNet (_k_\ =\ 10)  32.4^ 1.85^  44.9^ 0.47^  60.7^ 0.37^  49.3^ 0.14^
+
+: Top-1 accuracy for AlphaNet using varying number of nearest neighbors (_k_) based on Euclidean distance, with \acs{cRT} baseline on ImageNet-LT. {#tbl:nnsweep_euclidean_imagenetlt_resnext50_crt_rho_2_top1}

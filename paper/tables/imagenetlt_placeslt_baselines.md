@@ -1,8 +1,7 @@
 Method                                 Few         Med.         Many      Overall
 -------------------            -----------  -----------  -----------  -----------
 **ImageNet-LT**
-Cross entropy                          7.7         37.5         65.9         44.4
-NCM                                   28.1         45.3         56.6         47.3
+\acs{NCM}                             28.1         45.3         56.6         47.3
 $\tau$-normalized                     30.7         46.9         59.1         49.4
 <!--  -->
 \acs{cRT}                             27.4         46.2         61.8         49.6
@@ -17,8 +16,7 @@ _α_\ \acs{LWS} (_ρ_\ =\ 1.5)    40.1^1.99^   43.2^0.98^   56.9^0.76^   48.0^0.
 <!--  -->
 <!--  -->
 **Places-LT**
-Cross entropy                         8.2         27.3         45.7         30.2
-NCM                                  27.3         37.1         40.4         36.4
+\acs{NCM}                            27.3         37.1         40.4         36.4
 $\tau$-normalized                    31.8         40.7         37.8         37.9
 <!--  -->
 \acs{cRT}                            24.9         37.6         42.0         36.7
@@ -31,4 +29,4 @@ _α_\ \acs{LWS} (_ρ_\ =\ 0.5)   37.1^1.39^   34.4^0.80^   37.7^0.52^   36.1^0.3
 _α_\ \acs{LWS} (_ρ_\ =\ 1)     34.6^0.97^   35.8^0.54^   38.6^0.39^   36.6^0.22^
 _α_\ \acs{LWS} (_ρ_\ =\ 1.5)   32.2^1.17^   37.2^0.36^   39.5^0.39^   37.0^0.11^
 
-: Mean split accuracy (standard deviation in super-script) of AlphaNet and various baseline methods on ImageNet-LT and Places-LT. _α_\ \acs{cRT} and _α_\ \acs{LWS} are AlphaNet models applied over \acs{cRT} and \acs{LWS} features respectively. {#tbl:baselines_imagenetlt_placeslt}
+: Mean split accuracy in percents (standard deviation in super-script) of AlphaNet and various baseline methods on ImageNet-LT and Places-LT. _α_\ \acs{cRT} and _α_\ \acs{LWS} are AlphaNet models applied over \acs{cRT} and \acs{LWS} features respectively. {#tbl:baselines_imagenetlt_placeslt}

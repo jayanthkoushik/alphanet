@@ -63,3 +63,12 @@ classifier_loader = "LinearClassifierLoader"
 nn_files_dir = "data/PlacesLT/nns/resnet152_lws"
 baseline_eval_file = "data/PlacesLT/baselines/resnet152_lws.pkl"
 proper_name = "Places-LT | LWS"
+
+[inatlt_resnet152_crt]
+split_files_dir = "data/iNaturalistLT/splits"
+feature_files_dir = "data/iNaturalistLT/features/resnet152_crt"
+classifier_file = "data/iNaturalistLT/classifiers/resnet152_crt.pth"
+classifier_loader = "LinearClassifierLoader"
+nn_files_dir = "data/iNaturalistLT/nns/resnet152_crt"
+baseline_eval_file = "data/iNaturalistLT/baselines/resnet152_crt.pkl"
+proper_name = "iNaturalist | cRT"

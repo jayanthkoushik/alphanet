@@ -5,12 +5,13 @@ from collections import defaultdict
 from heapq import nlargest, nsmallest
 from math import isnan
 from statistics import mean
-from typing import Dict, List, Literal, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import torch
 from corgy import Corgy
 from corgy.types import InputDirectory
 from tqdm import tqdm
+from typing_extensions import Literal
 
 from alphanet._dataset import SplitLTDataset
 from alphanet._pt import DEFAULT_DEVICE

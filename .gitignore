@@ -1,6 +1,6 @@
 .shinymdc/
 www/
-results/**/rep_*
+results/
 config/datasets.toml
 data/
 __pycache__/

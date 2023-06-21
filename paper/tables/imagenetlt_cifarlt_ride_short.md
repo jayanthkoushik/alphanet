@@ -12,4 +12,4 @@ _α_\ \acs{RIDE} (_ρ_\ =\ 0.5)    30.9^1.82^   47.0^1.25^   65.7^0.94^   48.7^0
 _α_\ \acs{RIDE} (_ρ_\ =\ 1)      27.2^1.69^   49.1^0.85^   67.4^0.62^   48.9^0.30^
 _α_\ \acs{RIDE} (_ρ_\ =\ 1.5)    25.0^1.15^   50.1^1.12^   67.9^1.01^   48.8^0.63^
 
-: Mean split accuracy (standard deviation in super-script) on ImageNet-LT and CIFAR-100-LT using the ensemble \acs{RIDE} model[@2020.Yu.Wang]. _α_\ \acs{RIDE} applies AlphaNet on average features from the ensemble. {#tbl:ride_imagenetlt_cifarlt_short}
+: Mean split accuracy in percents (standard deviation in super-script) on ImageNet-LT and CIFAR-100-LT using the ensemble \acs{RIDE} model[@2020.Yu.Wang]. _α_\ \acs{RIDE} applies AlphaNet on average features from the ensemble. {#tbl:ride_imagenetlt_cifarlt_short}

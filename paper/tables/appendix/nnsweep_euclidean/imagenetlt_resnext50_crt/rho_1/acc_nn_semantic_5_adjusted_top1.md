@@ -1,0 +1,15 @@
+Experiment                     Few         Med.         Many     Overall
+---------------------  -----------  -----------  -----------  ----------
+Baseline                      54.7         64.6         74.1        66.9
+AlphaNet (_k_\ =\ 1)   56.7^13.94^  52.3^10.90^  60.9^11.74^  56.2^7.84^
+AlphaNet (_k_\ =\ 2)   58.4^ 4.12^  59.5^ 6.35^  69.2^ 6.67^  63.1^5.07^
+AlphaNet (_k_\ =\ 3)   57.6^ 0.71^  62.8^ 0.42^  72.5^ 0.30^  65.8^0.22^
+AlphaNet (_k_\ =\ 4)   57.9^ 0.86^  63.0^ 0.34^  72.7^ 0.31^  66.0^0.22^
+AlphaNet (_k_\ =\ 5)   58.0^ 0.88^  63.2^ 0.38^  72.9^ 0.24^  66.2^0.16^
+AlphaNet (_k_\ =\ 6)   58.1^ 0.57^  63.2^ 0.27^  72.9^ 0.16^  66.2^0.16^
+AlphaNet (_k_\ =\ 7)   58.4^ 0.65^  63.3^ 0.26^  72.9^ 0.15^  66.3^0.10^
+AlphaNet (_k_\ =\ 8)   58.5^ 0.77^  63.2^ 0.23^  72.9^ 0.21^  66.3^0.14^
+AlphaNet (_k_\ =\ 9)   58.4^ 0.84^  63.3^ 0.26^  73.1^ 0.22^  66.4^0.13^
+AlphaNet (_k_\ =\ 10)  58.4^ 1.00^  63.3^ 0.32^  73.1^ 0.26^  66.4^0.13^
+
+: Accuracy computed by considering predictions within 5 WordNet nodes as correct, for AlphaNet using varying number of nearest neighbors (_k_) based on Euclidean distance, with \acs{cRT} baseline on ImageNet-LT. {#tbl:nnsweep_euclidean_imagenetlt_resnext50_crt_rho_1_semantic5_adjusted_top1}

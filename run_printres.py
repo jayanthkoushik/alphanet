@@ -38,6 +38,7 @@ class Args(Corgy):
     adjusted_acc_semantic_nns_level: Optional[int] = None
     imagenet_data_root: Optional[Path] = None
     eval_batch_size: int = 1024
+    print_csv: bool = True
 
 
 args = Args.parse_from_cmdline(usage=SUPPRESS)
@@ -205,9 +206,12 @@ for _dataset_name in seen_datasets:
     )
     _res_dict = {"Experiment": "Baseline", "Dataset": _dataset_name}
     if not args.show_adjusted_acc:
-        for _split, _split_acc in _baseline_res.test_acc__per__split.items():
-            _res_dict[_split.title()] = _split_acc * 100
-        _res_dict["Overall"] = _baseline_res.test_metrics["accuracy"] * 100
+        if args.acc_k != 1:
+            _res_dict.update(_get_topk_acc(_baseline_res, args))
+        else:
+            for _split, _split_acc in _baseline_res.test_acc__per__split.items():
+                _res_dict[_split.title()] = _split_acc * 100
+            _res_dict["Overall"] = _baseline_res.test_metrics["accuracy"] * 100
     else:
         _res_dict.update(_get_adjusted_accs(_baseline_res, args))
 
@@ -233,15 +237,17 @@ for _dataset_name in seen_datasets:
         _split_hdr_size = (
             4  # mean value (xx.x)
             + _sig_width__per__split[_split]  # std value (x.xx or xx.xx)
-            + 3  # format characters (<mean>^±<std>^)
+            + 2  # format characters (<mean>^<std>^)
         )
         _split_title = "Med." if _split == "Medium" else _split
         hdr_str += f"{_split_title:>{_split_hdr_size}}  "  # 2 spaces between columns
         sep_str += f"{'-' * _split_hdr_size}  "
 
-    _dataset_proper_name = SplitLTDataset(_dataset_name).proper_name
-    print(f"\n\n{_dataset_proper_name}:")
-    print(f"{'=' * (len(_dataset_proper_name) + 1)}\n")
+    if len(seen_datasets) > 1:
+        _dataset_proper_name = SplitLTDataset(_dataset_name).proper_name
+        print(f"\n\n{_dataset_proper_name}:")
+        print(f"{'=' * (len(_dataset_proper_name) + 1)}\n")
+
     print(hdr_str)
     print(sep_str)
 
@@ -254,16 +260,17 @@ for _dataset_name in seen_datasets:
             _mu, _sig = _mrow[_split], _srow[_split]
             _mu_str = f"{_mu:4.1f}"
             if not isnan(_sig):
-                row_str += f"{_mu_str}^±{_sig:{_sig_width__per__split[_split]}.2f}^"
+                row_str += f"{_mu_str}^{_sig:{_sig_width__per__split[_split]}.2f}^"
             else:
-                row_str += " " * (_sig_width__per__split[_split] + 3) + _mu_str
+                row_str += " " * (_sig_width__per__split[_split] + 2) + _mu_str
             row_str += "  "
         print(row_str.rstrip())
 
-    _col_order = ["Experiment", "Few", "Medium", "Many", "Overall"]
-    print()
-    print(
-        mean_table.to_csv(
-            columns=_col_order, index=False, float_format=lambda _f: f"{_f:4.1f}"
+    if args.print_csv:
+        _col_order = ["Experiment", "Few", "Medium", "Many", "Overall"]
+        print()
+        print(
+            mean_table.to_csv(
+                columns=_col_order, index=False, float_format=lambda _f: f"{_f:4.1f}"
+            )
         )
-    )
