@@ -128,7 +128,7 @@ for dist in "euclidean" "cosine"; do
         sfile="paper/tables/appendix/nnsweep_${dist}/imagenetlt_resnext50_crt/rho_${rho}/acc_top5.md"
         if check_does_not_exist "${sfile}"; then
             (set -x; python run_printres.py --base-res-dir "results/nnsweep_${dist}/imagenetlt_resnext50_crt/rho_${rho}" --rel-exp-paths "k_1" "k_2" "k_3" "k_4" "k_5" "k_6" "k_7" "k_8" "k_9" "k_10" --exp-names "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" --res-files-pattern "rep_*/result.pth" --exp-prefix "AlphaNet (_k_\\ =\\ " --exp-suffix ")" --no-print-csv --acc-k 5 > "${sfile}")
-            (set -x; echo "\n: Top-5 accuracy for AlphaNet using varying number of nearest neighbors (_k_) based on ${dist_desc}, with \\\\acs{cRT} baseline on ImageNet-LT. {#tbl:nnsweep_${dist}_imagenetlt_resnext50_crt_rho_${rho}_top1}" >> "${sfile}")
+            (set -x; echo "\n: Top-5 accuracy for AlphaNet using varying number of nearest neighbors (_k_) based on ${dist_desc}, with \\\\acs{cRT} baseline on ImageNet-LT. {#tbl:nnsweep_${dist}_imagenetlt_resnext50_crt_rho_${rho}_top5}" >> "${sfile}")
         fi
 
         for level in 2 3 4 5 10; do

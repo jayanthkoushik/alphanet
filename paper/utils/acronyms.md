@@ -5,3 +5,7 @@
 \acrodef{SVM}{support vector machine}
 \acrodef{SGD}{stochastic gradient descent}
 \acrodef{KDE}{kernel density estimator}
+\acrodef{NCM}{nearest class mean}
+\acrodef{NVIDIA}{NVIDIA}
+\acrodef{GPU}{GPU}
+\acrodef{NGC}{\acs{NVIDIA} \acs{GPU} cloud}

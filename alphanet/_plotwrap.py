@@ -5,7 +5,7 @@ import shutil
 from contextlib import contextmanager, ExitStack
 from functools import cached_property
 from pathlib import Path
-from typing import cast, Dict, Literal, Optional, Sequence, Tuple, Union
+from typing import cast, Dict, Optional, Sequence, Tuple, Union
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -13,7 +13,7 @@ import numpy as np
 import seaborn as sns
 from corgy import Corgy, corgyparser
 from corgy.types import OutputBinFile
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Literal
 
 CUD_PALETTE = [  # color universal design palette
     "#000000",
@@ -146,7 +146,7 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
     font: Annotated[PlotFont, "font config"] = PlotFont()
 
     DEFAULT_ASPECT_RATIO = 2.0
-    _scale_per_context = dict(paper=1, notebook=1.25, poster=2, talk=3.5)
+    _scale_per_context = {"paper": 1, "notebook": 1.25, "poster": 2, "talk": 3.5}
     _default_half_width_per_context = {
         _context: 3.25 * _scale for _context, _scale in _scale_per_context.items()
     }

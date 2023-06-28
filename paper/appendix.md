@@ -1,24 +1,11 @@
-# Additional Results
+# Additional Results {#sec:extra_results}
 
 This section contains additional analysis, as well as results on the
 \ac{LTR} model[@2022.Kong.Alshammari]. The included results are
 
-* Per-split accuracy with varying number of nearest numbers computed
-  using Euclidean and cosine distance
-  (@fig:euclidean_cosine_split_accs_vs_k_imagenetlt_crt).
-
 * Distribution of $\alpha$ values across 'few' split classes for
   different number of nearest numbers computed using Euclidean
   distance (@fig:ks_alpha_dists_imagenetlt_crt).
-
-* Tables of per-split accuracy comparing AlphaNet trained on a range
-  of $\rho$ values:
-
-    * ImageNet-LT ([@tbl:imgnetlt_crt_full;@tbl:imgnetlt_lws_full;@tbl:imgnetlt_ride_full]).
-
-    * Places-LT ([@tbl:placeslt_crt_full;@tbl:placeslt_lws_full]).
-
-    * CIFAR-100-LT ([@tbl:cifarlt_ride_full;@tbl:cifarlt_ltr_full]).
 
 * Change in per-class accuracy for AlphaNet compared to baseline models:
 

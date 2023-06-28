@@ -76,6 +76,14 @@ sections:
 - sections/4_experiments.md
 - sections/5_conclusion.md
 
+# cSpell: ignore rhosweep, ksweep
+
 appendices:
-- appendix.md
+- sections/appendix/implementation.md
+- sections/appendix/rhosweep.md
+- sections/appendix/ksweep.md
 ---
+
+{% raw %}
+\graphicspath{{figures/}}
+{% endraw %}

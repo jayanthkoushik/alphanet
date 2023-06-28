@@ -1,9 +1,10 @@
 from heapq import nsmallest
-from typing import List, Literal, Tuple
+from typing import List, Tuple
 
 import torch
 from torch import cdist, Tensor
 from torch.nn import functional as F
+from typing_extensions import Literal
 
 
 def get_nearest_neighbors(

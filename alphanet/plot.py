@@ -6,7 +6,7 @@ from heapq import nlargest, nsmallest
 from math import ceil
 from pathlib import Path
 from statistics import mean
-from typing import Dict, Iterator, List, Literal, Optional, Sequence, Tuple
+from typing import Dict, Iterator, List, Optional, Sequence, Tuple
 
 import ignite.contrib.handlers
 import ignite.engine
@@ -19,6 +19,7 @@ import torch
 from corgy import Corgy
 from corgy.types import InputBinFile, InputDirectory, OutputTextFile
 from matplotlib import (
+    image as mimg,
     patches as mpatches,
     path as mpath,
     patheffects as pe,
@@ -33,6 +34,7 @@ from sklearn.preprocessing import StandardScaler
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
+from typing_extensions import Literal
 
 from alphanet._dataset import SplitLTDataGroup, SplitLTDataset
 from alphanet._plotwrap import ContextPlot, PlotParams
@@ -664,6 +666,33 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
         return g.figure
 
 
+class PlotClassExamples(BasePlotCmd):
+    srcs: Tuple[Path]
+    labels: Tuple[str]
+
+    def __call__(self):
+        assert len(self.srcs) == len(self.labels)
+        _imgs = [mimg.imread(_src) for _src in self.srcs]
+        with self.plot.open(
+            nrows=1,
+            ncols=len(_imgs),
+            width_ratios=[_img.shape[1] for _img in _imgs],
+            gridspec_kw={"wspace": 0.01},
+        ) as (_fig, _axs):
+            for _ax, _img, _label in zip(_axs, _imgs, self.labels):
+                _ax.imshow(_img, interpolation="bicubic")
+                _ax.annotate(
+                    _label.title(), (0.5, -0.2), xycoords="axes fraction", ha="center"
+                )
+
+            for _ax in _axs:
+                _ax.set_xticks([])
+                _ax.set_yticks([])
+                for spine in ["top", "right", "bottom", "left"]:
+                    _ax.spines[spine].set_visible(True)
+        return _fig
+
+
 class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
     col: Optional[Literal["dataset", "metric"]] = None
     col_wrap: Optional[int] = None
@@ -1117,6 +1146,7 @@ class PlotAlphaDist(_BaseMultiExpPlotCmd, BasePlotCmd):
     legend_loc: Optional[str] = "center right"
     legend_bbox_to_anchor: Optional[Tuple[float, float]] = None
     legend_ncols: Optional[int] = None
+    source_idxs: Optional[Tuple[int, ...]] = None
 
     def __call__(self):
         df_rows = []
@@ -1126,9 +1156,16 @@ class PlotAlphaDist(_BaseMultiExpPlotCmd, BasePlotCmd):
             _alpha__mat = _alphanet_classifier.get_learned_alpha_vecs()
             assert all(bool(_a0 == 1) for _a0 in _alpha__mat[:, 0])
 
+            _source_idxs = (
+                range(1, _alpha__mat.shape[1])
+                if self.source_idxs is None
+                else self.source_idxs
+            )
             for (_target, _source) in itertools.product(
-                range(_alpha__mat.shape[0]), range(1, _alpha__mat.shape[1])
+                range(_alpha__mat.shape[0]), _source_idxs
             ):
+                if _source >= _alpha__mat.shape[1]:
+                    continue
                 df_rows.append(
                     {
                         "GID": _gid,

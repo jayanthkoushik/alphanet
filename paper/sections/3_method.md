@@ -1,53 +1,50 @@
-# Methods {#sec:method}
+# Method {#sec:method}
 
-![Pipeline for AlphaNet. Given examples from rare classes, we identify the
-nearest neighbors (visually similar) examples from frequent classes and then
-update each rare classifier using learned $\alpha$'s for each nearest neighbor.
-The result is an improved classifier for each rare
-class.](figures/pipeline){#fig:alphanet width=7.25in}
+![Pipeline for AlphaNet. Given a rare class, we identify the nearest
+neighbor frequent classes based on visual similarity, and then update
+the rare class' classifier using learned coefficients. One coefficient,
+$\alpha$, is learned for each nearest neighbor. The result is an
+improved classifier for the rare class.](figures/pipeline){#fig:alphanet
+width=7.25in}
 
-## Notation {#sec:method:notation}
+In this work, we define the distance between two classes as the distance
+between their average training set representation. Given a
+classification model, let $f$ be the function mapping images to vectors
+in a $d$-dimensional space (typically, this is the output of the
+penultimate layer in convolutional networks). For a class $c$ with $n^c$
+training samples $I^c_1, \dots, I^c_{n^c}$, let $z^c \equiv (1/n^c)
+\sumnl_i f(I^c_i)$ be the average training set representation. Given a
+distance function $\mu: \R^d \times \R^d \to \R$, for classes $c_1$ and
+$c_2$, we define the distance between two classes as $m_\mu(c_1, c_2)
+\equiv \mu(z^{c_1}, z^{c_2})$.
 
-In this work, we will define the distance between two classes as the distance
-between their average training set representation. Given a classification
-model, let $f$ be the function mapping images to vectors in $\R^d$ (typically,
-this is the output of the penultimate layer in convolutional networks). For a
-class $c$ with training samples $I^c_1, \dots, I^c_{n^c}$, let $z^c \equiv
-(1/n^c) \sumnl_i f(I^c_i)$ \aarti{be the average training set representation}.
-Given a distance metric $\mu: \R^d \times \R^d \to \R$, for classes $c_1$ and
-$c_2$, we define $m_\mu(c_1, c_2) \equiv \mu(x^{c_1}, x^{c_2})$. \aarti{Do we
-want to call $z^c$ as $x^c$ instead to be consistent?}
+Given a long-tailed dataset, the 'few' split, $C^F$, is defined as the
+set of classes with fewer than $T$ training samples, for some constant
+$T$ (for the datasets used in our experiments, $T=20$). The set of
+remaining classes forms the 'base' split, $C^B$. AlphaNet is applied to
+update the 'few' split classifiers using nearest neighbors from the
+'base' split. We will use the term 'classifier' to denote the linear
+mapping from feature vectors to class scores. In convolutional networks,
+the last layer is generally a matrix of all individual classifiers. The
+bias terms are not updated by AlphaNet, and are learned separately (more
+on this later).
 
-Given a long-tailed dataset, the 'few' split, $C^F$, is defined as the set of
-rare classes (which form the "tail" of the training data distribution). The set
-of remaining classes forms the 'base' split, $C^B$. AlphaNet is applied to
-update the 'few' split classifiers using nearest neighbors from the 'base'
-split. For a 'few' split class $c$, let the $k$ nearest 'base' split neighbors
-(based on $m_\mu$) be $q^c_1, \dots, q^c_k$. \aarti{Some comment on how to
-choose the split in practice?}
+## AlphaNet implementation {#sec:method:impl}
 
-We will use the term 'classifier' to denote the linear mapping from feature
-vectors to class scores. In convolutional networks, the last layer is generally
-a matrix of all individual classifiers. For a class $c$, let $w^c$ be its
-classifier, and let $v^c_1, \dots, v^c_k$ be the classifiers for its nearest
-neighbors. Finally, let $\c{v}^c \in \R^{kd}$ \aarti{$d$ not defined,
-also there are too many terms $q^c, z^c, x^c, v^c$ - maybe only introduce the
-ones you need later} be a vector with the nearest neighbor classifiers
-concatenated together.
-
-## AlphaNet implementation  {#sec:method:impl}
-
-@fig:alphanet shows the architecture of our method. AlphaNet is a small fully
-connected network which maps $\c{v}^c$ to a set of coefficients $\alpha^c_1,
-\dots, \alpha^c_k$. The $\alpha$ coefficients (denoted together as a vector
-$\alpha^c$), are then scaled to unit 1-norm (the reasoning behind this is
-explained below):
+@fig:alphanet shows the pipeline of our method. Given a 'few' split
+class $c$, let the $k$ nearest 'base' split neighbors (based on $m_\mu$)
+be $q^c_1, \dots, q^c_k$, with corresponding classifiers $v^c_1, \dots,
+v^c_k$. AlphaNet maps the nearest neighbor classifiers (concatenated
+together into a vector $\c{v}^c$) to a set of coefficients $\alpha^c_1,
+\dots, \alpha^c_k$. The $\alpha$ coefficients (denoted together as a
+vector $\alpha^c$), are then scaled to unit 1-norm (the reasoning behind
+this will be explained later), to obtain $\tilde{\alpha}^c$:
 $$
   \tilde{\alpha}^c
-= \alpha^c / \abs{\alpha^c}_1.
+= \alpha^c / \norm{\alpha^c}_1.
 $$ {#eq:alpha_scaling}
-The scaled coefficients are used to update classifiers through a linear
-combination:
+The scaled coefficients are used to update the 'few' split classifier
+($w^c \to \shat{w}^c$) through a linear combination:
 $$
        \shat{w}^c
 \equiv w^c + \suml_{i=1}^k \tilde{\alpha}^c_i v^c_i
@@ -64,28 +61,32 @@ $$
 &=   \max_{i=1,\dots,k} \norm{v^c_i}_2,
 \end{aligned}
 $$ {#eq:wdelta_norm_bound}
-that is, a classifier's change is bound by the norm of its class's nearest
-neighbors. Thanks to this, we do not need to update or rescale 'base' split
-classifiers, which may not be possible in certain domains.
+that is, a classifier's change is bound by the norm of its class'
+nearest neighbors. Thanks to this, we do not need to update or rescale
+'base' split classifiers, which may not be possible in certain domains.
 
-A single network is used to generate coefficients for every 'few' split class.
-So, once trained, AlphaNet can be applied even to previously unseen classes.
-\aarti{clarify unseen but known vs. open set - maybe add latter to future
-work}
+A single network is used to generate coefficients for every 'few' split
+class. So, once trained, AlphaNet can be applied even to classes not
+seen during training. This will be further explored in future work.
 
 ## Training {#sec:method:training}
 
-To train AlphaNet, we have to learn parameters $\theta$ for the network which
-maps $\c{v}^c$ to $\alpha^c$. We also learn a new set of bias values for the
-'few' split classes, $\tilde{b}_1, \dots, \tilde{b}_{\abs{C^F}}$. We train
-AlphaNet using samples from both the 'few' and 'base' splits to prevent
-over-fitting. So, for a sample $(I, y)$, the prediction score is given by
+The main trainable component of AlphaNet is a network (with parameters
+$\theta$) which maps $\c{v}^c$ to $\alpha^c$. We also learn a new set of
+bias values for the 'few' split classes, $\tilde{b}_1, \dots,
+\tilde{b}_{\abs{C^F}}$[^note:abs_cf]. Given a training image $I$, the
+per-class prediction scores are given by
 $$
-s(I, y; \theta, \tilde{b}) = \begin{cases}
-    f(I)^T \shat{w}^y + \tilde{b}_y & y \in C^F \\
-    f(I)^T w^y + b_y                & y \in C^B
+s(c; I) = \begin{cases}
+       f(I)^T \shat{w}^c + \shat{b}_c & c \in C^F. \\
+       f(I)^T w^c + b_c               & c \in C^B.
 \end{cases}
-$$ {#eq:training_probs}
-This score is used to compute the softmax cross-entropy loss on a set of
-training samples, and minimized with respect to $\theta$ and $\tilde{b}$ using
-\ac{SGD}.
+$$ {#eq:pred_scores}
+These scores are used to compute the softmax cross-entropy loss[^note:ce],
+which is minimized with respect to $\theta$ and $\tilde{b}$ using a \ac{SGD}
+optimizer.
+
+[^note:abs_cf]: $\abs{C^F}$ is the cardinality of $C^F$, i.e., the number
+of 'few' split classes.
+[^note:ce]: We use softmax cross-entropy loss in our experiments, but
+any loss function can be used.

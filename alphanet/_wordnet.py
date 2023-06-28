@@ -1,12 +1,13 @@
 import logging
 from collections import defaultdict
-from typing import Dict, List, Literal, Optional
+from typing import Dict, List, Optional
 
 import nltk
 from corgy.types import OutputTextFile
 from nltk.corpus import wordnet
 from nltk.corpus.reader.wordnet import Synset  # pylint: disable=no-name-in-module
 from tqdm import tqdm
+from typing_extensions import Literal
 
 nltk.download("wordnet", download_dir=".nltk")
 nltk.data.path.append(".nltk")

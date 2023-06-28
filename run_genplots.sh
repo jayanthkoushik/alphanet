@@ -42,12 +42,12 @@ rep=${REP:-"${REP_DEFAULT}"}
 n_boot=${N_BOOT:-${N_BOOT_DEFAULT}}
 
 if [ "${context}" = "paper" ]; then
-    dfont="Latin Modern Roman"
+    dfont="serif"
     mfont="cm"
     if [ "${theme}" = "light" ]; then
-        ext=".pdf"
+        ext=".pgf"
     else
-        ext="_dark.pdf"
+        ext="_dark.pgf"
     fi
     save_dir="${BASE_SAVE_DIR}"
 else
@@ -62,17 +62,21 @@ else
 fi
 
 if [ "${context}" = "paper" ]; then width="2"; else width="2.5"; fi
+sfile="${save_dir}/doggies${ext}"
+if check_does_not_exist "${sfile}"; then
+    (set -x; python run_makeplot.py PlotClassExamples --srcs "paper/figures/_src/lhasa.png" "paper/figures/_src/terrier.png" --labels "Lhasa" "Tibetan Terrier" --plot:dpi 300 --plot:width "${width}" --plot:aspect 1.5 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --plot:file "${sfile}";)
+fi
+
 sfile="${save_dir}/pred_counts_imagenetlt_crt_baseline${ext}"
 if check_does_not_exist "${sfile}"; then
     (set -x; python run_makeplot.py PlotPredCounts --base-res-dir "data/ImageNetLT/baselines" --exp-sub-dirs "" --res-files-pattern "resnext50_crt.pkl" --n-boot ${n_boot} --plot:width "${width}" --plot:aspect 1.25 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --plot:file "${sfile}";)
 fi
 
-if [ "${context}" = "paper" ]; then width="2"; else width="2.5"; fi
 sfile="${save_dir}/pred_changes_imagenetlt_crt_rho_05_few_nn_base${ext}"
 if check_does_not_exist "${sfile}"; then
     (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${rep}/result.pth" --n-boot ${n_boot} --plot:width "${width}" --plot:aspect "1:2" --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "few" --nn-split "base" --plot:file "${sfile}";)
 fi
-if [ "${context}" = "paper" ]; then width="2.25"; else width="2.8125"; fi
+
 sfile="${save_dir}/pred_changes_imagenetlt_crt_rho_05_few_nn_all${ext}"
 if check_does_not_exist "${sfile}"; then
     (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${rep}/result.pth" --n-boot ${n_boot} --plot:width "${width}" --plot:aspect "1:2" --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --label-size "x-small" --split "few" --nn-split "all" --plot:file "${sfile}";)
@@ -141,12 +145,10 @@ for rho in "0.25" "0.5" "1" "2"; do
         (set -x; python run_makeplot.py PlotSplitAccVsExp --base-res-dir "results" --exp-sub-dirs "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_2" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_3" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_4" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_5" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_6" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_7" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_8" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_9" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_10" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_2" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_3" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_4" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_5" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_6" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_7" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_8" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_9" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_10" --exp-names "2" "3" "4" "5" "6" "7" "8" "9" "10" "2" "3" "4" "5" "6" "7" "8" "9" "10" --res-files-pattern "rep_${rep}/result.pth" --n-boot ${n_boot} --col "metric" --y "acc" --xlabel "\$k$" --plot:width "full" --plot:aspect 3 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --legend-loc "upper right" --legend-bbox-to-anchor 0.99 0.85 --plot:file "${save_dir}/appendix/euclidean_cosine_split_accs_vs_k_imagenetlt_crt_rho_${rhostr}${ext}";)
     fi
     for dist in euclidean cosine; do
-        for k in 2 3 4 5 6 7 8 9 10; do
-            sfile="${save_dir}/appendix/ks_alpha_dists_imagenetlt_crt_rho_${rhostr}${ext}"
-            if check_does_not_exist "${sfile}"; then
-                (set -x; python run_makeplot.py PlotAlphaDist --base-res-dir "results/nnsweep_${dist}/imagenetlt_resnext50_crt/rho_${rho}" --exp-sub-dirs "k_${k}" --exp-names "\$k=${k}$" --res-files-pattern "rep_${rep}/result.pth" --n-boot ${n_boot} --col-wrap 5 --legend-loc "center" --legend-bbox-to-anchor 0.9 0.25 --legend-ncols 2 --plot:width "full" --plot:aspect 2.5 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --plot:file "${sfile}";)
-            fi
-        done
+        sfile="${save_dir}/appendix/ks_alpha_dists_${dist}_imagenetlt_crt_rho_${rhostr}${ext}"
+        if check_does_not_exist "${sfile}"; then
+            (set -x; python run_makeplot.py PlotAlphaDist --base-res-dir "results/nnsweep_${dist}/imagenetlt_resnext50_crt/rho_${rho}" --exp-sub-dirs "k_1" "k_2" "k_3" "k_4" "k_5" "k_6" "k_7" "k_8" "k_9" "k_10" --exp-names "\$k=1$" "\$k=2$" "\$k=3$" "\$k=4$" "\$k=5$" "\$k=6$" "\$k=7$" "\$k=8$" "\$k=9$" "\$k=10$" --res-files-pattern "rep_${rep}/result.pth" --n-boot ${n_boot} --col-wrap 5 --legend-loc "center" --legend-bbox-to-anchor 0.9 0.25 --legend-ncols 2 --plot:width "full" --plot:aspect 2.5 --plot:theme "${theme}" --plot:context "${context}" --plot:font:default "${dfont}" --plot:font:math "${mfont}" --plot:file "${sfile}";)
+        fi
     done
 
     for dataset in imagenetlt_resnext50_crt imagenetlt_resnext50_lws imagenetlt_resnext50_ride placeslt_resnet152_crt placeslt_resnet152_lws cifar100_resnet32_ltr cifar100_resnet32_ride; do

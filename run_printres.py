@@ -260,7 +260,7 @@ for _dataset_name in seen_datasets:
             _mu, _sig = _mrow[_split], _srow[_split]
             _mu_str = f"{_mu:4.1f}"
             if not isnan(_sig):
-                row_str += f"{_mu_str}^{_sig:{_sig_width__per__split[_split]}.2f}^"
+                row_str += f"{_mu_str}^{_sig:0{_sig_width__per__split[_split]}.2f}^"
             else:
                 row_str += " " * (_sig_width__per__split[_split] + 2) + _mu_str
             row_str += "  "
