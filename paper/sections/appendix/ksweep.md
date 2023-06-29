@@ -1,8 +1,8 @@
+# Analysis of nearest neighbor selection {#sec:ksweep}
+
 {% raw %}
 \graphicspath{{figures/appendix/}}
 {% endraw %}
-
-# Analysis of nearest neighbor selection {#sec:ksweep}
 
 We analyzed the effect of the number of nearest neighbors $k$, and the
 distance metric ($\mu$) used to select them, on the performance of

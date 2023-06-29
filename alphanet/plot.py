@@ -1943,19 +1943,18 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
             _n_rows = ceil(len(_exps) / self.col_wrap)
 
         if self.nn_split == "semantic":
-            palette = ["#e5ae39", "#179be8", "#4f9e89"]
-            # palette__per__split = {
-            #     "few": ["#ffd67f", "#7fc1e8", "#66ccb0"],
-            #     "base": ["#bf8200", "#0079bf", "#007f5d"],
-            #     "all": ["#e5ae39", "#179be8", "#4f9e89"],
-            # }
-            # palette = list(
-            #     itertools.chain.from_iterable(palette__per__split.values())
-            # )
-            hatch_palette = ["#ffd67f", "#7fc1e8", "#66ccb0"]
+            if self.plot.theme == "light":
+                palette = ["#e5ae39", "#179be8", "#4f9e89"]
+                hatch_palette = ["#ffd67f", "#7fc1e8", "#66ccb0"]
+            else:
+                palette = ["#15419e", "#ba5012", "#8d4e5e"]
+                hatch_palette = ["#002166", "#663212", "#7a293f"]
         else:
             palette = self.plot.palette[1:4]
-            hatch_palette = ["#e5cfa0", "#b9d7e8", "#00cc95"]
+            if self.plot.theme == "light":
+                hatch_palette = ["#e5cfa0", "#b9d7e8", "#00cc95"]
+            else:
+                hatch_palette = ["#101d39", "#2a180e", "#991f40"]
 
         with self.plot.open(
             close_fig_on_exit=False, nrows=_n_rows, ncols=_n_cols, squeeze=False

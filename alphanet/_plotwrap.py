@@ -5,7 +5,7 @@ import shutil
 from contextlib import contextmanager, ExitStack
 from functools import cached_property
 from pathlib import Path
-from typing import cast, Dict, Optional, Sequence, Tuple, Union
+from typing import cast, Optional, Sequence, Tuple, Union
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -26,6 +26,34 @@ CUD_PALETTE = [  # color universal design palette
     "#cc79a7",
 ]
 
+_CUD_INVERSE = [
+    "#ffffff",
+    # lighter
+    # "#4780ff",
+    # "#ba6f45",
+    # "#ff81a3",
+    # "#3f49ca",
+    # "#ffa471",
+    # "#55b4ff",
+    # "#5c9e79",
+    # normal
+    # "#1960ff",
+    # "#a94b16",
+    # "#ff618c",
+    # "#0f1bbd",
+    # "#ff8d4d",
+    # "#2aa1ff",
+    # "#338658",
+    # darker
+    "#144DCC",
+    "#873C12",
+    "#CC4E70",
+    "#0C1697",
+    "#CC713E",
+    "#2281CC",
+    "#296B46",
+]
+
 _BASE_RC = {
     "axes.grid": True,
     "axes.grid.axis": "y",
@@ -34,7 +62,6 @@ _BASE_RC = {
     "axes.spines.right": False,
     "axes.spines.top": False,
     "axes.spines.bottom": False,
-    "axes.prop_cycle": mpl.cycler("color", CUD_PALETTE),
     "lines.color": "C0",
     "ytick.direction": "out",
     "xtick.direction": "out",
@@ -43,9 +70,9 @@ _BASE_RC = {
     "legend.handletextpad": 0.25,
     "figure.constrained_layout.use": True,
     "savefig.bbox": "standard",
-    "savefig.transparent": True,
     "savefig.edgecolor": "auto",
     "savefig.facecolor": "auto",
+    "svg.fonttype": "none",
     "mathtext.bf": "bf",
     "mathtext.cal": "cursive",
     "mathtext.it": "it",
@@ -67,32 +94,6 @@ _BASE_RC = {
     ),
 }
 
-_bg_per_theme = {"dark": "#212529", "light": "#ffffff"}
-_fg_primary_per_theme = {"dark": "#adb5bd", "light": "#212529"}
-_fg_secondary_per_theme = {"dark": "#495057", "light": "#adb5bd"}
-_THEME_RC: Dict[str, Dict[str, str]] = {}
-for _theme in ["dark", "light"]:
-    _bg = _bg_per_theme[_theme]
-    _fg_primary = _fg_primary_per_theme[_theme]
-    _fg_secondary = _fg_secondary_per_theme[_theme]
-    _THEME_RC[_theme] = {
-        "axes.edgecolor": _fg_primary,
-        "axes.facecolor": _bg,
-        "axes.labelcolor": _fg_primary,
-        "boxplot.boxprops.color": _fg_primary,
-        "boxplot.capprops.color": _fg_primary,
-        "boxplot.flierprops.color": _fg_primary,
-        "boxplot.flierprops.markeredgecolor": _fg_primary,
-        "boxplot.whiskerprops.color": _fg_primary,
-        "figure.edgecolor": _bg,
-        "figure.facecolor": _bg,
-        "grid.color": _fg_secondary,
-        "patch.edgecolor": _fg_primary,
-        "text.color": _fg_primary,
-        "xtick.color": _fg_primary,
-        "ytick.color": _fg_primary,
-    }
-
 
 class PlotFont(Corgy):
     default: Annotated[Optional[str], "default font family override"] = None
@@ -109,6 +110,14 @@ class PlotFont(Corgy):
         Optional[Literal["dejavusans", "dejavuserif", "cm", "stix", "stixsans"]],
         "math font override",
     ] = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        for attr in ["serif", "sans_serif", "monospace", "cursive", "fantasy"]:
+            # Remove leading/trailing spaces from font names.
+            fonts: Optional[Sequence[str]] = getattr(self, attr)
+            if fonts is not None:
+                setattr(self, attr, [font.strip() for font in fonts])
 
     def config(self, rc):
         if self.default is not None:
@@ -144,15 +153,27 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
     backend: Annotated[Optional[str], "matplotlib backend override"] = None
     dpi: Annotated[Optional[int], "plot dpi"] = 72
     font: Annotated[PlotFont, "font config"] = PlotFont()
+    bg: Annotated[Optional[str], "plot background color override"] = None
+    fg_primary: Annotated[
+        Optional[str], "plot primary foreground color override"
+    ] = None
+    fg_secondary: Annotated[
+        Optional[str], "plot secondary foreground color override"
+    ] = None
+    transparent: Annotated[bool, "save with transparent background"] = False
 
     DEFAULT_ASPECT_RATIO = 2.0
     _scale_per_context = {"paper": 1, "notebook": 1.25, "poster": 2, "talk": 3.5}
+    _font_scale_per_context = {"paper": 1, "notebook": 1.125, "poster": 1.75, "talk": 3}
     _default_half_width_per_context = {
         _context: 3.25 * _scale for _context, _scale in _scale_per_context.items()
     }
     _default_full_width_per_context = {
         _context: 6.5 * _scale for _context, _scale in _scale_per_context.items()
     }
+    _default_bg_per_theme = {"dark": "#212529", "light": "#ffffff"}
+    _default_fg_primary_per_theme = {"dark": "#adb5bd", "light": "#212529"}
+    _default_fg_secondary_per_theme = {"dark": "#495057", "light": "#adb5bd"}
 
     @cached_property
     def _can_use_latex(self) -> bool:
@@ -167,9 +188,10 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
 
     def config(self):
         """Apply configurations globally."""
+        _font_scale = self._font_scale_per_context[self.context]
+        _font_size = 9 * _font_scale
+        _small_font_size = 8 * _font_scale
         _scale = self._scale_per_context[self.context]
-        _font_size = 9 * _scale
-        _small_font_size = 8 * _scale
         _lw = 1.25 * _scale
         _maj_tickw = 1 * _scale
         _min_tickw = 0.75 * _scale
@@ -209,11 +231,38 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
         _mpl_rc["figure.dpi"] = self.dpi
 
         sns.set_theme(style="ticks", palette=self.palette, rc=_mpl_rc)
-        mpl.rcParams.update(_THEME_RC[self.theme])
+
+        _bg = self.bg or self._default_bg_per_theme[self.theme]
+        _fg_primary = self.fg_primary or self._default_fg_primary_per_theme[self.theme]
+        _fg_secondary = (
+            self.fg_secondary or self._default_fg_secondary_per_theme[self.theme]
+        )
+        _theme_rc = {
+            "axes.edgecolor": _fg_primary,
+            "axes.facecolor": _bg,
+            "axes.labelcolor": _fg_primary,
+            "boxplot.boxprops.color": _fg_primary,
+            "boxplot.capprops.color": _fg_primary,
+            "boxplot.flierprops.color": _fg_primary,
+            "boxplot.flierprops.markeredgecolor": _fg_primary,
+            "boxplot.whiskerprops.color": _fg_primary,
+            "figure.edgecolor": _bg,
+            "figure.facecolor": _bg,
+            "grid.color": _fg_secondary,
+            "patch.edgecolor": _fg_primary,
+            "text.color": _fg_primary,
+            "xtick.color": _fg_primary,
+            "ytick.color": _fg_primary,
+            "axes.prop_cycle": mpl.cycler("color", self.palette),
+            "savefig.transparent": self.transparent,
+        }
+        mpl.rcParams.update(_theme_rc)
 
     @cached_property
     def palette(self):
-        return CUD_PALETTE if self.theme == "light" else ["white"] + CUD_PALETTE[1:]
+        _c0 = self.fg_primary or self._default_fg_primary_per_theme[self.theme]
+        _palette = CUD_PALETTE if self.theme == "light" else _CUD_INVERSE
+        return [_c0] + _palette[1:]
 
     def __enter__(self) -> None:
         self._rc_orig = mpl.rcParams.copy()
