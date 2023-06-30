@@ -1,0 +1,29 @@
+[FORMAT]
+max-line-length = 88
+
+[MESSAGES CONTROL]
+disable =
+  fixme,
+  duplicate-code,
+  missing-docstring,
+  invalid-name,
+  ungrouped-imports,
+  wrong-import-order,
+  wrong-import-position,
+  import-outside-toplevel,
+  unused-argument,
+  no-member,
+  protected-access,
+  attribute-defined-outside-init,
+  too-few-public-methods,
+  too-many-public-methods,
+  too-many-ancestors,
+  too-many-instance-attributes,
+  too-many-arguments,
+  too-many-locals,
+  too-many-statements,
+  too-many-lines,
+  too-many-branches,
+  too-many-nested-blocks,
+  too-many-return-statements,
+  too-many-boolean-expressions,

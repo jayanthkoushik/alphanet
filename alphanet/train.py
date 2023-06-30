@@ -169,7 +169,7 @@ class TrainCmd(Corgy):
         "whether to load the latest checkpoint (ignored if `ckpt_dir` not provided)",
     ] = True
     dataset: Annotated[
-        SplitLTDataset, "name of dataset as defined in 'config/datasets.toml'",
+        SplitLTDataset, "name of dataset as defined in 'config/datasets.toml'"
     ]
     alphanet: Annotated[AlphaNet, "AlphaNet parameters"]
     training: Annotated[TrainingConfig, "training parameters"]

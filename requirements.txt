@@ -1,0 +1,14 @@
+corgy@git+https://github.com/jayanthkoushik/corgy@889f11c#egg=corgy[colors,toml]
+tomli
+torch
+torchvision
+torcheval
+tqdm
+matplotlib
+seaborn
+typing-extensions
+pandas
+pytorch-ignite
+tensorboard
+scikit-learn
+nltk

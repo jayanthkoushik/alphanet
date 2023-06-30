@@ -1161,7 +1161,7 @@ class PlotAlphaDist(_BaseMultiExpPlotCmd, BasePlotCmd):
                 if self.source_idxs is None
                 else self.source_idxs
             )
-            for (_target, _source) in itertools.product(
+            for _target, _source in itertools.product(
                 range(_alpha__mat.shape[0]), _source_idxs
             ):
                 if _source >= _alpha__mat.shape[1]:

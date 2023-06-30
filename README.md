@@ -7,24 +7,26 @@ tested, and the commands will need to be modified.
 
 ## Setup
 Download the repository, or clone it using `git`. Running the code requires
-**Python 3.8 or higher**. Dependencies can be installed using
-[Poetry](https://python-poetry.org/), preferably in a virtual environment:
+**Python 3.8 or higher**. Required dependencies are listed in
+`requirements.txt`, and can be installed with `pip` (preferably inside a
+virtual environment).
 
 <!-- cspell: disable -->
 ```bash
 $ python -m venv .venv  # create a virtual environment named '.venv'
 $ source .venv/bin/activate  # activate the virtual environment
-$ poetry install --only main  # install dependencies
+$ pip install -r requirements.txt
 ```
 <!-- cspell: enable -->
 
 ### Dev setup
-For development, get [npm](https://www.npmjs.com), then
-install dev dependencies, and enable pre-commit hooks.
+For development, get [npm](https://www.npmjs.com) and
+[pipx](https://pypa.github.io/pipx/), then install dev dependencies,
+and enable pre-commit hooks.
 
 <!-- cspell: disable -->
 ```bash
-$ poetry install
+$ pip install -r requirements.dev.txt
 $ pre-commit install -t pre-commit
 ```
 <!-- cspell: enable -->

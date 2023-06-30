@@ -328,7 +328,6 @@ class NNsResult(Corgy):
         # mean feature vector for the corresponding class label in
         # `class__seq__per__msplit['few']`.
         for _msplit in ("base", "few"):
-
             _class__seq, _mean_feat__mats = zip(
                 *_mean_feat__vec__per__class__msplit[_msplit].items()
             )
