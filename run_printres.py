@@ -39,6 +39,9 @@ class Args(Corgy):
     imagenet_data_root: Optional[Path] = None
     eval_batch_size: int = 1024
     print_csv: bool = True
+    show_baselines: bool = True
+    fixed_sig_width: Optional[int] = None
+    show_hdr: bool = True
 
 
 args = Args.parse_from_cmdline(usage=SUPPRESS)
@@ -198,26 +201,29 @@ for _i, _rel_exp_path in enumerate(args.rel_exp_paths):
     pbar.update(1)
 pbar.close()
 
-pbar = trange(len(seen_datasets), desc="Loading baselines", unit="dataset")
-for _dataset_name in seen_datasets:
-    _dataset = SplitLTDataset(_dataset_name)
-    _baseline_res = TrainResult.from_dict(
-        torch.load(str(_dataset.baseline_eval_file_path), map_location=DEFAULT_DEVICE)
-    )
-    _res_dict = {"Experiment": "Baseline", "Dataset": _dataset_name}
-    if not args.show_adjusted_acc:
-        if args.acc_k != 1:
-            _res_dict.update(_get_topk_acc(_baseline_res, args))
+if args.show_baselines:
+    pbar = trange(len(seen_datasets), desc="Loading baselines", unit="dataset")
+    for _dataset_name in seen_datasets:
+        _dataset = SplitLTDataset(_dataset_name)
+        _baseline_res = TrainResult.from_dict(
+            torch.load(
+                str(_dataset.baseline_eval_file_path), map_location=DEFAULT_DEVICE
+            )
+        )
+        _res_dict = {"Experiment": "Baseline", "Dataset": _dataset_name}
+        if not args.show_adjusted_acc:
+            if args.acc_k != 1:
+                _res_dict.update(_get_topk_acc(_baseline_res, args))
+            else:
+                for _split, _split_acc in _baseline_res.test_acc__per__split.items():
+                    _res_dict[_split.title()] = _split_acc * 100
+                _res_dict["Overall"] = _baseline_res.test_metrics["accuracy"] * 100
         else:
-            for _split, _split_acc in _baseline_res.test_acc__per__split.items():
-                _res_dict[_split.title()] = _split_acc * 100
-            _res_dict["Overall"] = _baseline_res.test_metrics["accuracy"] * 100
-    else:
-        _res_dict.update(_get_adjusted_accs(_baseline_res, args))
+            _res_dict.update(_get_adjusted_accs(_baseline_res, args))
 
-    table_rows.insert(0, _res_dict)
-    pbar.update(1)
-pbar.close()
+        table_rows.insert(0, _res_dict)
+        pbar.update(1)
+    pbar.close()
 
 full_table = pd.DataFrame(table_rows)
 for _dataset_name in seen_datasets:
@@ -229,7 +235,10 @@ for _dataset_name in seen_datasets:
     std_table = _grouped_table.std().reset_index()
     _sig_width__per__split = {}
     for _split in ("Few", "Medium", "Many", "Overall"):
-        _sig_width__per__split[_split] = 5 if std_table[_split].max() >= 10 else 4
+        if args.fixed_sig_width is not None:
+            _sig_width__per__split[_split] = args.fixed_sig_width
+        else:
+            _sig_width__per__split[_split] = 5 if std_table[_split].max() >= 10 else 4
 
     hdr_str = f"{'Experiment':{max_exp_name_len + 2}}"
     sep_str = f"{'-' * max_exp_name_len}  "
@@ -248,8 +257,9 @@ for _dataset_name in seen_datasets:
         print(f"\n\n{_dataset_proper_name}:")
         print(f"{'=' * (len(_dataset_proper_name) + 1)}\n")
 
-    print(hdr_str)
-    print(sep_str)
+    if args.show_hdr:
+        print(hdr_str)
+        print(sep_str)
 
     for _mrow, _srow in zip(mean_table.iterrows(), std_table.iterrows()):
         _mrow, _srow = _mrow[1], _srow[1]

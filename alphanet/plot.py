@@ -25,7 +25,12 @@ from matplotlib import (
     patheffects as pe,
     pyplot as plt,
 )
-from matplotlib.ticker import MultipleLocator, PercentFormatter
+from matplotlib.ticker import (
+    FixedFormatter,
+    FixedLocator,
+    MultipleLocator,
+    PercentFormatter,
+)
 from scipy.spatial.distance import cosine, euclidean
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS
@@ -39,6 +44,7 @@ from typing_extensions import Literal
 from alphanet._dataset import SplitLTDataGroup, SplitLTDataset
 from alphanet._plotwrap import ContextPlot, PlotParams
 from alphanet._pt import DEFAULT_DEVICE
+from alphanet._samplers import AllFewSampler, ClassBalancedBaseSampler
 from alphanet._wordnet import get_wordnet_nns_per_imgnet_class
 from alphanet.train import TrainResult
 
@@ -690,6 +696,105 @@ class PlotClassExamples(BasePlotCmd):
                 _ax.set_yticks([])
                 for spine in ["top", "right", "bottom", "left"]:
                     _ax.spines[spine].set_visible(True)
+        return _fig
+
+
+class PlotSplitAccVsRhosSingle(BasePlotCmd):
+    res_dirs: Tuple[InputDirectory]
+    res_files_pattern: str = "**/*.pth"
+    eval_batch_size: int = 1024
+    n_boot: int = 1000
+    y: Literal["acc", "acc_delta"]
+    legend_loc: str = "upper right"
+    legend_bbox_to_anchor: Optional[Tuple[float, float]] = None
+    major_xticks: Optional[Tuple[float]] = None
+    major_xticklabels: Optional[Tuple[str]] = None
+    minor_xticks: Optional[Tuple[float]] = None
+
+    def __call__(self):
+        df_rows = []
+        _dataset: Optional[SplitLTDataset] = None
+        for _res_dir in self.res_dirs:
+            for _res_file in tqdm(
+                list(_res_dir.glob(self.res_files_pattern)),
+                desc=f"Loading results from '{_res_dir}'",
+                unit="file",
+            ):
+                _res = _load_train_res(_res_file, self.eval_batch_size)
+                if _dataset is None:
+                    _dataset = SplitLTDataset(_res.train_data_info.dataset_name)
+                else:
+                    assert str(_dataset) == _res.train_data_info.dataset_name
+                _baseline_res = _load_baseline_res(_dataset, self.eval_batch_size)
+                assert list(_res.training_config.sampler_builder.sampler_classes) == [
+                    AllFewSampler,
+                    ClassBalancedBaseSampler,
+                ]
+                _rho = float(_res.training_config.sampler_builder.sampler_args[1]["r"])
+                for _split in ["Many", "Medium", "Few", "Overall"]:
+                    df_rows.append(
+                        {
+                            "$\\rho$": _rho,
+                            "Split": _split,
+                            "Accuracy": _get_split_test_acc(_res, _split),
+                            "Accuracy change": (
+                                _get_split_test_acc(_res, _split)
+                                - _get_split_test_acc(_baseline_res, _split)
+                            ),
+                        }
+                    )
+
+        df = pd.DataFrame(df_rows)
+        logging.info("loaded dataframe:\n%s", df)
+
+        with self.plot.open() as (_fig, _ax):
+            sns.lineplot(
+                df,
+                x="$\\rho$",
+                y=("Accuracy change" if self.y == "acc_delta" else "Accuracy"),
+                hue="Split",
+                style="Split",
+                hue_order=["Overall", "Few", "Medium", "Many"],
+                n_boot=self.n_boot,
+                markers=True,
+                ms=(mpl.rcParams["lines.markersize"] / 1.2),
+                dashes=False,
+                err_style="bars",
+                ax=_ax,
+                legend=False,
+            )
+            sns.despine(fig=_fig, ax=_ax, left=True, right=True, bottom=False, top=True)
+
+            if self.y == "acc":
+                _ax.set_ylim(0, 1.01)
+                _ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+            else:
+                _ax.set_ylim(-0.25, 0.25)
+                _ax.set_yticks([-0.2, -0.1, 0, 0.1, 0.2])
+                _ax.axhline(y=0, ls="-", color=self.plot.palette[0], zorder=1)
+
+            _ax.xaxis.set_tick_params(direction="in", which="both")
+            if self.major_xticks is not None:
+                _ax.xaxis.set_major_locator(FixedLocator(self.major_xticks))
+                _ax.set_xlim(min(self.major_xticks), max(self.major_xticks))
+            if self.major_xticklabels is not None:
+                _ax.xaxis.set_major_formatter(FixedFormatter(self.major_xticklabels))
+            if self.minor_xticks is not None:
+                _ax.xaxis.set_minor_locator(FixedLocator(self.minor_xticks))
+
+            # if self.legend_loc:
+            #     _legend = _ax.legend()
+            #     _legend_handles = _legend.legendHandles
+            #     _legend.remove()
+            #     _ax.legend(
+            #         handles=_legend_handles,
+            #         ncols=4,
+            #         title="",
+            #         frameon=False,
+            #         loc=self.legend_loc,
+            #         bbox_to_anchor=self.legend_bbox_to_anchor,
+            #     )
+
         return _fig
 
 
