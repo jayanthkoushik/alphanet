@@ -82,6 +82,8 @@ appendices:
 - sections/appendix/implementation.md
 - sections/appendix/rhosweep.md
 - sections/appendix/ksweep.md
+
+url: https://jkoushik.me/alphanet
 ---
 
 {% raw %}
