@@ -761,7 +761,7 @@ class PlotSplitAccVsRhosSingle(BasePlotCmd):
                 dashes=False,
                 err_style="bars",
                 ax=_ax,
-                legend=False,
+                legend=True,
             )
             sns.despine(fig=_fig, ax=_ax, left=True, right=True, bottom=False, top=True)
 
@@ -782,18 +782,18 @@ class PlotSplitAccVsRhosSingle(BasePlotCmd):
             if self.minor_xticks is not None:
                 _ax.xaxis.set_minor_locator(FixedLocator(self.minor_xticks))
 
-            # if self.legend_loc:
-            #     _legend = _ax.legend()
-            #     _legend_handles = _legend.legendHandles
-            #     _legend.remove()
-            #     _ax.legend(
-            #         handles=_legend_handles,
-            #         ncols=4,
-            #         title="",
-            #         frameon=False,
-            #         loc=self.legend_loc,
-            #         bbox_to_anchor=self.legend_bbox_to_anchor,
-            #     )
+            if self.legend_loc:
+                _legend = _ax.legend()
+                _legend_handles = _legend.legendHandles
+                _legend.remove()
+                _ax.legend(
+                    handles=_legend_handles,
+                    ncols=4,
+                    title="",
+                    frameon=False,
+                    loc=self.legend_loc,
+                    bbox_to_anchor=self.legend_bbox_to_anchor,
+                )
 
         return _fig
 

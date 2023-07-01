@@ -10,12 +10,11 @@ import pandas as pd
 import torch
 from corgy import Corgy
 from corgy.types import InputDirectory
-from torch.utils.data import DataLoader, TensorDataset
-from torcheval.metrics import MulticlassAccuracy
 from tqdm import trange
 
 from alphanet._dataset import SplitLTDataset
 from alphanet._pt import DEFAULT_DEVICE
+from alphanet._utils import get_topk_acc
 from alphanet._wordnet import get_wordnet_nns_per_imgnet_class
 from alphanet.plot import (
     _get_nn_dist_per_split_class,
@@ -102,55 +101,9 @@ def _get_adjusted_accs(_train_res: TrainResult, _args: Args) -> Dict[str, float]
     _res_dict = {}
     for _split in _correct__per__split:
         _res_dict[_split.title()] = (
-            _correct__per__split[_split] / _total__per__split[_split] * 100
+            _correct__per__split[_split] / _total__per__split[_split]
         )
-    _res_dict["Overall"] = sum(_correct__per__split.values()) / len(_test_ys) * 100
-    return _res_dict
-
-
-def _get_topk_acc(_train_res: TrainResult, _args: Args):
-    _alphanet_classifier = _train_res.load_best_alphanet_classifier()
-    _dataset = SplitLTDataset(_train_res.train_data_info.dataset_name)
-    try:
-        _test_datagrp = _TEST_DATA_CACHE[str(_dataset)]
-    except KeyError:
-        _test_datagrp = _dataset.load_data("test")
-        _TEST_DATA_CACHE[str(_dataset)] = _test_datagrp
-    _test_dataset = TensorDataset(
-        _test_datagrp.feat__mat, torch.tensor(_test_datagrp.label__seq)
-    )
-    _data_loader = DataLoader(_test_dataset, args.eval_batch_size)
-
-    _topk_metric = MulticlassAccuracy(k=args.acc_k)
-    _topk_metric__per__split = {
-        _split: MulticlassAccuracy(k=args.acc_k) for _split in ["many", "medium", "few"]
-    }
-
-    _pbar = trange(
-        len(_test_dataset), desc=f"Computing top-{args.acc_k} accuracy", unit="sample"
-    )
-    for _X_batch, _y_batch in _data_loader:
-        _X_batch, _y_batch = _X_batch.to(DEFAULT_DEVICE), _y_batch.to(DEFAULT_DEVICE)
-        _yhat_batch = _alphanet_classifier(_X_batch)
-        _topk_metric.update(_yhat_batch, _y_batch)
-        for _yhat_i, _yi in zip(_yhat_batch, _y_batch):
-            for (
-                _split,
-                _split_class__set,
-            ) in _train_res.train_data_info.class__set__per__split.items():
-                if int(_yi) in _split_class__set:
-                    break
-            else:
-                raise AssertionError
-            _topk_metric__per__split[_split].update(
-                _yhat_i.unsqueeze(0), _yi.unsqueeze(0)
-            )
-        _pbar.update(len(_X_batch))
-    _pbar.close()
-
-    _res_dict = {"Overall": _topk_metric.compute() * 100}
-    for _split, _split_topk_metric in _topk_metric__per__split.items():
-        _res_dict[_split.title()] = _split_topk_metric.compute() * 100
+    _res_dict["Overall"] = sum(_correct__per__split.values()) / len(_test_ys)
     return _res_dict
 
 
@@ -182,17 +135,15 @@ for _i, _rel_exp_path in enumerate(args.rel_exp_paths):
         }
         if not args.show_adjusted_acc:
             if args.acc_k != 1:
-                _res_dict.update(_get_topk_acc(_res, args))
+                _res_dict.update(get_topk_acc(_res, args.acc_k, args.eval_batch_size))
             else:
                 for _split, _split_acc in _res.test_acc__per__split.items():
-                    _res_dict[_split.title()] = _split_acc * 100
-                _res_dict["Overall"] = _res.test_metrics["accuracy"] * 100
-                # for _split, _split_acc in _get_topk_acc(_res, args).items():
-                #     assert torch.isclose(
-                #         torch.tensor(data=_res_dict[_split]), _split_acc
-                #     )
+                    _res_dict[_split.title()] = _split_acc
+                _res_dict["Overall"] = _res.test_metrics["accuracy"]
         else:
             _res_dict.update(_get_adjusted_accs(_res, args))
+        for _split in ["Many", "Medium", "Few", "Overall"]:
+            _res_dict[_split] = _res_dict[_split] * 100
 
         table_rows.append(_res_dict)
         _sub_pbar.update(1)
@@ -213,13 +164,17 @@ if args.show_baselines:
         _res_dict = {"Experiment": "Baseline", "Dataset": _dataset_name}
         if not args.show_adjusted_acc:
             if args.acc_k != 1:
-                _res_dict.update(_get_topk_acc(_baseline_res, args))
+                _res_dict.update(
+                    get_topk_acc(_baseline_res, args.acc_k, args.eval_batch_size)
+                )
             else:
                 for _split, _split_acc in _baseline_res.test_acc__per__split.items():
-                    _res_dict[_split.title()] = _split_acc * 100
-                _res_dict["Overall"] = _baseline_res.test_metrics["accuracy"] * 100
+                    _res_dict[_split.title()] = _split_acc
+                _res_dict["Overall"] = _baseline_res.test_metrics["accuracy"]
         else:
             _res_dict.update(_get_adjusted_accs(_baseline_res, args))
+        for _split in ["Many", "Medium", "Few", "Overall"]:
+            _res_dict[_split] = _res_dict[_split] * 100
 
         table_rows.insert(0, _res_dict)
         pbar.update(1)

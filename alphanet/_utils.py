@@ -1,9 +1,16 @@
 import logging
 from typing import Any, Dict, Optional, Tuple
 
+import torch
 from torch import Tensor
+from torch.utils.data import DataLoader, TensorDataset
+from torcheval.metrics import MulticlassAccuracy
+from tqdm import trange
 
-from ._pt import TBLogs
+from ._dataset import SplitLTDataGroup, SplitLTDataset
+from ._pt import DEFAULT_DEVICE, TBLogs
+
+_TEST_DATA_CACHE: Dict[str, SplitLTDataGroup] = {}
 
 
 def log_metrics(
@@ -64,3 +71,54 @@ def log_alphas(
         )
 
     return mean_alpha__vec, min_alpha__vec, max_alpha__vec
+
+
+def get_topk_acc(train_res, k: int, batch_size: int = 1024):
+    _alphanet_classifier = train_res.load_best_alphanet_classifier().to(DEFAULT_DEVICE)
+    _dataset = SplitLTDataset(train_res.train_data_info.dataset_name)
+    try:
+        _test_datagrp = _TEST_DATA_CACHE[str(_dataset)]
+    except KeyError:
+        _test_datagrp = _dataset.load_data("test")
+        _TEST_DATA_CACHE[str(_dataset)] = _test_datagrp
+    _test_dataset = TensorDataset(
+        _test_datagrp.feat__mat, torch.tensor(_test_datagrp.label__seq)
+    )
+    _data_loader = DataLoader(_test_dataset, batch_size)
+
+    _topk_metric = MulticlassAccuracy(k=k, device=DEFAULT_DEVICE)
+    _topk_metric__per__split = {
+        _split: MulticlassAccuracy(k=k, device=DEFAULT_DEVICE)
+        for _split in ["many", "medium", "few"]
+    }
+
+    _pbar = trange(
+        len(_test_dataset),
+        desc=f"Computing top-{k} accuracy",
+        unit="sample",
+        leave=False,
+    )
+    for _X_batch, _y_batch in _data_loader:
+        _X_batch, _y_batch = _X_batch.to(DEFAULT_DEVICE), _y_batch.to(DEFAULT_DEVICE)
+        with torch.no_grad():
+            _yhat_batch = _alphanet_classifier(_X_batch)
+        _topk_metric.update(_yhat_batch, _y_batch)
+        for _yhat_i, _yi in zip(_yhat_batch, _y_batch):
+            for (
+                _split,
+                _split_class__set,
+            ) in train_res.train_data_info.class__set__per__split.items():
+                if int(_yi) in _split_class__set:
+                    break
+            else:
+                raise AssertionError
+            _topk_metric__per__split[_split].update(
+                _yhat_i.unsqueeze(0), _yi.unsqueeze(0)
+            )
+        _pbar.update(len(_X_batch))
+    _pbar.close()
+
+    _res_dict = {"Overall": float(_topk_metric.compute())}
+    for _split, _split_topk_metric in _topk_metric__per__split.items():
+        _res_dict[_split.title()] = float(_split_topk_metric.compute())
+    return _res_dict
