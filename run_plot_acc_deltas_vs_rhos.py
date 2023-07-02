@@ -95,11 +95,7 @@ datasets = list(
         ],
     )
 )
-rho_strs = [
-    "0.1",
-    "0.2",
-    "0.3",
-]  # , "0.4", "0.5", "0.75", "1", "1.25", "1.5", "1.75", "2"]
+rho_strs = ["0.1", "0.2", "0.3", "0.4", "0.5", "0.75", "1", "1.25", "1.5", "1.75", "2"]
 data_root = Path("results/main")
 
 
@@ -180,6 +176,7 @@ def plot(profile):
     )
 
     g.set_titles("{col_name}")
+    g.set_ylabels(f"Top-{args.acc_k} accuracy change")
     sns.move_legend(g, loc="center", bbox_to_anchor=(0.75, 0.125), ncol=1, title="")
     g.refline(y=0, ls="-", color=cfg.palette[0], zorder=1)
     for ax in g.axes:
