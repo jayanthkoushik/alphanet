@@ -9,7 +9,7 @@ import ignite.handlers
 import ignite.metrics
 import torch
 from corgy import Corgy
-from corgy.types import KeyValuePairs, OutputBinFile, OutputDirectory
+from corgy.types import KeyValuePairs, OutputBinFile, OutputDirectory, SubClass
 from torch import Tensor
 from torch.utils.data import DataLoader, TensorDataset
 from typing_extensions import Annotated, Literal
@@ -59,6 +59,7 @@ class TrainingConfig(Corgy):
     train_datagrp: str = "train"
     val_datagrp: Optional[str] = "val"
     test_datagrp: str = "test"
+    cb_loss_beta: Optional[float] = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -70,7 +71,11 @@ class TrainingConfig(Corgy):
     def as_dict(self, recursive=False):  # pylint: disable=arguments-differ
         d = super().as_dict(recursive)
         del d["tb_logs"]
+        if isinstance(d["ptopt"]["optim_cls"], SubClass):
+            d["ptopt"]["optim_cls"] = d["ptopt"]["optim_cls"].which
         d["ptopt"]["optim_params"] = dict(d["ptopt"]["optim_params"])
+        if isinstance(d["ptopt"]["lr_sched_cls"], SubClass):
+            d["ptopt"]["lr_sched_cls"] = d["ptopt"]["lr_sched_cls"].which
         d["ptopt"]["lr_sched_params"] = dict(d["ptopt"]["lr_sched_params"])
         d["sampler_builder"]["sampler_args"] = [
             dict(_arg) for _arg in d["sampler_builder"]["sampler_args"]
@@ -280,8 +285,27 @@ class TrainCmd(Corgy):
         ).to(DEFAULT_DEVICE)
 
         self.training.ptopt.set_weights(alphanet_classifier.parameters())
-        loss_fn = torch.nn.CrossEntropyLoss()
         logging.info("setting up model...done")
+
+        ############################################################
+        if self.training.cb_loss_beta is not None:
+            # Set up class balanced loss.
+            _ns = torch.tensor(
+                [
+                    orig_train_data.info.n_imgs__per__class[_class]
+                    for _class in range(orig_train_data.info.n_classes)
+                ],
+                dtype=torch.float,
+                device=DEFAULT_DEVICE,
+            )
+            _effective_ns = 1.0 - torch.pow(self.training.cb_loss_beta, _ns)
+            _loss_weights = (1.0 - self.training.cb_loss_beta) / _effective_ns
+            _loss_weights = (
+                _loss_weights / _loss_weights.sum() * orig_train_data.info.n_classes
+            )
+        else:
+            _loss_weights = None
+        loss_fn = torch.nn.CrossEntropyLoss(weight=_loss_weights)
 
         ############################################################
 
