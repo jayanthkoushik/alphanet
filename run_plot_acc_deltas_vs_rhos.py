@@ -87,8 +87,8 @@ datasets = list(
         [
             "placeslt_resnet152_crt",
             "placeslt_resnet152_lws",
-            "cifar100_resnet32_ride",
-            "cifar100_resnet32_ltr",
+            "cifarlt_resnet32_ride",
+            "cifarlt_resnet34_ltr",
             "imagenetlt_resnext50_crt",
             "imagenetlt_resnext50_lws",
             "imagenetlt_resnext50_ride",

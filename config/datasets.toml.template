@@ -28,22 +28,22 @@ baseline_eval_file = "data/ImageNetLT/baselines/resnext50_ride.pkl"
 label_names_file = "data/ImageNetLT/label_names.txt"
 proper_name = "ImageNet-LT | RIDE"
 
-[cifar100_resnet32_ride]
-split_files_dir = "data/CIFAR100/splits"
-feature_files_dir = "data/CIFAR100/features/resnet32_ride"
-classifier_file = "data/CIFAR100/classifiers/resnet32_ride.pth"
+[cifarlt_resnet32_ride]
+split_files_dir = "data/CIFARLT/splits"
+feature_files_dir = "data/CIFARLT/features/resnet32_ride"
+classifier_file = "data/CIFARLT/classifiers/resnet32_ride.pth"
 classifier_loader = "CombinedClassifierLoader"
-nn_files_dir = "data/CIFAR100/nns/resnet32_ride"
-baseline_eval_file = "data/CIFAR100/baselines/resnet32_ride.pkl"
+nn_files_dir = "data/CIFARLT/nns/resnet32_ride"
+baseline_eval_file = "data/CIFARLT/baselines/resnet32_ride.pkl"
 proper_name = "CIFAR-100-LT | RIDE"
 
-[cifar100_resnet32_ltr]
-split_files_dir = "data/CIFAR100/splits"
-feature_files_dir = "data/CIFAR100/features/resnet32_ltr"
-classifier_file = "data/CIFAR100/classifiers/resnet32_ltr.pth"
+[cifarlt_resnet34_ltr]
+split_files_dir = "data/CIFARLT/splits"
+feature_files_dir = "data/CIFARLT/features/resnet34_ltr"
+classifier_file = "data/CIFARLT/classifiers/resnet34_ltr.pth"
 classifier_loader = "LinearClassifierLoader"
-nn_files_dir = "data/CIFAR100/nns/resnet32_ltr"
-baseline_eval_file = "data/CIFAR100/baselines/resnet32_ltr.pkl"
+nn_files_dir = "data/CIFARLT/nns/resnet34_ltr"
+baseline_eval_file = "data/CIFARLT/baselines/resnet34_ltr.pkl"
 proper_name = "CIFAR-100-LT | LTR"
 
 [placeslt_resnet152_crt]
