@@ -206,6 +206,8 @@ for _dataset_name in seen_datasets:
         _split_title = "Med." if _split == "Medium" else _split
         hdr_str += f"{_split_title:>{_split_hdr_size}}  "  # 2 spaces between columns
         sep_str += f"{'-' * _split_hdr_size}  "
+    hdr_str = hdr_str.rstrip()
+    sep_str = sep_str.rstrip()
 
     if len(seen_datasets) > 1:
         _dataset_proper_name = SplitLTDataset(_dataset_name).proper_name

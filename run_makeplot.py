@@ -5,11 +5,10 @@ from argparse import ArgumentParser, SUPPRESS
 from corgy import CorgyHelpFormatter
 
 import alphanet.plot
-from alphanet.plot import BasePlotCmd
 
 parser = ArgumentParser(formatter_class=CorgyHelpFormatter, usage=SUPPRESS)
 sub_parsers = parser.add_subparsers(dest="cmd", required=True)
-for cmd_cls in BasePlotCmd.__subclasses__():
+for cmd_cls in alphanet.plot.BasePlotCmd.__subclasses__():
     cmd_cls = getattr(alphanet.plot, cmd_cls.__name__)
     _sub_parser = sub_parsers.add_parser(
         cmd_cls.__name__, formatter_class=CorgyHelpFormatter, usage=SUPPRESS
