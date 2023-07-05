@@ -174,10 +174,12 @@ class AlphaNetClassifier(nn.Module):
         alphanet_bias__init: Optional[Tensor] = None,
         base_clf_weight_init: Optional[Tensor] = None,
         base_clf_bias_init: Optional[Tensor] = None,
+        pred_scale: float = 1,
     ):
         super().__init__()
         self.alphanet = alphanet
         self.ab_class_ordered_idx__vec = ab_class_ordered_idx__vec
+        self.pred_scale = pred_scale
 
         if alphanet_bias__init is None:
             alphanet_bias__init = torch.zeros(alphanet.n_targets)
@@ -198,10 +200,13 @@ class AlphaNetClassifier(nn.Module):
         _alphanet_w__mat = self.alphanet()
         _alphanet_scores__batch = x__batch @ _alphanet_w__mat.t() + self.alphanet_b__vec
         _base_scores__batch = self.base_clf(x__batch)
-        return torch.index_select(
-            torch.cat((_alphanet_scores__batch, _base_scores__batch), dim=1),
-            1,
-            self.ab_class_ordered_idx__vec,
+        return (
+            torch.index_select(
+                torch.cat((_alphanet_scores__batch, _base_scores__batch), dim=1),
+                1,
+                self.ab_class_ordered_idx__vec,
+            )
+            * self.pred_scale
         )
 
     def get_trained_templates(self) -> Tensor:

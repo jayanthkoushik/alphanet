@@ -59,7 +59,7 @@ class TrainingConfig(Corgy):
     train_datagrp: str = "train"
     val_datagrp: Optional[str] = "val"
     test_datagrp: str = "test"
-    cb_loss_beta: Optional[float] = None
+    pred_scale: float = 1.0
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -282,30 +282,12 @@ class TrainCmd(Corgy):
             _fclass_clf_b_init__vec,
             _bclass_clf_weight_init__mat,
             _bclass_clf_bias_init__vec,
+            self.training.pred_scale,
         ).to(DEFAULT_DEVICE)
 
         self.training.ptopt.set_weights(alphanet_classifier.parameters())
+        loss_fn = torch.nn.CrossEntropyLoss()
         logging.info("setting up model...done")
-
-        ############################################################
-        if self.training.cb_loss_beta is not None:
-            # Set up class balanced loss.
-            _ns = torch.tensor(
-                [
-                    orig_train_data.info.n_imgs__per__class[_class]
-                    for _class in range(orig_train_data.info.n_classes)
-                ],
-                dtype=torch.float,
-                device=DEFAULT_DEVICE,
-            )
-            _effective_ns = 1.0 - torch.pow(self.training.cb_loss_beta, _ns)
-            _loss_weights = (1.0 - self.training.cb_loss_beta) / _effective_ns
-            _loss_weights = (
-                _loss_weights / _loss_weights.sum() * orig_train_data.info.n_classes
-            )
-        else:
-            _loss_weights = None
-        loss_fn = torch.nn.CrossEntropyLoss(weight=_loss_weights)
 
         ############################################################
 
