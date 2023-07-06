@@ -198,7 +198,7 @@ def plot(profile):
         if cfg.context == "paper"
         else Path("paper/figures/_www/appendix")
     )
-    save_file = f"acc_deltas_vs_rhos_top{args.acc_k}"
+    save_file = f"models_split_top{args.acc_k}_deltas_vs_rho"
     save_file += "_dark" if cfg.theme == "dark" else ""
     ext = ".pgf" if cfg.context == "paper" else ".svg"
     save_file += ext
