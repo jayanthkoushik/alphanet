@@ -419,6 +419,8 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
     add_axes_guide: bool = False
     rasterize_scatter: bool = False
     plot_params: PlotParams = PlotParams()
+    add_dummy_before: bool = False
+    add_dummy_after: bool = False
 
     def __call__(self):
         if "base" in self.splits and ("many" in self.splits or "medium" in self.splits):
@@ -453,7 +455,7 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
                 )
                 _fclass__vec = _nn_mean_feat__mat[0]
                 _nn_dist__per__fclass[_fclass] = mean(
-                    _f_metric(_fclass__vec, _nn__vec)
+                    _f_metric(_fclass__vec.cpu(), _nn__vec.cpu())
                     for _nn__vec in _nn_mean_feat__mat[1:]
                 )
             assert set(_nn_dist__per__fclass.keys()) == _class__set__per__split["few"]
@@ -498,6 +500,15 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
                     }
                 )
 
+        if self.add_dummy_before:
+            df_rows.insert(0, df_rows[0])
+            df_rows[0]["FID"] = -1
+            df_rows[0]["Experiment"] = "Dummy before"
+        if self.add_dummy_after:
+            df_rows.append(df_rows[-1])
+            df_rows[-1]["FID"] = -1
+            df_rows[-1]["Experiment"] = "Dummy after"
+
         df = pd.DataFrame(df_rows)
         logging.info("loaded dataframe:\n%s", df)
         df = df[df["Split"].isin(self.splits)]
@@ -540,6 +551,7 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
             },
             facet_kws={"sharex": self.sharex, "sharey": self.sharey},
         )
+
         g.map_dataframe(
             sns.scatterplot,
             x=x,
@@ -634,6 +646,7 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
             _ax.set_yticks([])
             sns.despine(ax=_ax, left=True, right=True, top=True, bottom=True)
 
+        _kwargs = {}
         if len(self.splits) > 1 and self.legend_loc:
             _patch_splits = [
                 mpatches.Patch(color=_palette[_split], label=_split.title())
@@ -651,24 +664,22 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
                 frameon=False,
             )
             _extra_artists.append(_legend)
-            g.figure.set_size_inches(self.plot.get_size())
-            _kwargs = {}
-            if self.rasterize_scatter:
-                _kwargs["dpi"] = 300
-            if self.plot.file is not None:
-                g.figure.savefig(
-                    self.plot.file,
-                    format=Path(self.plot.file.name).suffix[1:],
-                    bbox_extra_artists=_extra_artists,
-                    bbox_inches="tight",
-                    **_kwargs,
-                )
-        else:
-            g.figure.set_size_inches(self.plot.get_size())
-            _kwargs = {}
-            if self.rasterize_scatter:
-                _kwargs["dpi"] = 300
-            self._save_figure(g.figure, **_kwargs)
+            _kwargs["bbox_extra_artists"] = _extra_artists
+            g.figure.tight_layout()
+
+        g.figure.set_size_inches(self.plot.get_size())
+        if self.rasterize_scatter:
+            _kwargs["dpi"] = 300
+
+        if self.add_dummy_before:
+            g.axes.flat[0].set_visible(False)
+        if self.add_dummy_after:
+            g.axes.flat[-1].set_visible(False)
+
+        if self.plot.file is not None:
+            g.figure.savefig(
+                self.plot.file, format=Path(self.plot.file.name).suffix[1:], **_kwargs
+            )
         return g.figure
 
 
