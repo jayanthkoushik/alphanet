@@ -194,7 +194,7 @@ def plot(profile):
     g.despine(left=True, top=True, right=True, bottom=False, trim=True)
 
     _ax = g.figure.add_subplot(4, 2, 8)
-    _ax.set_aspect(1/ASPECT)
+    _ax.set_aspect(1 / ASPECT)
     for _del in [(0.9, 0), (0, 0.9)]:
         _ax.arrow(
             0.05,
@@ -208,14 +208,7 @@ def plot(profile):
             color=cfg.palette[0],
             transform=_ax.transAxes,
         )
-    _ax.text(
-        0.5,
-        0,
-        "$\\rho$",
-        transform=_ax.transAxes,
-        va="top",
-        ha="center",
-    )
+    _ax.text(0.5, 0, "$\\rho$", transform=_ax.transAxes, va="top", ha="center")
     _ax.text(
         0,
         0.5,

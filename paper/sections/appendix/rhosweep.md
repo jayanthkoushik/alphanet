@@ -94,61 +94,21 @@ Results are shown in the following tables.
 
 \clearpage
 
-{% include tables/appendix/main/imagenetlt_resnext50_crt/acc_top1.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_crt/acc_top5.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_crt/acc_nn_adjusted_top1.md %}
-
-{% include tables/appendix/main/imagenetlt_resnext50_lws/acc_top1.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_lws/acc_top5.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_lws/acc_nn_adjusted_top1.md %}
+{% include tables/appendix/models_split_top1_accs_vs_rho_imagenetlt.md %}
+{% include tables/appendix/models_split_top5_accs_vs_rho_imagenetlt.md %}
+{% include tables/appendix/models_split_semantic4_accs_vs_rho_imagenetlt.md %}
 
 \clearpage
 
-{% include tables/appendix/main/imagenetlt_resnext50_ride/acc_top1.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_ride/acc_top5.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_ride/acc_nn_adjusted_top1.md %}
-
-{% include tables/appendix/main/inatlt_resnet152_crt/acc_top1.md %}
-{% include tables/appendix/main/inatlt_resnet152_crt/acc_top5.md %}
-{% include tables/appendix/main/inatlt_resnet152_crt/acc_nn_adjusted_top1.md %}
+{% include tables/appendix/models_split_top1_accs_vs_rho_placeslt.md %}
+{% include tables/appendix/models_split_top5_accs_vs_rho_placeslt.md %}
 
 \clearpage
 
-{% include tables/appendix/main/placeslt_resnet152_crt/acc_top1.md %}
-{% include tables/appendix/main/placeslt_resnet152_crt/acc_top5.md %}
-{% include tables/appendix/main/placeslt_resnet152_crt/acc_nn_adjusted_top1.md %}
-
-{% include tables/appendix/main/placeslt_resnet152_lws/acc_top1.md %}
-{% include tables/appendix/main/placeslt_resnet152_lws/acc_top5.md %}
-{% include tables/appendix/main/placeslt_resnet152_lws/acc_nn_adjusted_top1.md %}
+{% include tables/appendix/models_split_top1_accs_vs_rho_cifarlt.md %}
+{% include tables/appendix/models_split_top5_accs_vs_rho_cifarlt.md %}
 
 \clearpage
 
-{% include tables/appendix/main/cifar100_resnet32_ltr/acc_top1.md %}
-{% include tables/appendix/main/cifar100_resnet32_ltr/acc_top5.md %}
-{% include tables/appendix/main/cifar100_resnet32_ltr/acc_nn_adjusted_top1.md %}
-
-{% include tables/appendix/main/cifar100_resnet32_ride/acc_top1.md %}
-{% include tables/appendix/main/cifar100_resnet32_ride/acc_top5.md %}
-{% include tables/appendix/main/cifar100_resnet32_ride/acc_nn_adjusted_top1.md %}
-
-\clearpage
-
-{% include tables/appendix/main/imagenetlt_resnext50_crt/acc_nn_semantic_2_adjusted_top1.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_crt/acc_nn_semantic_3_adjusted_top1.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_crt/acc_nn_semantic_4_adjusted_top1.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_crt/acc_nn_semantic_5_adjusted_top1.md %}
-
-\clearpage
-
-{% include tables/appendix/main/imagenetlt_resnext50_lws/acc_nn_semantic_2_adjusted_top1.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_lws/acc_nn_semantic_3_adjusted_top1.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_lws/acc_nn_semantic_4_adjusted_top1.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_lws/acc_nn_semantic_5_adjusted_top1.md %}
-
-\clearpage
-
-{% include tables/appendix/main/imagenetlt_resnext50_ride/acc_nn_semantic_2_adjusted_top1.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_ride/acc_nn_semantic_3_adjusted_top1.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_ride/acc_nn_semantic_4_adjusted_top1.md %}
-{% include tables/appendix/main/imagenetlt_resnext50_ride/acc_nn_semantic_5_adjusted_top1.md %}
+{% include tables/appendix/models_split_top1_accs_vs_rho_inatlt.md %}
+{% include tables/appendix/models_split_top5_accs_vs_rho_inatlt.md %}

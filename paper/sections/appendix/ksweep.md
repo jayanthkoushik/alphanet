@@ -43,10 +43,10 @@ neighbors, for AlphaNet with \ac{cRT}.
 
 \clearpage
 
-{% include tables/appendix/nnsweep_euclidean/imagenetlt_resnext50_crt/acc_top1.md %}
-{% include tables/appendix/nnsweep_euclidean/imagenetlt_resnext50_crt/acc_top5.md %}
+{% include tables/appendix/rhos_split_top1_accs_vs_k_imagenetlt_crt_euclidean.md %}
+{% include tables/appendix/rhos_split_top5_accs_vs_k_imagenetlt_crt_euclidean.md %}
 
 \clearpage
 
-{% include tables/appendix/nnsweep_cosine/imagenetlt_resnext50_crt/acc_top1.md %}
-{% include tables/appendix/nnsweep_cosine/imagenetlt_resnext50_crt/acc_top5.md %}
+{% include tables/appendix/rhos_split_top1_accs_vs_k_imagenetlt_crt_cosine.md %}
+{% include tables/appendix/rhos_split_top5_accs_vs_k_imagenetlt_crt_cosine.md %}

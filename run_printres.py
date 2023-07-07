@@ -246,7 +246,9 @@ for _dataset_name in seen_datasets:
                 num_str = " " * (_sig_width__per__split[_split] + 2) + _mu_str
             if args.num_col_width is not None:
                 if args.num_col_width < len(num_str):
-                    raise RuntimeError(f"`num_col_width`={args.num_col_width} too small for {num_str!r}")
+                    raise RuntimeError(
+                        f"`num_col_width`={args.num_col_width} too small for {num_str!r}"
+                    )
                 num_str = f"{num_str:>{args.num_col_width}}"
             row_str += num_str + "  "
         print(row_str.rstrip())

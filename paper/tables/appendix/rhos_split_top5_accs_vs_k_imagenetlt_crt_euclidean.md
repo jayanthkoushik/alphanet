@@ -51,4 +51,4 @@ _k_\ =\ 8           60.6^01.15^  72.6^00.21^   81.2^0.20^   74.3^0.06^
 _k_\ =\ 9           60.9^00.99^  72.6^00.19^   81.2^0.13^   74.3^0.04^
 _k_\ =\ 10          60.9^01.34^  72.6^00.23^   81.2^0.16^   74.3^0.08^
 
-: Top-5 accuracy for AlphaNet using varying number of nearest neighbors (_k_) based on Euclidean distance, with \acs{cRT} baseline on ImageNet-LT. {#tbl:rhos_split_top5_accs_vs_k_imagenetlt_crt}
+: Top-5 accuracy for AlphaNet using varying number of nearest neighbors (_k_) based on Euclidean distance, with \acs{cRT} baseline on ImageNet-LT. {#tbl:rhos_split_top5_accs_vs_k_imagenetlt_crt_euclidean}

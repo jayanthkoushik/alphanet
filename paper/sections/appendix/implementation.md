@@ -1,6 +1,6 @@
 # Implementation details {#sec:impl_details}
 
-<!-- cSpell:ignore jayanthkoushik, matplotlib -->
+<!-- cSpell:ignore jayanthkoushik, matplotlib, seaborn -->
 
 Experiments were run using the PyTorch[@paszke2019pytorch] library. We
 used the container implementation provided by

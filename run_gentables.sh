@@ -257,7 +257,7 @@ for dist in "euclidean" "cosine"; do
                     (set -x; echo "<!--  -->" >> "${sfile}")
                 fi
             done
-            (set -x; echo "\n: Top-${acck} accuracy for AlphaNet using varying number of nearest neighbors (_k_) based on ${dist_desc}, with \\\\acs{cRT} baseline on ImageNet-LT. {#tbl:rhos_split_top${acck}_accs_vs_k_imagenetlt_crt}" >> "${sfile}")
+            (set -x; echo "\n: Top-${acck} accuracy for AlphaNet using varying number of nearest neighbors (_k_) based on ${dist_desc}, with \\\\acs{cRT} baseline on ImageNet-LT. {#tbl:rhos_split_top${acck}_accs_vs_k_imagenetlt_crt_${dist}}" >> "${sfile}")
         fi
     done
 done
