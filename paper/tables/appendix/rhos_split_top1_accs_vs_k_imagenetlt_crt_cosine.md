@@ -2,7 +2,7 @@ Model                       Few         Med.         Many      Overall
 ------------------  -----------  -----------  -----------  -----------
 \acs{cRT}                  27.4         46.2         61.8         49.6
 <!--  -->
-**_α_\ \acs{cRT}**
+**_α_-\acs{cRT}**
 **_ρ_\ =\ 0.25**
 _k_\ =\ 1           17.4^26.99^  36.5^16.97^  51.3^18.15^  39.6^11.45^
 _k_\ =\ 2           44.3^06.71^  34.1^10.34^  50.1^11.57^  41.6^08.50^
@@ -51,4 +51,4 @@ _k_\ =\ 8           31.5^01.52^  45.0^00.27^  60.7^00.21^  49.2^00.13^
 _k_\ =\ 9           32.9^01.41^  44.8^00.25^  60.6^00.22^  49.3^00.10^
 _k_\ =\ 10          31.9^02.16^  45.0^00.42^  60.7^00.33^  49.3^00.08^
 
-: Top-1 accuracy for AlphaNet using varying number of nearest neighbors (_k_) based on cosine distance, with \acs{cRT} baseline on ImageNet-LT. {#tbl:rhos_split_top1_accs_vs_k_imagenetlt_crt_cosine}
+: Top-1 accuracy for AlphaNet using varying number of nearest neighbors ($k$) based on cosine distance, with \acs{cRT} baseline on ImageNet-LT. {#tbl:rhos_split_top1_accs_vs_k_imagenetlt_crt_cosine}

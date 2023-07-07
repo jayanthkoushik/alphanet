@@ -1,11 +1,11 @@
 Model                        Few         Med.         Many      Overall
 -------------------  -----------  -----------  -----------  -----------
 \acs{cRT}                   88.2         87.5         90.2         88.1
-**_α_\ \acs{cRT}**
+**_α_-\acs{cRT}**
 _ρ_\ =\ 0.01          89.2^0.43^   79.2^1.51^   85.1^1.03^   85.3^0.55^
 _ρ_\ =\ 0.02          88.6^0.41^   81.8^1.85^   86.7^1.21^   86.0^0.68^
 _ρ_\ =\ 0.03          88.6^0.44^   82.0^1.42^   87.0^0.89^   86.1^0.65^
 _ρ_\ =\ 0.04          88.4^0.28^   82.4^1.30^   87.0^0.80^   86.1^0.48^
 _ρ_\ =\ 0.05          88.0^0.42^   83.0^1.35^   87.6^0.81^   86.2^0.50^
 
-: Top-5 accuracy on iNaturalist, using AlphaNet with different _ρ_s
+: Top-5 accuracy on iNaturalist, using AlphaNet with different $\rho$s. {#tbl:models_split_top5_accs_vs_rho_inatlt}

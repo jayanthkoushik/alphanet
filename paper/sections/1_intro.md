@@ -1,5 +1,28 @@
 # Introduction {#sec:intro}
 
+<div id="fig:analysis">
+
+![Predictions from \acs{cRT} model on test samples from 'few' split of
+ImageNet-LT. A large percentage of samples are misclassified as a
+visually similar 'base' split
+class.](figures/pred_counts_imagenetlt_crt_baseline){#fig:analysis:bins}
+
+![Sample images from two classes in ImageNet-LT. 'Lhasa' is a 'few'
+split class, and 'Tibetan terrier' is a 'base' split class. The classes
+are visually similar, leading to
+misclassifications.](figures/doggies){#fig:analysis:egs}
+
+![Per-class test accuracy of \acs{cRT} model on 'few' split of
+ImageNet-LT versus the mean distance to 10 nearest neighbors from the
+'base' split. The line is a bootstrapped linear regression fit, and $r$
+(top right) is Pearson correlation. There is a high correlation, i.e.,
+'few' split classes with close nearest neighbors were more likely to be
+misclassified.](figures/cls_acc_vs_nndist_imagenetlt_crt_baseline){#fig:analysis:acc_vs_dist}
+
+Analysis of test accuracy for 'few' split of ImageNet-LT.
+
+</div>
+
 The significance of long-tailed distributions in real-world applications
 (such as autonomous driving[@2018.Malla.Narayanan] and medical image
 analysis[@2022.Bian.Yang]) has spurred a variety of approaches for
@@ -28,29 +51,6 @@ detection[@buolamwini2018gender]. For example, models trained on chest
 X-rays consistently under-diagnosed minority
 groups[@2021.Ghassemi.Seyyed]. Similarly, cardiac image segmentation
 showed significant differences between racial groups[@2021.King.Puyol].
-
-<div id="fig:analysis">
-
-![Predictions from \acs{cRT} model on test samples from 'few' split of
-ImageNet-LT. A large percentage of samples are misclassified as a
-visually similar 'base' split
-class.](figures/pred_counts_imagenetlt_crt_baseline){#fig:analysis:bins}
-
-![Sample images from two classes in ImageNet-LT. 'Lhasa' is a 'few'
-split class, and 'Tibetan terrier' is a 'base' split class. The classes
-are visually similar, leading to
-misclassifications.](figures/doggies){#fig:analysis:egs}
-
-![Per-class test accuracy of \acs{cRT} model on 'few' split of
-ImageNet-LT versus the mean distance to 10 nearest neighbors from the
-'base' split. The line is a bootstrapped linear regression fit, and $r$
-(top right) is Pearson correlation. There is a high correlation, i.e.,
-'few' split classes with close nearest neighbors were more likely to be
-misclassified.](figures/cls_acc_vs_nndist_imagenetlt_crt_baseline){#fig:analysis:acc_vs_dist}
-
-Analysis of test accuracy for 'few' split of ImageNet-LT.
-
-</div>
 
 To understand the poor rare class performance of long-tail models, we
 analyzed the predictions of the \ac{RIDE} model[@2020.Yu.Wang] on

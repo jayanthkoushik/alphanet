@@ -1,5 +1,11 @@
 # Experiments {#sec:exp}
 
+{% include tables/datasets_baselines_split_accs_vs_rho.md %}
+
+{% include tables/datasets_split_accs_vs_rho_ride.md %}
+
+{% include tables/datasets_split_accs_vs_rho_ltr.md %}
+
 ## Experimental setup {#sec:exp:setup}
 
 **Datasets.** We evaluated AlphaNet using three long-tailed datasets:
@@ -69,9 +75,56 @@ deviation of accuracies across trials.
 
 <!-- cSpell: enable -->
 
-## Long-tail classification results {#sec:exp:classres}
+![Change in split accuracy for AlphaNet training of cRT model on
+ImageNet-LT. For each value of $\rho$, the two plots show the raw change
+in split accuracy for AlphaNet compared to the baseline \acs{cRT} model,
+as well as the change in overall accuracy. Left shows the results for
+normal training with 5 euclidean nearest neighbors, and right shows the
+results for training with 5 random neighbors for each 'few' split class.
+Training with nearest neighbors leads to a larger increase in 'few'
+split accuracy (especially for small values of $\rho$), which cannot be
+accounted for by the additional fine-tuning of classifiers
+alone.](figures/euclidean_random_split_deltas_vs_rho_imagenetlt_crt){#fig:euclidean_random_split_deltas_vs_imagenetlt_crt}
 
-{% include tables/datasets_baselines_split_accs_vs_rho.md %}
+![Change in per-class accuracy for AlphaNet applied over \acs{cRT}
+features, versus mean Euclidean distance to five nearest neighbors.
+Comparing with @fig:analysis:acc_vs_dist, we can see that AlphaNet
+provides the largest boost to classes with poor baseline performance,
+which have close nearest
+neighbors.](figures/cls_delta_vs_nndist_imagenetlt_crt_rho_05){#fig:cls_delta_vs_nndist}
+
+![Predictions on 'few' split classes, with nearest neighbors selected
+from 'base' split
+classes.](figures/rhos_few_pred_changes_nn_base_imagenetlt_crt){#fig:pred_changes:few}
+
+<!-- Change in sample predictions for AlphaNet applied to \ac{cRT} features,
+using $k=10$ nearest neighbors by Euclidean distance. The bars on the
+left show the distribution of predictions by the baseline model; and the
+bars on the right show the distribution for AlphaNet. The counts are
+aggregated from 10 independent runs of AlphaNet. The "flow" bands from
+left to right show the changes in individual sample predictions. -->
+
+<div id="fig:pred_changes_semantic">
+
+![Predictions on 'few' split classes, with nearest neighbors selected
+from 'base' split
+classes.](figures/few_pred_changes_nn_semantic4_imagenetlt_crt_rho_05){#fig:pred_changes_semantic:few}
+
+![Predictions on 'base' split classes, with nearest neighbors selected
+from 'few' split
+classes.](figures/base_pred_changes_nn_semantic4_imagenetlt_crt_rho_05){#fig:pred_changes_semantic:base}
+
+![All predictions, with nearest neighbors selected from all
+classes.](figures/all_pred_changes_nn_semantic4_imagenetlt_crt_rho_05){#fig:pred_changes_semantic:all}
+
+Change in sample predictions for AlphaNet applied for \ac{cRT} features,
+with nearest neighbors identified using WordNet categories. This figure
+represents the same predictions as @fig:pred_changes, but grouped
+differently.
+
+</div>
+
+## Long-tail classification results {#sec:exp:classres}
 
 **Baseline models.** First, we applied AlphaNet on the \ac{cRT} and
 \ac{LWS} models[@2019.Kalantidis.Kang]. These methods have good overall
@@ -96,10 +149,6 @@ seen in @tbl:baselines_imagenetlt_placeslt. With $\rho = 1$, AlphaNet
 improved 'few' split accuracy by 2 points on average for the cRT model,
 and about 6 points on average for the LWS model.
 
-{% include tables/datasets_split_accs_vs_rho_ride.md %}
-
-{% include tables/datasets_split_accs_vs_rho_ltr.md %}
-
 **Expert model.** Next, we applied AlphaNet on the 6-expert ensemble
 \ac{RIDE} model[@2020.Yu.Wang]. We provided the combined feature vectors
 from all 6 experts as input to AlphaNet. The learned 'few' split
@@ -114,17 +163,6 @@ on CIFAR-100-LT, by 5 points.
 
 
 ## Comparison with control {#sec:exp:control}
-
-![Change in split accuracy for AlphaNet training of cRT model on
-ImageNet-LT. For each value of $\rho$, the two plots show the raw change
-in split accuracy for AlphaNet compared to the baseline \acs{cRT} model,
-as well as the change in overall accuracy. Left shows the results for
-normal training with 5 euclidean nearest neighbors, and right shows the
-results for training with 5 random neighbors for each 'few' split class.
-Training with nearest neighbors leads to a larger increase in 'few'
-split accuracy (especially for small values of $\rho$), which cannot be
-accounted for by the additional fine-tuning of classifiers
-alone.](figures/euclidean_random_split_deltas_vs_rho_imagenetlt_crt){#fig:euclidean_random_split_deltas_vs_imagenetlt_crt}
 
 Our method is based on the core hypothesis that classifiers can be
 improved using nearest neighbors. In this section, we directly evaluate
@@ -144,13 +182,6 @@ neighbors to improve classification performance.
 
 ## Prediction changes {#sec:exp:predchanges}
 
-![Change in per-class accuracy for AlphaNet applied over \acs{cRT}
-features, versus mean Euclidean distance to five nearest neighbors.
-Comparing with @fig:analysis:acc_vs_dist, we can see that AlphaNet
-provides the largest boost to classes with poor baseline performance,
-which have close nearest
-neighbors.](figures/cls_delta_vs_nndist_imagenetlt_crt_rho_05){#fig:cls_delta_vs_nndist}
-
 As shown in @sec:intro, the \ac{cRT} model frequently misclassifies
 'few' split classes as visually similar 'base' split classes. Using the
 AlphaNet model with $\rho=0.5$, we performed the same analyses as
@@ -163,17 +194,6 @@ close neighbors, which had a high likelihood of being misclassified by
 the baseline model, see the biggest improvement in test accuracy.
 
 ## Analysis of AlphaNet predictions {#sec:exp:analysis}
-
-![Predictions on 'few' split classes, with nearest neighbors selected
-from 'base' split
-classes.](figures/rhos_few_pred_changes_nn_base_imagenetlt_crt){#fig:pred_changes:few}
-
-<!-- Change in sample predictions for AlphaNet applied to \ac{cRT} features,
-using $k=10$ nearest neighbors by Euclidean distance. The bars on the
-left show the distribution of predictions by the baseline model; and the
-bars on the right show the distribution for AlphaNet. The counts are
-aggregated from 10 independent runs of AlphaNet. The "flow" bands from
-left to right show the changes in individual sample predictions. -->
 
 AlphaNet significantly boosts the accuracy of 'few' split classes.
 However, looking at @tbl:baselines_imagenetlt_placeslt and
@@ -192,26 +212,6 @@ from the 'few' split. We see a small increase in misclassifications as
 'few' split classes. This leads to the slight decrease in overall
 accuracy, which is also evident in @fig:pred_changes:all where all
 predictions are shown, and with nearest neighbors from all classes.
-
-<div id="fig:pred_changes_semantic">
-
-![Predictions on 'few' split classes, with nearest neighbors selected
-from 'base' split
-classes.](figures/few_pred_changes_nn_semantic4_imagenetlt_crt_rho_05){#fig:pred_changes_semantic:few}
-
-![Predictions on 'base' split classes, with nearest neighbors selected
-from 'few' split
-classes.](figures/base_pred_changes_nn_semantic4_imagenetlt_crt_rho_05){#fig:pred_changes_semantic:base}
-
-![All predictions, with nearest neighbors selected from all
-classes.](figures/all_pred_changes_nn_semantic4_imagenetlt_crt_rho_05){#fig:pred_changes_semantic:all}
-
-Change in sample predictions for AlphaNet applied for \ac{cRT} features,
-with nearest neighbors identified using WordNet categories. This figure
-represents the same predictions as @fig:pred_changes, but grouped
-differently.
-
-</div>
 
 The previous analysis was conducted using nearest neighbors identified
 based on visual similarity. Since this is dependent on the particular
