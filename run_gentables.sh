@@ -14,6 +14,122 @@ function check_does_not_exist() {
 
 ################################################
 
+sfile="paper/tables/datasets_split_accs_vs_rho_ltr.md"
+
+if check_does_not_exist "${sfile}"; then
+    model="resnet34_ltr"
+    modelname="\\acs{LTR}"
+    rhos=(rho_1 rho_2 rho_3)
+    rhostrs=(1 2 3)
+
+    datasrc="cifarlt"
+    datasrcdir="CIFARLT"
+    datasrcname="CIFAR-100-LT"
+    (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 11 --name-col-width 17 --exp-str Model >> "${sfile}")
+    (set -x; echo "_α_\\ \\${modelname}" >> "${sfile}")
+    (set -x; python run_printres.py --base-res-dir "results/main/${datasrc}_${model}" --rel-exp-paths "${rhos[@]}" --exp-names "${rhostrs[@]}" --res-files-pattern "rep_*/result.pth" --exp-prefix "_ρ_\\ =\\ " --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 11 --name-col-width 17 --no-show-hdr >> "${sfile}")
+    (set -x; echo "\n: Mean split accuracy in percents (standard deviation in super-script) on ${datasrcname} using the \\${modelname} model[@2022.Kong.Alshammari]. {#tbl:datasets_split_accs_vs_rho_ltr}" >> "${sfile}")
+fi
+
+################################################
+
+sfile="paper/tables/datasets_split_accs_vs_rho_ride.md"
+
+if check_does_not_exist "${sfile}"; then
+    (set -x; echo "Method                     Few         Med.         Many      Overall" >> "${sfile}")
+    (set -x; echo "-----------------  -----------  -----------  -----------  -----------" >> "${sfile}")
+
+    modelname="\\acs{RIDE}"
+    rhos=(rho_0.5 rho_1 rho_1.5)
+    rhostrs=(0.5 1 1.5)
+
+    for datasrc in imagenetlt cifarlt; do
+        if [ "${datasrc}" = "imagenetlt" ]; then
+            model="resnext50_ride"
+            datasrcdir="ImageNetLT"
+            datasrcname="ImageNet-LT"
+        else
+            model="resnet32_ride"
+            datasrcdir="CIFARLT"
+            datasrcname="CIFAR-100-LT"
+        fi
+
+        (set -x; echo "**${datasrcname}**" >> "${sfile}")
+        (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 11 --name-col-width 17 --no-show-hdr >> "${sfile}")
+        (set -x; echo "_α_\\ \\${modelname}" >> "${sfile}")
+        (set -x; python run_printres.py --base-res-dir "results/main/${datasrc}_${model}" --rel-exp-paths "${rhos[@]}" --exp-names "${rhostrs[@]}" --res-files-pattern "rep_*/result.pth" --exp-prefix "_ρ_\\ =\\ " --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 11 --name-col-width 17 --no-show-hdr >> "${sfile}")
+
+        if [ "${datasrc}" = "imagenetlt" ]; then
+            (set -x; echo "<!--  -->" >> "${sfile}")
+        fi
+    done
+
+    (set -x; echo "\n: Mean split accuracy in percents (standard deviation in super-script) on ImageNet-LT and CIFAR-100-LT using the ensemble \\\\acs{RIDE} model[@2020.Yu.Wang]. _α_\\\\ \\\\acs{RIDE} applies AlphaNet on average features from the ensemble. {#tbl:datasets_split_accs_vs_rho_ride}" >> "${sfile}")
+fi
+
+################################################
+
+sfile="paper/tables/datasets_baselines_split_accs_vs_rho.md"
+
+if check_does_not_exist "${sfile}"; then
+    (set -x; echo "Method                     Few         Med.         Many      Overall" >> "${sfile}")
+    (set -x; echo "-----------------  -----------  -----------  -----------  -----------" >> "${sfile}")
+
+    rhos=(rho_0.5 rho_1 rho_1.5)
+    rhostrs=(0.5 1 1.5)
+
+    for datasrc in imagenetlt placeslt; do
+        if [ "${datasrc}" = "imagenetlt" ]; then
+            datasrcdir="ImageNetLT"
+            datasrcname="ImageNet-LT"
+            models=(resnext50_crt resnext50_lws)
+        else
+            datasrcdir="PlacesLT"
+            datasrcname="Places-LT"
+            models=(resnet152_crt resnet152_lws)
+        fi
+
+        (set -x; echo "**${datasrcname}**" >> "${sfile}")
+
+        if [ "${datasrc}" = "imagenetlt" ]; then
+            (set -x; echo "\\\\acs{NCM}                 28.1         45.3         56.6         47.3" >> "${sfile}")
+            (set -x; echo "\$\\\\tau\$-normalized         30.7         46.9         59.1         49.4" >> "${sfile}")
+        else
+            (set -x; echo "\\\\acs{NCM}                 27.3         37.1         40.4         36.4" >> "${sfile}")
+            (set -x; echo "\$\\\\tau\$-normalized         31.8         40.7         37.8         37.9" >> "${sfile}")
+        fi
+
+        for model in ${models[@]}; do
+            case $model in
+                resnext50_crt|resnet152_crt)
+                    modelname="\\acs{cRT}"
+                    ;;
+                resnext50_lws|resnet152_lws)
+                    modelname="\\acs{LWS}"
+                    ;;
+                *)
+                    echo "bad model: ${model}" >&2
+                    exit 1
+                    ;;
+            esac
+
+            (set -x; echo "<!--  -->" >> "${sfile}")
+            (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 11 --name-col-width 17 --no-show-hdr >> "${sfile}")
+            (set -x; echo "_α_\\ \\${modelname}" >> "${sfile}")
+            (set -x; python run_printres.py --base-res-dir "results/main/${datasrc}_${model}" --rel-exp-paths "${rhos[@]}" --exp-names "${rhostrs[@]}" --res-files-pattern "rep_*/result.pth" --exp-prefix "_ρ_\\ =\\ " --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 11 --name-col-width 17 --no-show-hdr >> "${sfile}")
+        done
+
+        if [ "${datasrc}" = "imagenetlt" ]; then
+            (set -x; echo "<!--  -->" >> "${sfile}")
+            (set -x; echo "<!--  -->" >> "${sfile}")
+        fi
+    done
+
+    (set -x; echo "\n: Mean split accuracy in percents (standard deviation in super-script) of AlphaNet and various baseline methods on ImageNet-LT and Places-LT. _α_\\\\ \\\\acs{cRT} and _α_\\\\ \\\\acs{LWS} are AlphaNet models applied over \\\\acs{cRT} and \\\\acs{LWS} features respectively. {#tbl:datasets_baselines_split_accs_vs_rhos}" >> "${sfile}")
+fi
+
+################################################
+
 for acck in 1 5; do
     for datasrc in "imagenetlt" "cifarlt" "placeslt" "inatlt"; do
         sfile="paper/tables/appendix/models_split_top${acck}_accs_vs_rho_${datasrc}.md"

@@ -65,6 +65,7 @@ PROFILES = {
     ),
 }
 WIDTH_PER_CONTEXT = {"paper": 6, "notebook": 6 * 1.25}
+ASPECT = 1.25
 
 
 # %%
@@ -171,14 +172,17 @@ def plot(profile):
         markers=True,
         kind="line",
         err_style="bars",
-        aspect=1.5,
+        aspect=ASPECT,
         facet_kws={"sharex": True, "sharey": True},
     )
 
     g.set_titles("{col_name}")
-    g.set_ylabels(f"Top-{args.acc_k} accuracy change")
-    sns.move_legend(g, loc="center", bbox_to_anchor=(0.75, 0.125), ncol=1, title="")
+    g.set_xlabels("")
+    g.set_ylabels("")
+
+    sns.move_legend(g, loc="center", bbox_to_anchor=(0.75, 0.12), ncol=1, title="")
     g.refline(y=0, ls="-", color=cfg.palette[0], zorder=1)
+
     for ax in g.axes:
         ax.xaxis.set_major_locator(FixedLocator([0, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]))
         ax.xaxis.set_major_formatter(
@@ -188,10 +192,46 @@ def plot(profile):
     g.tick_params(axis="x", which="both", direction="in")
     g.set(xlim=(0, 2.05), ylim=(-0.25, 0.25), yticks=[-0.2, -0.1, 0, 0.1, 0.2])
     g.despine(left=True, top=True, right=True, bottom=False, trim=True)
-    g.figure.tight_layout(h_pad=2.5, w_pad=2.5)
 
+    _ax = g.figure.add_subplot(4, 2, 8)
+    _ax.set_aspect(1/ASPECT)
+    for _del in [(0.9, 0), (0, 0.9)]:
+        _ax.arrow(
+            0.05,
+            0.05,
+            *_del,
+            lw=mpl.rcParams["axes.linewidth"],
+            length_includes_head=True,
+            head_width=0.02,
+            head_length=0.02,
+            fc=cfg.palette[0],
+            color=cfg.palette[0],
+            transform=_ax.transAxes,
+        )
+    _ax.text(
+        0.5,
+        0,
+        "$\\rho$",
+        transform=_ax.transAxes,
+        va="top",
+        ha="center",
+    )
+    _ax.text(
+        0,
+        0.5,
+        f"Top-{args.acc_k} accuracy change",
+        transform=_ax.transAxes,
+        va="center",
+        ha="right",
+        rotation="vertical",
+    )
+    _ax.set_xticks([])
+    _ax.set_yticks([])
+    sns.despine(ax=_ax, left=True, right=True, top=True, bottom=True)
+
+    g.figure.tight_layout(h_pad=8, w_pad=3)
     width = WIDTH_PER_CONTEXT[cfg.context]
-    g.figure.set_size_inches(width, 1.5 * width)
+    g.figure.set_size_inches(width, ASPECT * width)
 
     save_root = (
         Path("paper/figures/appendix")

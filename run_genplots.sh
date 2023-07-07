@@ -149,7 +149,7 @@ for dataset in imagenetlt_resnext50_crt imagenetlt_resnext50_lws imagenetlt_resn
             xxargs=("--add-axes-guide" "--legend-loc" "center" "--legend-bbox-to-anchor" "0.91" "0.5" "--legend-ncols" "1")
             ;;
         *)
-            xxargs=()
+            xxargs=("--no-add-axlabels")
             ;;
     esac
 

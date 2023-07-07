@@ -421,6 +421,7 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
     plot_params: PlotParams = PlotParams()
     add_dummy_before: bool = False
     add_dummy_after: bool = False
+    add_axlabels: bool = True
 
     def __call__(self):
         if "base" in self.splits and ("many" in self.splits or "medium" in self.splits):
@@ -603,7 +604,7 @@ class PlotSplitClsAccDeltaVsNNDist(_BaseMultiExpPlotCmd, BasePlotCmd):
             self.plot_params.set_params(_ax)
             _ax.grid(visible=True, axis="both", which="major")
             _ax.tick_params(axis="both", which="major", length=0)
-            if self.add_axes_guide:
+            if self.add_axes_guide or not self.add_axlabels:
                 _ax.set_xlabel("")
                 _ax.set_ylabel("")
 
