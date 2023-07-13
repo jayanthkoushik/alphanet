@@ -27,3 +27,15 @@
 \renewcommand{\P}[2]{\mathbb{P}_{#1}\left[{#2}\right]}
 \newcommand{\E}[2]{\mathbb{E}_{#1}\left[{#2}\right]}
 \newcommand{\V}[2]{\mathbb{V}_{#1}\left[{#2}\right]}
+
+\newcommand{\ph}[1]{\phantom{#1}}
+\newcommand{\q}{\quad}
+\newcommand{\qq}{\qquad}
+\newcommand{\train}{\text{train}}
+\newcommand{\val}{\text{val}}
+\newcommand{\test}{\text{test}}
+\newcommand{\total}{\text{total}}
+\newcommand{\many}{\text{many}}
+\newcommand{\medium}{\text{med.}}
+\newcommand{\few}{\text{few}}
+\newcommand{\balph}{\bm{\alpha}}

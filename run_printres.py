@@ -191,6 +191,7 @@ if args.name_col_width is not None:
         )
     max_exp_name_len = args.name_col_width
 
+_fmt_chrs = "$^{}$"
 full_table = pd.DataFrame(table_rows)
 for _dataset_name in seen_datasets:
     table = full_table[full_table["Dataset"] == _dataset_name]
@@ -215,7 +216,7 @@ for _dataset_name in seen_datasets:
             _split_hdr_size = (
                 4  # mean value (xx.x)
                 + _sig_width__per__split[_split]  # std value (x.xx or xx.xx)
-                + 2  # format characters (<mean>^<std>^)
+                + len(_fmt_chrs)  # format characters ($<mean>^{<std>}$)
             )
         _split_title = "Med." if _split == "Medium" else _split
         hdr_str += f"{_split_title:>{_split_hdr_size}}  "  # 2 spaces between columns
@@ -241,13 +242,16 @@ for _dataset_name in seen_datasets:
             _mu, _sig = _mrow[_split], _srow[_split]
             _mu_str = f"{_mu:4.1f}"
             if not isnan(_sig):
-                num_str = f"{_mu_str}^{_sig:0{_sig_width__per__split[_split]}.2f}^"
+                num_str = f"${_mu_str}^{{{_sig:0{_sig_width__per__split[_split]}.2f}}}$"
             else:
-                num_str = " " * (_sig_width__per__split[_split] + 2) + _mu_str
+                num_str = (
+                    " " * (_sig_width__per__split[_split] + len(_fmt_chrs) - 2)
+                    + f"${_mu_str}$"
+                )
             if args.num_col_width is not None:
                 if args.num_col_width < len(num_str):
                     raise RuntimeError(
-                        f"`num_col_width`={args.num_col_width} too small for {num_str!r}"
+                        f"num_col_width={args.num_col_width} too small for {num_str!r}"
                     )
                 num_str = f"{num_str:>{args.num_col_width}}"
             row_str += num_str + "  "

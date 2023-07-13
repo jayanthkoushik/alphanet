@@ -186,11 +186,16 @@ def plot(profile):
     for ax in g.axes:
         ax.xaxis.set_major_locator(FixedLocator([0, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]))
         ax.xaxis.set_major_formatter(
-            FixedFormatter(["0", "0.5", "", "1", "", "1.5", "", "2"])
+            FixedFormatter(["$0$", "$0.5$", "", "$1$", "", "$1.5$", "", "$2$"])
         )
         ax.xaxis.set_minor_locator(FixedLocator([0.1, 0.2, 0.3, 0.4]))
     g.tick_params(axis="x", which="both", direction="in")
-    g.set(xlim=(0, 2.05), ylim=(-0.25, 0.25), yticks=[-0.2, -0.1, 0, 0.1, 0.2])
+    g.set(
+        xlim=(0, 2.05),
+        ylim=(-0.25, 0.25),
+        yticks=[-0.2, -0.1, 0, 0.1, 0.2],
+        yticklabels=["$-0.2$", "$-0.1$", "$0$", "$0.1$", "$0.2$"],
+    )
     g.despine(left=True, top=True, right=True, bottom=False, trim=True)
 
     _ax = g.figure.add_subplot(4, 2, 8)

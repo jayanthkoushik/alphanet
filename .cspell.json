@@ -17,6 +17,8 @@
     "softmax",
     "convolutional",
     "Cauchy-Schwarz",
-    "AlphaNet"
+    "AlphaNet",
+    "SVM",
+    "thresholding",
   ]
 }

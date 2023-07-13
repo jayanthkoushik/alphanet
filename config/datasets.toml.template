@@ -6,7 +6,7 @@ classifier_loader = "LinearClassifierLoader"
 nn_files_dir = "data/ImageNetLT/nns/resnext50_crt"
 baseline_eval_file = "data/ImageNetLT/baselines/resnext50_crt.pkl"
 label_names_file = "data/ImageNetLT/label_names.txt"
-proper_name = "ImageNet-LT | cRT"
+proper_name = "ImageNet‑LT | cRT"
 
 [imagenetlt_resnext50_lws]
 split_files_dir = "data/ImageNetLT/splits"
@@ -16,7 +16,7 @@ classifier_loader = "LinearClassifierLoader"
 nn_files_dir = "data/ImageNetLT/nns/resnext50_lws"
 baseline_eval_file = "data/ImageNetLT/baselines/resnext50_lws.pkl"
 label_names_file = "data/ImageNetLT/label_names.txt"
-proper_name = "ImageNet-LT | LWS"
+proper_name = "ImageNet‑LT | LWS"
 
 [imagenetlt_resnext50_ride]
 split_files_dir = "data/ImageNetLT/splits"
@@ -26,7 +26,7 @@ classifier_loader = "CombinedClassifierLoader"
 nn_files_dir = "data/ImageNetLT/nns/resnext50_ride"
 baseline_eval_file = "data/ImageNetLT/baselines/resnext50_ride.pkl"
 label_names_file = "data/ImageNetLT/label_names.txt"
-proper_name = "ImageNet-LT | RIDE"
+proper_name = "ImageNet‑LT | RIDE"
 
 [cifarlt_resnet32_ride]
 split_files_dir = "data/CIFARLT/splits"
@@ -35,7 +35,7 @@ classifier_file = "data/CIFARLT/classifiers/resnet32_ride.pth"
 classifier_loader = "CombinedClassifierLoader"
 nn_files_dir = "data/CIFARLT/nns/resnet32_ride"
 baseline_eval_file = "data/CIFARLT/baselines/resnet32_ride.pkl"
-proper_name = "CIFAR-100-LT | RIDE"
+proper_name = "CIFAR‑100‑LT | RIDE"
 
 [cifarlt_resnet34_ltr]
 split_files_dir = "data/CIFARLT/splits"
@@ -44,7 +44,7 @@ classifier_file = "data/CIFARLT/classifiers/resnet34_ltr.pth"
 classifier_loader = "LinearClassifierLoader"
 nn_files_dir = "data/CIFARLT/nns/resnet34_ltr"
 baseline_eval_file = "data/CIFARLT/baselines/resnet34_ltr.pkl"
-proper_name = "CIFAR-100-LT | LTR"
+proper_name = "CIFAR‑100‑LT | LTR"
 
 [placeslt_resnet152_crt]
 split_files_dir = "data/PlacesLT/splits"
@@ -53,7 +53,7 @@ classifier_file = "data/PlacesLT/classifiers/resnet152_crt.pth"
 classifier_loader = "LinearClassifierLoader"
 nn_files_dir = "data/PlacesLT/nns/resnet152_crt"
 baseline_eval_file = "data/PlacesLT/baselines/resnet152_crt.pkl"
-proper_name = "Places-LT | cRT"
+proper_name = "Places‑LT | cRT"
 
 [placeslt_resnet152_lws]
 split_files_dir = "data/PlacesLT/splits"
@@ -62,7 +62,7 @@ classifier_file = "data/PlacesLT/classifiers/resnet152_lws.pth"
 classifier_loader = "LinearClassifierLoader"
 nn_files_dir = "data/PlacesLT/nns/resnet152_lws"
 baseline_eval_file = "data/PlacesLT/baselines/resnet152_lws.pkl"
-proper_name = "Places-LT | LWS"
+proper_name = "Places‑LT | LWS"
 
 [inatlt_resnet152_crt]
 split_files_dir = "data/iNaturalistLT/splits"

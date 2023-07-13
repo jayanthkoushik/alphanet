@@ -65,9 +65,8 @@ abstract: Methods in long-tail learning focus on improving performance
 bibliography: references.bib
 
 includes:
-- utils/debugcmd.md
 - utils/commands.md
-- utils/acronyms.md
+- utils/debugcmd.md
 
 sections:
 - sections/1_intro.md

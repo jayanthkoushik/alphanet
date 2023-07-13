@@ -1,12 +1,5 @@
 # Method {#sec:method}
 
-![Pipeline for AlphaNet. Given a rare class, we identify the nearest
-neighbor frequent classes based on visual similarity, and then update
-the rare class' classifier using learned coefficients. One coefficient,
-$\alpha$, is learned for each nearest neighbor. The result is an
-improved classifier for the rare class.](figures/pipeline){#fig:alphanet
-width=7.25in}
-
 In this work, we define the distance between two classes as the distance
 between their average training set representation. Given a
 classification model, let $f$ be the function mapping images to vectors
@@ -30,6 +23,13 @@ bias terms are not updated by AlphaNet, and are learned separately (more
 on this later).
 
 ## AlphaNet implementation {#sec:method:impl}
+
+![Pipeline for AlphaNet. Given a rare class, we identify the nearest
+neighbor frequent classes based on visual similarity, and then update
+the rare class' classifier using learned coefficients. One coefficient,
+$\alpha$, is learned for each nearest neighbor. The result is an
+improved classifier for the rare class.](figures/pipeline){#fig:alphanet
+width=7.25in}
 
 @fig:alphanet shows the pipeline of our method. Given a 'few' split
 class $c$, let the $k$ nearest 'base' split neighbors (based on $m_\mu$)
@@ -74,7 +74,7 @@ seen during training. This will be further explored in future work.
 The main trainable component of AlphaNet is a network (with parameters
 $\theta$) which maps $\c{v}^c$ to $\alpha^c$. We also learn a new set of
 bias values for the 'few' split classes, $\tilde{b}_1, \dots,
-\tilde{b}_{\abs{C^F}}$[^note:abs_cf]. Given a training image $I$, the
+\tilde{b}_{\abs{C^F}}$.[^note:abs_cf] Given a training image $I$, the
 per-class prediction scores are given by
 $$
 s(c; I) = \begin{cases}
@@ -82,11 +82,11 @@ s(c; I) = \begin{cases}
        f(I)^T w^c + b_c               & c \in C^B.
 \end{cases}
 $$ {#eq:pred_scores}
-These scores are used to compute the softmax cross-entropy loss[^note:ce],
-which is minimized with respect to $\theta$ and $\tilde{b}$ using a \ac{SGD}
-optimizer.
+These scores are used to compute the softmax cross-entropy
+loss,[^note:ce] which is minimized with respect to $\theta$ and
+$\tilde{b}$ using a gradient based optimizer.
 
-[^note:abs_cf]: $\abs{C^F}$ is the cardinality of $C^F$, i.e., the number
-of 'few' split classes.
+[^note:abs_cf]: $\abs{C^F}$ is the cardinality of $C^F$, i.e., the
+    number of 'few' split classes.
 [^note:ce]: We use softmax cross-entropy loss in our experiments, but
-any loss function can be used.
+    any loss function can be used.

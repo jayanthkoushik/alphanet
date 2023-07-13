@@ -299,6 +299,14 @@ class PlotParams(Corgy, corgy_make_slots=False):
         Optional[Sequence[float]],
         "ticks for the y axis (if not specified, ticks will not be modified)",
     ] = None
+    xticklabels: Annotated[
+        Optional[Sequence[str]],
+        "tick labels for the x axis (if not specified, ticks will not be modified)",
+    ] = None
+    yticklabels: Annotated[
+        Optional[Sequence[str]],
+        "tick labels for the y axis (if not specified, ticks will not be modified)",
+    ] = None
 
     xlabel: Annotated[Optional[str], "label for the x axis"] = None
     ylabel: Annotated[Optional[str], "label for the y axis"] = None
@@ -329,6 +337,10 @@ class PlotParams(Corgy, corgy_make_slots=False):
                 _ax.set_xticks(self.xticks)
             if self.yticks is not None:
                 _ax.set_yticks(self.yticks)
+            if self.xticklabels is not None:
+                _ax.set_xticklabels(self.xticklabels)
+            if self.yticklabels is not None:
+                _ax.set_yticklabels(self.yticklabels)
             if self.xlabel is not None:
                 _ax.set_xlabel(self.xlabel)
             if self.ylabel is not None:

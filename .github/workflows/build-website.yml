@@ -7,6 +7,7 @@ on:
     - master
     paths:
     - 'paper/**'
+    - '!paper/README.md'
     - '!paper/main.pdf'
     - '.github/workflows/build-website.yml'
 
@@ -19,10 +20,10 @@ jobs:
       with:
         setupscript: |
           cp paper/main.md /www/index.md
-          cp paper/appendix.md /www/_includes/
           cp paper/references.bib /www/_includes/
           cp -r paper/sections /www/_includes/
           cp -r paper/tables /www/_includes/
+          cp -r paper/tables_stats/_www /www/tables_stats
           cp -r paper/utils /www/_includes/
           cp -r paper/figures/_www /www/figures
         targetbranch: gh-pages

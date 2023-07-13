@@ -24,7 +24,7 @@ repos:
     types: [python]
   - id: pylint
     name: lint python files
-    entry: sh -c "python $(which pylint) $0"
+    entry: sh -c "(set -x; python $(which pylint) $0 $*)"
     language: system
     types: [python]
   - id: mypy
@@ -38,9 +38,14 @@ repos:
     language: system
     files: "paper/.*\\.md|README\\.md"
     entry: "npx cspell"
+  - id: fixhyphens
+    name: replace hyphens with non-breaking versions
+    language: system
+    files: "paper/.*\\.(md|svg|pgf)|run_gentables.sh|config/datasets.toml.template"
+    entry: paper/fixhyphens.sh
   - id: mdc
     name: build paper pdf
     language: system
     files: "paper/.*"
     pass_filenames: false
-    entry: sh -c "(cd paper && pipx run --spec shiny-mdc shinymdc -i main.md -o main.pdf -t stylish -m smalltabs=true,nonidan=true)"
+    entry: sh -c "(cd paper && pipx run --spec shiny-mdc shinymdc -i main.md -o main.pdf -t stylish -m smalltabs=true)"

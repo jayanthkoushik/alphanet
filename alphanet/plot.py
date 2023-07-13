@@ -908,9 +908,11 @@ class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
                 if self.y == "acc":
                     _ax.set_ylim(0, 1.01)
                     _ax.set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+                    _ax.set_yticklabels(["$0.2$", "$0.4$", "$0.6$", "$0.8$", "$1.0$"])
                 else:
                     _ax.set_ylim(-0.25, 0.25)
                     _ax.set_yticks([-0.2, -0.1, 0, 0.1, 0.2])
+                    _ax.set_yticklabels(["$-0.2$", "$-0.1$", "$0$", "$0.1$", "$0.2$"])
                     _ax.axhline(y=0, ls="-", color=self.plot.palette[0], zorder=1)
                 if _i != 0:
                     _ax.set_yticklabels([])
@@ -1087,6 +1089,7 @@ class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
                 _ax.set_ylim(-0.6, 0.6)
                 _ax.set_ylabel("Accuracy change")
                 _ax.set_yticks([-0.5, -0.25, 0, 0.25, 0.5])
+                _ax.set_yticklabels(["$-0.5$", "$-0.25$", "$0$", "$0.25$", "$0.5$"])
                 _ax.axhline(y=0, ls="-", color=self.plot.palette[0], alpha=0.5)
                 _ax.axhline(
                     y=_overall_del, ls="--", color=self.plot.palette[0], zorder=1
@@ -2062,20 +2065,29 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
         if self.nn_split == "semantic":
             if self.plot.theme == "light":
                 palette = ["#e5ae39", "#179be8", "#4f9e89"]
-                hatch_palette = ["#ffd67f", "#7fc1e8", "#66ccb0"]
+                # hatch_palette = ["#ffd67f", "#7fc1e8", "#66ccb0"]
+                hatch_palette = ["#f7e7c4", "#b9e1f8", "#c8e4dc"]  # 70% brighter
             else:
                 palette = ["#15419e", "#ba5012", "#8d4e5e"]
-                hatch_palette = ["#002166", "#663212", "#7a293f"]
+                # hatch_palette = ["#002166", "#663212", "#7a293f"]
+                hatch_palette = ["#06132f", "#381805", "#2a171c"]  # 70% darker
         else:
             palette = self.plot.palette[1:4]
             if self.plot.theme == "light":
-                hatch_palette = ["#e5cfa0", "#b9d7e8", "#00cc95"]
+                # hatch_palette = ["#e5cfa0", "#b9d7e8", "#00cc95"]
+                # hatch_palette = ["#ffdc8f", "#bbe1f6", "#72ffd9"]  # 60% brighter
+                hatch_palette = ["#ffe5ab", "#cce8f8", "#95ffe2"]  # 70% brighter
             else:
-                hatch_palette = ["#101d39", "#2a180e", "#991f40"]
+                # hatch_palette = ["#101d39", "#2a180e", "#991f40"]
+                # hatch_palette = ["#081f52", "#361807", "#58192a"]  # 60% darker
+                hatch_palette = ["#06173d", "#281205", "#421320"]  # 70% darker
 
         with self.plot.open(
             close_fig_on_exit=False, nrows=_n_rows, ncols=_n_cols, squeeze=False
         ) as (_fig, _axs):
+            _out_format = (
+                None if self.plot.file is None else Path(self.plot.file.name).suffix
+            )
             for _axno, (_exp, _ax) in enumerate(
                 itertools.zip_longest(_exps, _axs.flatten())
             ):
@@ -2132,9 +2144,13 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                                 width=_bar_width,
                                 bottom=_offset,
                                 color=palette[_j],
-                                hatch="////",
+                                hatch=("////////" if _out_format == ".pgf" else "////"),
                                 linewidth=0,
-                                edgecolor=hatch_palette[_j],
+                                edgecolor=(
+                                    self.plot.palette[0]
+                                    if _out_format == ".pgf"
+                                    else hatch_palette[_j]
+                                ),
                             )
 
                         _y = _offset + (_bar_height / 2)
@@ -2145,7 +2161,7 @@ class PlotPredChanges(_BaseMultiExpPlotCmd, BasePlotCmd):
                         _ax.text(
                             _i,
                             _y,
-                            str(_n_status),
+                            "$" + str(_n_status) + "$",
                             ha="center",
                             va=_va,
                             fontsize=self.label_size,
