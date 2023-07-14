@@ -17,22 +17,18 @@ top‑1 and top‑5 accuracy (respectively), versus $\rho$.
 Detailed results are shown in the following tables:
 
 * ImageNet‑LT:
-
   * Top‑1 accuracy: @tbl:models_split_top1_accs_vs_rho_imagenetlt.
   * Top‑5 accuracy: @tbl:models_split_top5_accs_vs_rho_imagenetlt.
 
 * Places‑LT:
-
   * Top‑1 accuracy: @tbl:models_split_top1_accs_vs_rho_placeslt.
   * Top‑5 accuracy: @tbl:models_split_top5_accs_vs_rho_placeslt.
 
 * CIFAR‑100‑LT:
-
   * Top‑1 accuracy: @tbl:models_split_top1_accs_vs_rho_cifarlt.
   * Top‑5 accuracy: @tbl:models_split_top5_accs_vs_rho_cifarlt.
 
 * iNaturalist:
-
   * Top‑1 accuracy: @tbl:models_split_top1_accs_vs_rho_inatlt.
   * Top‑5 accuracy: @tbl:models_split_top5_accs_vs_rho_inatlt.
 

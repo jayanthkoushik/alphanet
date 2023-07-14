@@ -24,14 +24,12 @@ The full set of top‑1 and top‑5 accuracies is shown in the following
 tables:
 
 * Euclidean distance:
-
   * Top‑1 accuracy:
     @tbl:rhos_split_top1_accs_vs_k_imagenetlt_crt_euclidean.
   * Top‑5 accuracy:
     @tbl:rhos_split_top5_accs_vs_k_imagenetlt_crt_euclidean.
 
 * Cosine distance:
-
   * Top‑1 accuracy:
     @tbl:rhos_split_top1_accs_vs_k_imagenetlt_crt_cosine.
   * Top‑5 accuracy:

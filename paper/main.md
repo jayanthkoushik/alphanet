@@ -75,12 +75,13 @@ sections:
 - sections/4_experiments.md
 - sections/5_conclusion.md
 
-# cSpell: ignore rhosweep, ksweep
+# cSpell: ignore rhosweep, ksweep, perclsdels
 
 appendices:
 - sections/appendix/implementation.md
-- sections/appendix/rhosweep.md
 - sections/appendix/ksweep.md
+- sections/appendix/rhosweep.md
+- sections/appendix/perclsdels.md
 
 url: https://jkoushik.me/alphanet
 ---

@@ -1,26 +1,15 @@
 # Implementation details {#sec:impl_details}
 
-<!-- cSpell:ignore jayanthkoushik, matplotlib, seaborn, Kang -->
-
 Experiments were run using the PyTorch[@paszke2019pytorch] library. We
 used the container implementation provided by the NVIDIA GPU cloud
 (NGC).[^note:container_link] Code to reproduce experimental results is
 available on GitHub.[^note:self_repo]
 
-<!-- cSpell: disable -->
-
-[^note:container_link]:
-    [`catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch`](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch),
-    version 22.06.
-
-[^note:self_repo]:
-    [`github.com/jayanthkoushik/alphanet`](https://github.com/jayanthkoushik/alphanet).
-
-<!-- cSpell: enable -->
-
 ## Datasets
 
 {% include tables_stats/dataset_stats.md %}
+
+<!-- cSpell:ignore Kang -->
 
 Details about the long-tailed datasets used in our experiments are shown
 in @tbl:dataset_stats. For ImageNet‑LT, Places‑LT, and iNaturalist, we
@@ -28,16 +17,6 @@ used splits from Kang et\ al. (2019),[@2019.Kalantidis.Kang] available
 on GitHub.[^note:cls_bal_repo] For CIFAR‑100‑LT, we used the 100
 imbalance implementation of Wang et\ al. (2020),[@2020.Yu.Wang], also
 available on GitHub.[^note:ride_repo]
-
-<!-- cSpell: disable -->
-
-[^note:cls_bal_repo]:
-    [`github.com/facebookresearch/classifier-balancing`](https://github.com/facebookresearch/classifier-balancing).
-
-[^note:ride_repo]:
-    [`github.com/frank-xwang/RIDE-LongTailRecognition`](https://github.com/frank-xwang/RIDE-LongTailRecognition).
-
-<!-- cSpell: enable -->
 
 ### Splits
 
@@ -58,16 +37,10 @@ architecture on Places‑LT.
 
 For all models except LTR, we used model weights provided by the
 respective authors. For LTR, we retrained the model using code provided
-by the authors,[^note:ltr] with some modifications: 1) for consistency,
-we used the same CIFAR‑100‑LT data splits used for training the RIDE
-model, and 2) we performed second stage training -- fine-tuning with
-weight decay and norm thresholding -- for a fixed 10 epochs.
-
-<!-- cSpell: disable -->
-
-[^note:ltr]: [`github.com/ShadeAlsha/LTR-weight-balancing`](https://github.com/ShadeAlsha/LTR-weight-balancing).
-
-<!-- cSpell: enable -->
+by the authors,[^note:ltr_repo] with some modifications: 1) for
+consistency, we used the same CIFAR‑100‑LT data splits used for training
+the RIDE model, and 2) we performed second stage training -- fine-tuning
+with weight decay and norm thresholding -- for a fixed 10 epochs.
 
 {% include tables_stats/dataset_splits.md %}
 
@@ -77,10 +50,9 @@ weight decay and norm thresholding -- for a fixed 10 epochs.
 
 In most cases, we simply used the flattened output of a model's
 penultimate layer as features, and used the weights (including bias) of
-the last layer (fully connected) as the classifier. Exceptions to this
-are listed below:
+the last layer as the classifier. Exceptions to this are listed below:
 
-* LWS: We multiplied the classifier with the learned per-class scales.
+* LWS: We multiplied classifier weights with the per-class scales.
 
 * RIDE: We used the 6-expert teacher model, and saved classifiers from
   each expert after normalizing and scaling as in the model. For
@@ -122,6 +94,28 @@ published values, except in the case of LTR, which we retrained.
 Additionally, for consistency, we also did not use data augmentation at
 test time.
 
+<!-- cSpell:ignore matplotlib, seaborn -->
+
 Plots were generated with Matplotlib,[@hunter2007matplotlib] using the
 Seaborn library.[@waskom2021] Wherever applicable, error bars show 95%
 confidence intervals, estimated using 10,000 bootstrap resamples.
+
+<!-- cSpell: disable -->
+
+[^note:container_link]:
+    [`catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch`](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch),
+    version 22.06.
+
+[^note:self_repo]:
+    [`github.com/jayanthkoushik/alphanet`](https://github.com/jayanthkoushik/alphanet).
+
+[^note:cls_bal_repo]:
+    [`github.com/facebookresearch/classifier-balancing`](https://github.com/facebookresearch/classifier-balancing).
+
+[^note:ride_repo]:
+    [`github.com/frank-xwang/RIDE-LongTailRecognition`](https://github.com/frank-xwang/RIDE-LongTailRecognition).
+
+[^note:ltr_repo]:
+    [`github.com/ShadeAlsha/LTR-weight-balancing`](https://github.com/ShadeAlsha/LTR-weight-balancing).
+
+<!-- cSpell: enable -->

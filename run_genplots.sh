@@ -134,14 +134,21 @@ done
 
 ################################################
 
+if [ "${context}" = "paper" ]; then width="5"; else width="6.25"; fi
+
 for dataset in imagenetlt_resnext50_crt imagenetlt_resnext50_lws imagenetlt_resnext50_ride placeslt_resnet152_crt placeslt_resnet152_lws cifarlt_resnet32_ride cifarlt_resnet34_ltr; do
-    expdirs=("rho_0.5" "rho_1" "rho_1.5")
-    expnames=("$\\rho=0.5$" "$\\rho=1$" "$\\rho=1.5$")
+    if [ "${dataset}" = "cifarlt_resnet34_ltr" ]; then
+        expdirs=("rho_1" "rho_2" "rho_3")
+        expnames=("$\\rho=1$" "$\\rho=2$" "$\\rho=3$")
+    else
+        expdirs=("rho_0.5" "rho_1" "rho_1.5")
+        expnames=("$\\rho=0.5$" "$\\rho=1$" "$\\rho=1.5$")
+    fi
     dname=$(echo ${dataset} | cut -d_ -f1,3)
 
     sfile="${save_dir}/appendix/rhos_cls_deltas_${dname}${ext}"
     if check_does_not_exist "${sfile}"; then
-        (set -x; python run_makeplot.py PlotClsAccDeltaBySplit --base-res-dir "results/main/${dataset}" --exp-sub-dirs "${expdirs[@]}" --exp-names "${expnames[@]}" --res-files-pattern "rep_${rep}/result.pth" --n-boot ${n_boot} --plot:width "full" --plot:aspect 1 --plot:file "${sfile}" "${mainargs[@]}" "${xargs[@]}";)
+        (set -x; python run_makeplot.py PlotClsAccDeltaBySplit --base-res-dir "results/main/${dataset}" --exp-sub-dirs "${expdirs[@]}" --exp-names "${expnames[@]}" --res-files-pattern "rep_${rep}/result.pth" --n-boot ${n_boot} --plot:width "${width}" --plot:aspect 1 --plot:file "${sfile}" "${mainargs[@]}" "${xargs[@]}";)
     fi
 
     case ${dataset} in
