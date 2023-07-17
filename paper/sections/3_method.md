@@ -19,8 +19,7 @@ update the 'few' split classifiers using nearest neighbors from the
 'base' split. We will use the term 'classifier' to denote the linear
 mapping from feature vectors to class scores. In convolutional networks,
 the last layer is generally a matrix of all individual classifiers. The
-bias terms are not updated by AlphaNet, and are learned separately (more
-on this later).
+bias terms are not updated by AlphaNet, and are used as is.
 
 ## AlphaNet implementation {#sec:method:impl}
 
@@ -32,13 +31,13 @@ improved classifier for the rare class.](figures/pipeline){#fig:alphanet
 width=7.25in}
 
 @fig:alphanet shows the pipeline of our method. Given a 'few' split
-class $c$, let the $k$ nearest 'base' split neighbors (based on $m_\mu$)
-be $q^c_1, \dots, q^c_k$, with corresponding classifiers $v^c_1, \dots,
-v^c_k$. AlphaNet maps the nearest neighbor classifiers (concatenated
-together into a vector $\c{v}^c$) to a set of coefficients $\alpha^c_1,
-\dots, \alpha^c_k$. The $\alpha$ coefficients (denoted together as a
-vector $\alpha^c$), are then scaled to unit 1-norm (the reasoning behind
-this will be explained later), to obtain $\tilde{\alpha}^c$:
+class $c$ with classifier $w^c$, we find its $k$ nearest 'base' split
+neighbors based on $m_\mu$. Let these neighbors have classifiers $v^c_1,
+\dots, v^c_k$, which are concatenated together into a vector $c{v}^c$.
+AlphaNet maps $c{v}^c$ to a set of coefficients $\alpha^c_1, \dots,
+\alpha^c_k$. The $\alpha$ coefficients (denoted together as a vector
+$\alpha^c$), are then scaled to unit 1-norm (the reasoning behind this
+will be explained later), to obtain $\tilde{\alpha}^c$:
 $$
   \tilde{\alpha}^c
 = \alpha^c / \norm{\alpha^c}_1.
@@ -71,22 +70,19 @@ seen during training. This will be further explored in future work.
 
 ## Training {#sec:method:training}
 
-The main trainable component of AlphaNet is a network (with parameters
-$\theta$) which maps $\c{v}^c$ to $\alpha^c$. We also learn a new set of
-bias values for the 'few' split classes, $\tilde{b}_1, \dots,
-\tilde{b}_{\abs{C^F}}$.[^note:abs_cf] Given a training image $I$, the
-per-class prediction scores are given by
+The trainable component of AlphaNet is a network (with parameters
+$\theta$) which maps $\c{v}^c$ to $\alpha^c$. We use the original
+classifier biases, $b$. So, given a training image $I$, the per-class
+prediction scores are given by
 $$
 s(c; I) = \begin{cases}
-       f(I)^T \shat{w}^c + \shat{b}_c & c \in C^F. \\
-       f(I)^T w^c + b_c               & c \in C^B.
+       f(I)^T \shat{w}^c + b_c & c \in C^F. \\
+       f(I)^T w^c + b_c        & c \in C^B.
 \end{cases}
 $$ {#eq:pred_scores}
 These scores are used to compute the softmax cross-entropy
-loss,[^note:ce] which is minimized with respect to $\theta$ and
-$\tilde{b}$ using a gradient based optimizer.
+loss,[^note:ce] which is minimized with respect to $\theta$ using a
+gradient based optimizer.
 
-[^note:abs_cf]: $\abs{C^F}$ is the cardinality of $C^F$, i.e., the
-    number of 'few' split classes.
 [^note:ce]: We use softmax cross-entropy loss in our experiments, but
     any loss function can be used.

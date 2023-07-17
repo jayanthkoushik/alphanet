@@ -9,7 +9,7 @@ Places‑LT     cRT     ResNet‑152
 <!--  -->
 CIFAR‑100‑LT  RIDE    ResNet‑32
               LTR     ResNet‑34
-<!--  -->
-iNaturalist   cRT     ResNet‑152
 
 : Baseline model architectures. {#tbl:baseline_archs}
+
+<!-- iNaturalist   cRT     ResNet‑152 -->

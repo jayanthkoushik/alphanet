@@ -38,17 +38,17 @@ class.](figures/pred_counts_imagenetlt_crt_baseline){#fig:analysis:bins}
 
 ![Sample images from two classes in ImageNet‑LT. 'Lhasa' is a 'few'
 split class, and 'Tibetan terrier' is a 'base' split class. The classes
-are visually similar, leading to
+are visually very similar, leading to
 misclassifications.](figures/doggies){#fig:analysis:egs}
 
-![Per-class test accuracy of cRT model on 'few' split of ImageNet‑LT
-versus the mean distance to 10 nearest neighbors from the 'base' split.
+![Per-class test accuracy of cRT model on 'few' split of ImageNet‑LT,
+versus the mean distance to 5 nearest neighbors from the 'base' split.
 The line is a bootstrapped linear regression fit, and $r$ (top right) is
 Pearson correlation. There is a high correlation, i.e., 'few' split
 classes with close nearest neighbors were more likely to be
 misclassified.](figures/cls_acc_vs_nndist_imagenetlt_crt_baseline){#fig:analysis:acc_vs_dist}
 
-Analysis of test accuracy for 'few' split of ImageNet‑LT.
+Analysis of 'few' split predictions on ImageNet‑LT.
 
 </div>
 
@@ -57,23 +57,23 @@ analyzed predictions of the cRT model[@2019.Kalantidis.Kang] on test
 samples from 'few' split classes (i.e. classes with limited training
 samples) in ImageNet‑LT[@2019.Yu.Liu] -- a long-tailed dataset based on
 ImageNet. @fig:analysis:bins shows predictions binned into three groups:
-1) samples predicted correctly; 2) samples incorrectly predicted as a
+(1) samples predicted correctly; (2) samples incorrectly predicted as a
 visually similar class (e.g., predicting 'husky' instead of 'malamute');
-and 3) samples incorrectly predicted as a visually dissimilar class
+and (3) samples incorrectly predicted as a visually dissimilar class
 (e.g., predicting 'car' instead of 'malamute'). A significant portion of
 the misclassifications (about 26%) are to visually similar classes.
 @fig:analysis:egs shows samples from one pair of visually similar
 classes; the differences are subtle, and can be hard even for humans to
-identify. We next analyzed the relationship between per-class test
+identify. We also analyzed the relationship between per-class test
 accuracy and mean distance of a class to its nearest neighbors (see
 @sec:method for details). @fig:analysis:acc_vs_dist shows a strong
-positive correlation between accuracy and mean distance -- 'few' split
-classes with close neighbors have lower test accuracy than classes with
-distant neighbors.
+positive correlation between accuracy and mean distance, that is, 'few'
+split classes with close neighbors have lower test accuracy than classes
+with distant neighbors.
 
 Based on these analyses, we designed a method to directly improve the
 accuracy of rare classes in long-tail classification. Our method,
-AlphaNet, uses information from visually similar _frequent_ classes to
+AlphaNet, uses information from visually similar frequent classes to
 improve classifiers for rare classes. @fig:alphanet illustrates the
 pipeline of our method. At a high level, AlphaNet can be seen as moving
 the classifiers for rare classes based on their position relative to

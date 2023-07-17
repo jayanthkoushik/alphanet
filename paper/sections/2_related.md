@@ -1,3 +1,5 @@
+<!-- cSpell:ignore Torralba -->
+
 # Related work {#sec:relwork}
 
 Combining, creating, modifying, and learning model weights are concepts
@@ -34,7 +36,7 @@ transfer learning with non-deep methods, there have been attempts to use
 and combine support vector machines (SVMs). In one
 method,[@2005.Singer.Tsochantaridis] SVMs are trained per object
 instance, and a hierarchical structure is required for combination in
-the datasets of interest. However, such a structure is typically not
+the datasets of interest. However, such a structure is typically neither
 guaranteed nor provided in long-tailed datasets. Another SVM method uses
 regularized minimization to learn the coefficients necessary to combine
 patches from other classifiers.[@2012.Zisserman.Aytar]
@@ -43,16 +45,32 @@ While these approaches are conceptually similar to our method, AlphaNet
 has the additional advantage of _learning_ the compositional
 coefficients. Specifically, different novel classes will have their own
 set of coefficients, and similar novel classes will naturally have
-similar coefficients. Learning such varying sets of coefficients is
-difficult in previous classical approaches, which either learn a fixed
-set of coefficients for all novel classes or are forced to introduce
-more complex group sparsity-like constraints.[@TODO] Finally, in
-zero-shot learning there exist methods which compose classifiers of
-known visual concepts to learn a completely new
-classifier.[@2013.Elgammal.Elhoseiny; @2017.Hebert.Misra;
+similar coefficients. Finally, in zero-shot learning there exist methods
+which compose classifiers of known visual concepts to learn a completely
+new classifier.[@2013.Elgammal.Elhoseiny; @2017.Hebert.Misra;
 @2015.Salakhutdinov.Ba; @2016.Sha.Changpinyo] However, such composition
 is often guided by supervision from additional attributes or textual
 descriptions, which are not needed by AlphaNet.
+
+### Boosting {#sec:relwork:composition:boosting}
+
+The idea of composing weak classifiers to build strong classifiers bears
+resemblance to the idea of boosting.[@schapire1990strength] The popular
+AdaBoost[@freund1995desicion] linearly combines classifiers based on a
+single feature (e.g., decision stumps), and iteratively re-weights
+training samples based on their error. For the case of multi-class
+classification, Torralba et\ al. (2007)[@torralba2007sharing] build a
+classifier that combines several binary classifiers, each designed to
+separate a single class from the others. Their method identifies common
+features that be shared across classifiers, which reduces the
+computational load, and the amount of training data required.
+
+It is important to note that boosting methods employ a different form of
+composition that our methods. Specifically, our focus is on
+classification methods where the _performance on a subset of classes_ is
+poor. Unlike boosting methods, we do not incorporate additional features
+-- improvements are made by adjusting classifiers within the learned
+representation space.
 
 ## Learning transformations between models and classes {#sec:relwork:transformation}
 
@@ -105,6 +123,6 @@ Results suggest that decoupling model representation learning and
 classifier learning is a more efficient way to approach long-tailed
 learning. Specifically, methods normalizing classifiers and adjusting
 classifiers using only re-sampling strategies achieve good
-performance.[@TODO:21; @TODO:more] These strong baselines support our
+performance.[@2019.Kalantidis.Kang] These strong baselines support our
 approach of operating in classifier space -- AlphaNet combines strong
 classifiers to improve weak classifiers.

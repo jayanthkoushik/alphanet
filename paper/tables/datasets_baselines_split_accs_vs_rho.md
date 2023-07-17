@@ -33,4 +33,4 @@ $\rho=0.5$          $37.1^{1.39}$   $34.4^{0.80}$   $37.7^{0.52}$   $36.1^{0.31}
 $\rho=1$            $34.6^{0.97}$   $35.8^{0.54}$   $38.6^{0.39}$   $36.6^{0.22}$
 $\rho=1.5$          $32.2^{1.17}$   $37.2^{0.36}$   $39.5^{0.39}$   $37.0^{0.11}$
 
-: Mean split accuracy in percents (standard deviation in superscript) of AlphaNet and various baseline methods on ImageNet‑LT and Places‑LT. $\alpha$‑cRT and $\alpha$‑LWS are AlphaNet models applied over cRT and LWS features respectively. {#tbl:datasets_baselines_split_accs_vs_rhos}
+: Mean split accuracy in percents (standard deviation in superscript) of AlphaNet and various baseline methods on ImageNet‑LT and Places‑LT. $\alpha$‑cRT and $\alpha$‑LWS are AlphaNet models applied over cRT and LWS features respectively. {#tbl:datasets_baselines_split_accs_vs_rho}

@@ -1,6 +1,6 @@
-# Analysis of training data sampling {#sec:rhosweep}
-
 <!-- cSpell:ignore synsets -->
+
+# Analysis of training data sampling {#sec:rhosweep}
 
 This section contains results for AlphaNet training with a range of
 $\rho$ values. We also include results for the iNaturalist dataset using
@@ -33,11 +33,11 @@ Detailed results are shown in the following tables:
   * Top‑5 accuracy: @tbl:models_split_top5_accs_vs_rho_inatlt.
 
 In addition to top‑1 and top‑5 accuracy, we evaluated performance on
-ImageNet‑LT by considering predictions to a WordNet nearest neighbor as
-correct.[^note:semantic_acc] Given a level $l$, if the predicted class
-for a sample is within $l$ nodes of the true class in the WordNet
-hierarchy (using the shortest path), it is considered correct. We used
-$l=4$ -- results are shown in
+ImageNet‑LT by considering predictions to a WordNet[@wordnet] nearest
+neighbor as correct.[^note:semantic_acc] Given a level $l$, if the
+predicted class for a sample is within $l$ nodes of the true class in
+the WordNet hierarchy (using the shortest path), it is considered
+correct. We used $l=4$ -- results are shown in
 @tbl:models_split_semantic4_accs_vs_rho_imagenetlt.
 
 [^note:semantic_acc]: This is only possible for ImageNet‑LT since image

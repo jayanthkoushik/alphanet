@@ -1,11 +1,11 @@
-# Analysis of nearest neighbor selection {#sec:ksweep}
-
 {% raw %}
 \graphicspath{{figures/appendix/}}
 {% endraw %}
 
+# Analysis of nearest neighbor selection {#sec:ksweep}
+
 We analyzed the effect of the number of nearest neighbors $k$, and the
-distance metric ($\mu$), on the performance of AlphaNet, on the
+distance metric ($\mu$), on the performance of AlphaNet, using the
 ImageNet‑LT dataset with the cRT model. We compared two distance
 metrics: cosine distance ($\mu(z_1, z_2) = 1 - z_1^T z_2 / \norm{z_1}_2
 \norm{z_2}_2$), and Euclidean distance ($\mu(z_1, z_2) = \norm{z_1 -

@@ -1,8 +1,8 @@
-# Change in per-class accuracies {#sec:perclsdels}
-
 {% raw %}
 \graphicspath{{figures/appendix/}}
 {% endraw %}
+
+# Change in per-class accuracies {#sec:perclsdels}
 
 In this section, we analyze the change in accuracy for individual
 classes after AlphaNet training. First, we plotted the sorted accuracy
@@ -73,20 +73,20 @@ change.](figures/appendix/rhos_cls_deltas_imagenetlt_ride){#fig:rhos_cls_deltas_
 
 \clearpage
 
-![Change in per-class test accuracy on Places‑LT after AlphaNet
-training with cRT baseline. Each bar shows the change the change in
-accuracy after AlphaNet training for one class. The solid lines in each
-split show the average per-class change for the split, and the dotted
-line shows the overall average per-class
+![Change in per-class test accuracy on Places‑LT after AlphaNet training
+with cRT baseline. Each bar shows the change the change in accuracy
+after AlphaNet training for one class. The solid lines in each split
+show the average per-class change for the split, and the dotted line
+shows the overall average per-class
 change.](figures/appendix/rhos_cls_deltas_placeslt_crt){#fig:rhos_cls_deltas_placeslt_crt}
 
 \clearpage
 
-![Change in per-class test accuracy on Places‑LT after AlphaNet
-training with LWS baseline. Each bar shows the change the change in
-accuracy after AlphaNet training for one class. The solid lines in each
-split show the average per-class change for the split, and the dotted
-line shows the overall average per-class
+![Change in per-class test accuracy on Places‑LT after AlphaNet training
+with LWS baseline. Each bar shows the change the change in accuracy
+after AlphaNet training for one class. The solid lines in each split
+show the average per-class change for the split, and the dotted line
+shows the overall average per-class
 change.](figures/appendix/rhos_cls_deltas_placeslt_lws){#fig:rhos_cls_deltas_placeslt_lws}
 
 \clearpage
@@ -138,11 +138,11 @@ baseline](figures/appendix/rhos_cls_delta_vs_nndist_placeslt_crt){#fig:rhos_cls_
 ![LWS
 baseline](figures/appendix/rhos_cls_delta_vs_nndist_placeslt_lws){#fig:rhos_cls_delta_vs_nndist_placeslt:lws}
 
-Change in per-class test accuracy on Places‑LT, versus mean distance
-to 5 nearest neighbors based on Euclidean distance. The neighbors are
-from 'base' split for the 'few' split classes, and vice-versa for the
-'base' split classes. The lines are regression fits, and the $r$s are
-Pearson correlations.
+Change in per-class test accuracy on Places‑LT, versus mean distance to
+5 nearest neighbors based on Euclidean distance. The neighbors are from
+'base' split for the 'few' split classes, and vice-versa for the 'base'
+split classes. The lines are regression fits, and the $r$s are Pearson
+correlations.
 
 </div>
 

@@ -99,12 +99,28 @@ if check_does_not_exist "${sfile}"; then
     (set -x; python run_makeplot.py PlotSplitAccVsExp --base-res-dir "results" --exp-sub-dir "main/imagenetlt_resnext50_crt/rho_0.1" "main/imagenetlt_resnext50_crt/rho_0.25" "main/imagenetlt_resnext50_crt/rho_0.5" "main/imagenetlt_resnext50_crt/rho_0.75" "main/imagenetlt_resnext50_crt/rho_1" "main/imagenetlt_resnext50_crt/rho_1.25" "main/imagenetlt_resnext50_crt/rho_1.5" "main/imagenetlt_resnext50_crt/rho_1.75" "main/imagenetlt_resnext50_crt/rho_2" "randomnns/imagenetlt_resnext50_crt/rho_0.1" "randomnns/imagenetlt_resnext50_crt/rho_0.25" "randomnns/imagenetlt_resnext50_crt/rho_0.5" "randomnns/imagenetlt_resnext50_crt/rho_0.75" "randomnns/imagenetlt_resnext50_crt/rho_1" "randomnns/imagenetlt_resnext50_crt/rho_1.25" "randomnns/imagenetlt_resnext50_crt/rho_1.5" "randomnns/imagenetlt_resnext50_crt/rho_1.75" "randomnns/imagenetlt_resnext50_crt/rho_2" --exp-names "\$0.10\$" "\$0.25\$" "\$0.50\$" "\$0.75\$" "\$1.00\$" "\$1.25\$" "\$1.50\$" "\$1.75\$" "\$2.00\$" "\$0.10\$" "\$0.25\$" "\$0.50\$" "\$0.75\$" "\$1.00\$" "\$1.25\$" "\$1.50\$" "\$1.75\$" "\$2.00\$" --xlabel "$\\rho$" --res-files-pattern "rep_${rep}/result.pth" --n-boot ${n_boot} --col "metric" --y "acc_delta" --plot:width "full" --plot:aspect 3 --legend-loc "upper right" --legend-bbox-to-anchor 0.99 0.85 --plot:file "${sfile}" "${mainargs[@]}" "${xargs[@]}";)
 fi
 
-sfile="${save_dir}/rhos_few_pred_changes_nn_base_imagenetlt_crt${ext}"
-if check_does_not_exist "${sfile}"; then
-    (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" "rho_1" "rho_1.5" --exp-names "$\\rho=0.5$" "$\\rho=1$" "$\\rho=1.5$" --res-files-pattern "rep_${rep}/result.pth" --n-boot ${n_boot} --plot:width "full" --plot:aspect "3:2" --label-size "x-small" --split "few" --nn-split "base" --plot:file "${sfile}" "${mainargs[@]}" "${xargs[@]}";)
-fi
-
 for split in few base all; do
+    case ${split} in
+        few)
+            osplit="base"
+            ;;
+        base)
+            osplit="few"
+            ;;
+        all)
+            osplit="all"
+            ;;
+        *)
+            echo "how?" >&2
+            exit 1
+            ;;
+    esac
+
+    sfile="${save_dir}/${split}_pred_changes_nn_${osplit}_imagenetlt_crt_rho_05${ext}"
+    if check_does_not_exist "${sfile}"; then
+        (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${rep}/result.pth" --n-boot ${n_boot} --plot:width "${width}" --plot:aspect "1:2" --label-size "x-small" --split "${split}" --nn-split "${osplit}" --plot:file "${sfile}" "${mainargs[@]}" "${xargs[@]}";)
+    fi
+
     sfile="${save_dir}/${split}_pred_changes_nn_semantic4_imagenetlt_crt_rho_05${ext}"
     if check_does_not_exist "${sfile}"; then
         (set -x; python run_makeplot.py PlotPredChanges --base-res-dir "results/main/imagenetlt_resnext50_crt" --exp-sub-dirs "rho_0.5" --res-files-pattern "rep_${rep}/result.pth" --n-boot ${n_boot} --plot:width "${width}" --plot:aspect "1:2" --label-size "x-small" --split "${split}" --nn-split "semantic" --semantic-nns-level 4 --imagenet-data-root "data/ImageNetLT" --plot:file "${sfile}" "${mainargs[@]}" "${xargs[@]}";)

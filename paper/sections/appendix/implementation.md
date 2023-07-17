@@ -1,7 +1,9 @@
+<!-- cSpell:ignore Kang, matplotlib, seaborn -->
+
 # Implementation details {#sec:impl_details}
 
 Experiments were run using the PyTorch[@paszke2019pytorch] library. We
-used the container implementation provided by the NVIDIA GPU cloud
+used the container implementation provided by NVIDIA GPU cloud
 (NGC).[^note:container_link] Code to reproduce experimental results is
 available on GitHub.[^note:self_repo]
 
@@ -9,14 +11,12 @@ available on GitHub.[^note:self_repo]
 
 {% include tables_stats/dataset_stats.md %}
 
-<!-- cSpell:ignore Kang -->
-
 Details about the long-tailed datasets used in our experiments are shown
-in @tbl:dataset_stats. For ImageNet‑LT, Places‑LT, and iNaturalist, we
-used splits from Kang et\ al. (2019),[@2019.Kalantidis.Kang] available
-on GitHub.[^note:cls_bal_repo] For CIFAR‑100‑LT, we used the 100
-imbalance implementation of Wang et\ al. (2020),[@2020.Yu.Wang], also
-available on GitHub.[^note:ride_repo]
+in @tbl:dataset_stats. For ImageNet‑LT and Places‑LT, we used splits
+from Kang et\ al. (2019),[@2019.Kalantidis.Kang] available on
+GitHub.[^note:cls_bal_repo] For CIFAR‑100‑LT, we used the 100 imbalance
+implementation of Wang et\ al. (2020),[@2020.Yu.Wang], also available on
+GitHub.[^note:ride_repo]
 
 ### Splits
 
@@ -37,10 +37,11 @@ architecture on Places‑LT.
 
 For all models except LTR, we used model weights provided by the
 respective authors. For LTR, we retrained the model using code provided
-by the authors,[^note:ltr_repo] with some modifications: 1) for
+by the authors,[^note:ltr_repo] with some modifications: (1) for
 consistency, we used the same CIFAR‑100‑LT data splits used for training
-the RIDE model, and 2) we performed second stage training -- fine-tuning
-with weight decay and norm thresholding -- for a fixed 10 epochs.
+the RIDE model, and (2) we performed second stage training --
+fine-tuning with weight decay and norm thresholding -- for a fixed 10
+epochs.
 
 {% include tables_stats/dataset_splits.md %}
 
@@ -93,8 +94,6 @@ in superscript. We regenerated baseline results, and these match
 published values, except in the case of LTR, which we retrained.
 Additionally, for consistency, we also did not use data augmentation at
 test time.
-
-<!-- cSpell:ignore matplotlib, seaborn -->
 
 Plots were generated with Matplotlib,[@hunter2007matplotlib] using the
 Seaborn library.[@waskom2021] Wherever applicable, error bars show 95%
