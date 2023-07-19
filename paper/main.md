@@ -52,15 +52,13 @@ abstract: Methods in long-tail learning focus on improving performance
   applied to existing models, performing post hoc correction on
   classifiers of rare classes. Starting with a pre-trained model, we
   find frequent classes that are closest to rare classes in the model's
-  representation space and learn weights to update rare classifiers with
-  a linear combination of frequent classifiers. AlphaNet, applied on
-  several different models, greatly improves test accuracy for rare
-  classes in multiple long-tail datasets. We then analyze predictions
-  from AlphaNet and find that remaining errors are to often due to
-  fine-grained differences among semantically similar classes (e.g., dog
-  breeds). Evaluating with semantically similar classes grouped
-  together, AlphaNet also improves overall accuracy, showing that the
-  method is practical for long-tail classification problems.
+  representation space and learn weights to update rare class
+  classifiers with a linear combination of frequent class classifiers.
+  AlphaNet, applied on several different models, greatly improves test
+  accuracy for rare classes in multiple long-tailed datasets, with very
+  little change to the overall accuracy. Our method also provides a way
+  to control the trade-off between rare class and overall accuracy,
+  making it practical for long-tail classification problems in the wild.
 
 bibliography: references.bib
 

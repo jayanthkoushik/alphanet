@@ -89,7 +89,7 @@ classes.
 
 ## Comparison with control {#sec:exp:control}
 
-![Change in split accuracy[^note:acc_delta] for AlphaNet training of cRT model on
+![Change in split accuracy for AlphaNet training of cRT model on
 ImageNet‑LT. For each value of $\rho$, the two plots show the raw change
 in split accuracy for AlphaNet compared to the baseline cRT model, as
 well as the change in overall accuracy. Left shows the results for
@@ -111,10 +111,10 @@ our previous experiments only in the nature of neighbors used, so if our
 method's improvements were solely due to extra fine-tuning, we should
 see similar results. However, as seen in
 @fig:euclidean_random_split_deltas_vs_imagenetlt_crt, training with
-nearest neighbors garners much larger improvements in 'few' split
-accuracy, with similar trends in overall accuracy. This supports our
-hypothesis that data-poor classes can make use of information from
-neighbors to improve classification performance.
+nearest neighbors garners much larger improvements[^note:acc_delta] in
+'few' split accuracy, with similar trends in overall accuracy. This
+supports our hypothesis that data-poor classes can make use of
+information from neighbors to improve classification performance.
 
 ## Prediction changes {#sec:exp:predchanges}
 
@@ -216,9 +216,9 @@ classes.
 [^note:inaturalist]: Another popular dataset used for testing long-tail
     models is iNaturalist.[@2018.Belongie.Horn] Results for this
     dataset, however, are much more balanced across splits. For example,
-    the cRT model achieves the following per-split accuracies: 75.9%
-    ('many'), 71.4% ('medium'), and 70.4% ('few'). The 'few' split
-    accuracy is only 0.8 points lower than the overall accuracy (71.2%);
+    the cRT model achieves the following per-split accuracies: 75.7%
+    ('many'), 71.9% ('medium'), and 69.2% ('few'). The 'few' split
+    accuracy is only 2 points lower than the overall accuracy (71.2%);
     so the dataset does not represent a valid use case for our proposed
     method, and we omitted the dataset from our main experiments.
     Results for this dataset are included in the appendix
@@ -231,7 +231,7 @@ classes.
     weight distribution, both classes have a 50% chance of being
     sampled.
 
-[^note:cac_delta]: We compute change as the raw difference in accuracy
+[^note:acc_delta]: We compute change as the raw difference in accuracy
     (expressed as a fraction between 0 to 1). So, if the baseline model
     has an accuracy of 50%, and AlphaNet has an accuracy of 60%, the
     difference is $0.6 - 0.5 = 0.1$.

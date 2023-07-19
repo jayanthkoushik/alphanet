@@ -29,8 +29,8 @@ Detailed results are shown in the following tables:
   * Top‑5 accuracy: @tbl:models_split_top5_accs_vs_rho_cifarlt.
 
 * iNaturalist:
-  * Top‑1 accuracy: @tbl:models_split_top1_accs_vs_rho_inatlt.
-  * Top‑5 accuracy: @tbl:models_split_top5_accs_vs_rho_inatlt.
+  * Top‑1 accuracy: @tbl:models_split_top1_accs_vs_rho_inat.
+  * Top‑5 accuracy: @tbl:models_split_top5_accs_vs_rho_inat.
 
 In addition to top‑1 and top‑5 accuracy, we evaluated performance on
 ImageNet‑LT by considering predictions to a WordNet[@wordnet] nearest
@@ -73,5 +73,5 @@ datasets](figures/appendix/models_split_top5_deltas_vs_rho){#fig:models_split_to
 
 \clearpage
 
-{% include tables/appendix/models_split_top1_accs_vs_rho_inatlt.md %}
-{% include tables/appendix/models_split_top5_accs_vs_rho_inatlt.md %}
+{% include tables/appendix/models_split_top1_accs_vs_rho_inat.md %}
+{% include tables/appendix/models_split_top5_accs_vs_rho_inat.md %}

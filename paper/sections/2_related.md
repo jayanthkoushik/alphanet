@@ -108,7 +108,7 @@ paradigm referred to as long-tail learning, where the distribution of
 class sizes (number of training samples) closely models that of the
 visual world; many classes have only a few samples, while a few classes
 have many samples. Recent work achieves state-of-the-art performance on
-long-tailed recognition by learning multiple experts.[@2021.Hwang.Cai;
+long-tail recognition by learning multiple experts.[@2021.Hwang.Cai;
 @2020.Yu.Wang] Both of these complex ensemble methods require a
 two-stage training method. Other approaches re-balance the class sizes
 at different stages of model training,[@2019.Ma.Cao] transfer features
@@ -120,7 +120,7 @@ largely focused on representation space transferability or complex
 ensembles, strong baselines have been established by exploring the
 potential of operating in classifier space.[@2019.Kalantidis.Kang]
 Results suggest that decoupling model representation learning and
-classifier learning is a more efficient way to approach long-tailed
+classifier learning is a more efficient way to approach long-tail
 learning. Specifically, methods normalizing classifiers and adjusting
 classifiers using only re-sampling strategies achieve good
 performance.[@2019.Kalantidis.Kang] These strong baselines support our

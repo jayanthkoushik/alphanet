@@ -153,13 +153,8 @@ done
 if [ "${context}" = "paper" ]; then width="5"; else width="6.25"; fi
 
 for dataset in imagenetlt_resnext50_crt imagenetlt_resnext50_lws imagenetlt_resnext50_ride placeslt_resnet152_crt placeslt_resnet152_lws cifarlt_resnet32_ride cifarlt_resnet34_ltr; do
-    if [ "${dataset}" = "cifarlt_resnet34_ltr" ]; then
-        expdirs=("rho_1" "rho_2" "rho_3")
-        expnames=("$\\rho=1$" "$\\rho=2$" "$\\rho=3$")
-    else
-        expdirs=("rho_0.5" "rho_1" "rho_1.5")
-        expnames=("$\\rho=0.5$" "$\\rho=1$" "$\\rho=1.5$")
-    fi
+    expdirs=("rho_0.5" "rho_1" "rho_1.5")
+    expnames=("$\\rho=0.5$" "$\\rho=1$" "$\\rho=1.5$")
     dname=$(echo ${dataset} | cut -d_ -f1,3)
 
     sfile="${save_dir}/appendix/rhos_cls_deltas_${dname}${ext}"

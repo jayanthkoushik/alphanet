@@ -1,7 +1,7 @@
 # Conclusion {#sec:conclusion}
 
 The long-tailed nature of the world presents a challenge for any model
-that depends on learning from specific examples. Many long-tailed
+that depends on learning from specific examples. Many long-tail
 methods tend to have high overall accuracy, but with unbalanced
 accuracies where frequent classes are learned well with high accuracies
 and rare classes are learned poorly with low accuracies. As such, the
@@ -11,7 +11,7 @@ of rare classes but still focus on achieving the highest overall
 accuracy. Consequently, these methods continue to suffer from low
 accuracy for data-poor classes, and an accuracy imbalance across
 data-rich and data-poor classes. In contrast, our method, AlphaNet,
-provides a rapid _post-hoc_ correction that can sit on top of any model
+provides a rapid post hoc correction that can sit on top of any model
 using classifiers. This simple method greatly improves the accuracy for
 data-poor classes, and re-balances classification accuracy in a way that
 overall classification accuracy is preserved. AlphaNet is deployable in

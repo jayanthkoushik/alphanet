@@ -13,14 +13,85 @@ function check_does_not_exist() {
 }
 
 ################################################
+# SKIP
+
+for acck in 1 5; do
+    sfile="paper/tables/datasets_split_top${acck}_accs_vs_model_tworho.md"
+
+    # NOTE: SKIPPING
+    # if check_does_not_exist "${sfile}"; then
+    if false; then
+        (set -x; echo "Method                        Few            Med.            Many         Overall" >> "${sfile}")
+        (set -x; echo "-----------------  --------------  --------------  --------------  --------------" >> "${sfile}")
+
+        for datasrc in "imagenetlt" "placeslt" "cifarlt"; do
+            case $datasrc in
+                imagenetlt)
+                    datasrcname="ImageNet‑LT"
+                    datasrcdir="ImageNetLT"
+                    models=("resnext50_crt" "resnext50_lws" "resnext50_ride")
+                    ;;
+                placeslt)
+                    datasrcname="Places‑LT"
+                    datasrcdir="PlacesLT"
+                    models=("resnet152_crt" "resnet152_lws")
+                    ;;
+                cifarlt)
+                    datasrcname="CIFAR‑100‑LT"
+                    datasrcdir="CIFARLT"
+                    models=("resnet32_ride" "resnet34_ltr")
+                    ;;
+                *)
+                    echo "how did you get here?" >&2
+                    exit 1
+                    ;;
+            esac
+
+            (set -x; echo "**${datasrcname}**" >> "${sfile}")
+
+            for model in ${models[@]}; do
+                case $model in
+                    resnext50_crt|resnet152_crt)
+                        modelname="cRT"
+                        ;;
+                    resnext50_lws|resnet152_lws)
+                        modelname="LWS"
+                        ;;
+                    resnext50_ride|resnet32_ride)
+                        modelname="RIDE"
+                        ;;
+                    resnet34_ltr)
+                        modelname="LTR"
+                        ;;
+                    *)
+                        echo "how did you get here?" >&2
+                        exit 1
+                        ;;
+                esac
+
+                (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --no-show-hdr >> "${sfile}")
+                (set -x; python run_printres.py --base-res-dir "results/tworho/${datasrc}_${model}/rho1_0.5_rho2_0.1" --rel-exp-paths "" --exp-names "\$\\alpha\$-${modelname}" --res-files-pattern "rep_*/result.pth" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --no-show-hdr >> "${sfile}")
+                (set -x; echo "<!-- -->" >> "${sfile}")
+            done
+
+            (set -x; echo "<!-- -->" >> "${sfile}")
+        done
+
+        (set -x; head --lines=-2 "${sfile}" > "${sfile}.tmp")
+        (set -x; mv "${sfile}.tmp" "${sfile}")
+        (set -x; echo "\nTODO: Caption" >> "${sfile}")
+    fi
+done
+
+################################################
 
 sfile="paper/tables/datasets_split_accs_vs_rho_ltr.md"
 
 if check_does_not_exist "${sfile}"; then
     model="resnet34_ltr"
     modelname="LTR"
-    rhos=(rho_1 rho_2 rho_3)
-    rhostrs=(1 2 3)
+    rhos=(rho_0.5 rho_1 rho_1.5)
+    rhostrs=(0.5 1 1.5)
 
     datasrc="cifarlt"
     datasrcdir="CIFARLT"
@@ -36,8 +107,8 @@ fi
 sfile="paper/tables/datasets_split_accs_vs_rho_ride.md"
 
 if check_does_not_exist "${sfile}"; then
-    (set -x; echo "Method                              Few            Med.            Many         Overall" >> "${sfile}")
-    (set -x; echo "-----------------------  --------------  --------------  --------------  --------------" >> "${sfile}")
+    (set -x; echo "Method                        Few            Med.            Many         Overall" >> "${sfile}")
+    (set -x; echo "-----------------  --------------  --------------  --------------  --------------" >> "${sfile}")
 
     modelname="RIDE"
     rhos=(rho_0.5 rho_1 rho_1.5)
@@ -72,8 +143,8 @@ fi
 sfile="paper/tables/datasets_baselines_split_accs_vs_rho.md"
 
 if check_does_not_exist "${sfile}"; then
-    (set -x; echo "Method                              Few            Med.            Many         Overall" >> "${sfile}")
-    (set -x; echo "-----------------------  --------------  --------------  --------------  --------------" >> "${sfile}")
+    (set -x; echo "Method                        Few            Med.            Many         Overall" >> "${sfile}")
+    (set -x; echo "-----------------  --------------  --------------  --------------  --------------" >> "${sfile}")
 
     rhos=(rho_0.5 rho_1 rho_1.5)
     rhostrs=(0.5 1 1.5)
@@ -131,7 +202,7 @@ fi
 ################################################
 
 for acck in 1 5; do
-    for datasrc in "imagenetlt" "cifarlt" "placeslt" "inatlt"; do
+    for datasrc in "imagenetlt" "cifarlt" "placeslt" "inat"; do
         sfile="paper/tables/appendix/models_split_top${acck}_accs_vs_rho_${datasrc}.md"
         if check_does_not_exist "${sfile}"; then
             if [ "${datasrc}" = "imagenetlt" ]; then
@@ -146,8 +217,8 @@ for acck in 1 5; do
                 datasrcdir="PlacesLT"
                 datasrcname="Places‑LT"
                 models=("resnet152_crt" "resnet152_lws")
-            elif [ "${datasrc}" = "inatlt" ]; then
-                datasrcdir="iNaturalistLT"
+            elif [ "${datasrc}" = "inat" ]; then
+                datasrcdir="iNaturalist"
                 datasrcname="iNaturalist"
                 models=("resnet152_crt")
             else
@@ -155,7 +226,7 @@ for acck in 1 5; do
                 exit 1
             fi
 
-            if [ "${datasrc}" = "inatlt" ]; then
+            if [ "${datasrc}" = "inat" ]; then
                 rhos=(rho_0.01 rho_0.02 rho_0.03 rho_0.04 rho_0.05)
                 rhostrs=(0.01 0.02 0.03 0.04 0.05)
                 modelsdesc="AlphaNet with different $\\\\rho\$s"

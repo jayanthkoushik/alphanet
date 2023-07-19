@@ -17,16 +17,15 @@ distillation,[@2021.Wu.Li] or use a combination of weight balancing,
 data re-sampling, and loss decay.[@2022.Kong.Alshammari]
 
 Despite these advances, accuracy on rare classes continues to be
-significantly worse than overall accuracy using these methods. For
-example, on the ImageNet‑LT dataset, the 6-expert ensemble RIDE
-model[@2020.Yu.Wang] has an average accuracy of 68.9% on frequent
-classes, but an average accuracy of 36.5% on rare classes. In addition
-to reducing overall accuracy, such performance imbalances raise ethical
-concerns in contexts where unequal accuracy leads to biased outcomes,
-for instance in medical imaging[@2022.Ferrante.Lara] or face
-detection.[@buolamwini2018gender] For example, models trained on chest
-X-rays consistently under-diagnosed minority
-groups.[@2021.Ghassemi.Seyyed] Similarly, cardiac image segmentation
+significantly lower than overall accuracy. For example, on the
+ImageNet‑LT dataset, the 6-expert ensemble RIDE model[@2020.Yu.Wang] has
+an average accuracy of 68.9% on frequent classes, but an average
+accuracy of 36.5% on rare classes. In addition to reducing overall
+accuracy, such performance imbalances raise ethical concerns in contexts
+where unequal accuracy leads to biased outcomes, for instance in medical
+imaging[@2022.Ferrante.Lara] or face detection.[@buolamwini2018gender]
+Models trained on chest X-rays consistently under-diagnosed minority
+groups,[@2021.Ghassemi.Seyyed] and similarly, cardiac image segmentation
 showed significant differences between racial groups.[@2021.King.Puyol]
 
 <div id="fig:analysis">
@@ -79,7 +78,7 @@ pipeline of our method. At a high level, AlphaNet can be seen as moving
 the classifiers for rare classes based on their position relative to
 visually similar classes. Importantly, AlphaNet updates classifiers
 without making any changes to the representation space, or to other
-classifiers in the model. It performs a _post-hoc_ correction, and as
+classifiers in the model. It performs a post hoc correction, and as
 such, is applicable to use cases where existing base classifiers are
 either unavailable or fixed (e.g., due to commercial interests or data
 privacy protections). The simplicity of our method lends to

@@ -65,7 +65,8 @@ PROFILES = {
     ),
 }
 WIDTH_PER_CONTEXT = {"paper": 6, "notebook": 6 * 1.25}
-ASPECT = 1.25
+HEIGHT_PER_CONTEXT = {"paper": 7.5, "notebook": 7.5 * 1.25}
+FACET_ASPECT = 1.25
 
 
 # %%
@@ -152,7 +153,7 @@ print(df)
 
 
 # %%
-def plot(profile):
+def plot(profile, save=True):
     cfg = PROFILES[profile]
     cfg.config()
     mpl.rcParams["figure.constrained_layout.use"] = False
@@ -172,7 +173,7 @@ def plot(profile):
         markers=True,
         kind="line",
         err_style="bars",
-        aspect=ASPECT,
+        aspect=FACET_ASPECT,
         facet_kws={"sharex": True, "sharey": True},
     )
 
@@ -199,7 +200,7 @@ def plot(profile):
     g.despine(left=True, top=True, right=True, bottom=False, trim=True)
 
     _ax = g.figure.add_subplot(4, 2, 8)
-    _ax.set_aspect(1 / ASPECT)
+    _ax.set_aspect(1 / FACET_ASPECT)  # matplotlib aspect is y/x
     for _del in [(0.9, 0), (0, 0.9)]:
         _ax.arrow(
             0.05,
@@ -228,20 +229,21 @@ def plot(profile):
     sns.despine(ax=_ax, left=True, right=True, top=True, bottom=True)
 
     g.figure.tight_layout(h_pad=8, w_pad=3)
-    width = WIDTH_PER_CONTEXT[cfg.context]
-    g.figure.set_size_inches(width, ASPECT * width)
+    width, height = WIDTH_PER_CONTEXT[cfg.context], HEIGHT_PER_CONTEXT[cfg.context]
+    g.figure.set_size_inches(width, height)
 
-    save_root = (
-        Path("paper/figures/appendix")
-        if cfg.context == "paper"
-        else Path("paper/figures/_www/appendix")
-    )
-    save_file = f"models_split_top{args.acc_k}_deltas_vs_rho"
-    save_file += "_dark" if cfg.theme == "dark" else ""
-    ext = ".pgf" if cfg.context == "paper" else ".svg"
-    save_file += ext
-    save_path = save_root / save_file
-    g.figure.savefig(save_path, format=ext[1:], bbox_inches="tight")
+    if save:
+        save_root = (
+            Path("paper/figures/appendix")
+            if cfg.context == "paper"
+            else Path("paper/figures/_www/appendix")
+        )
+        save_file = f"models_split_top{args.acc_k}_deltas_vs_rho"
+        save_file += "_dark" if cfg.theme == "dark" else ""
+        ext = ".pgf" if cfg.context == "paper" else ".svg"
+        save_file += ext
+        save_path = save_root / save_file
+        g.figure.savefig(save_path, format=ext[1:], bbox_inches="tight")
 
     return g.figure
 

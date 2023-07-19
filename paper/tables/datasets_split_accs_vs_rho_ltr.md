@@ -2,8 +2,8 @@ Model                         Few            Med.            Many         Overal
 -----------------  --------------  --------------  --------------  --------------
 LTR                        $29.8$          $49.3$          $70.1$          $50.7$
 $\alpha$‑LTR
-$\rho=1$            $38.4^{0.40}$   $36.0^{1.36}$   $62.0^{2.79}$   $45.8^{1.35}$
-$\rho=2$            $35.0^{1.58}$   $42.1^{1.22}$   $65.9^{1.90}$   $48.3^{0.70}$
-$\rho=3$            $33.4^{1.66}$   $45.2^{1.74}$   $65.8^{1.87}$   $48.9^{1.16}$
+$\rho=0.5$          $36.2^{1.39}$   $39.5^{2.11}$   $63.4^{4.18}$   $46.9^{1.95}$
+$\rho=1$            $32.2^{1.77}$   $43.4^{1.22}$   $67.5^{0.95}$   $48.5^{0.73}$
+$\rho=1.5$          $32.0^{1.49}$   $46.2^{0.86}$   $67.3^{1.02}$   $49.3^{0.33}$
 
-: Mean split accuracy in percents (standard deviation in superscript) on CIFAR‑100‑LT using the LTR model.[@2022.Kong.Alshammari] {#tbl:datasets_split_accs_vs_rho_ltr}
+: Mean split accuracy in percents (standard deviation in superscript) on CIFAR‑100‑LT using the LTR model[@2022.Kong.Alshammari]. {#tbl:datasets_split_accs_vs_rho_ltr}
