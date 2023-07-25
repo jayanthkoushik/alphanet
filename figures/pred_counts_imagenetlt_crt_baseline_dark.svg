@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2023-07-07T04:20:17.699386</dc:date>
+    <dc:date>2023-07-19T17:41:05.289766</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -64,7 +64,7 @@ z
      <g id="line2d_1">
       <path d="M 25.507115 74.765906
 L 176.99976 74.765906
-" clip-path="url(#p0af89847bd)" style="fill: none; stroke: #495057; stroke-width: 0.9375; stroke-linecap: round"/>
+" clip-path="url(#pcdc7a72d08)" style="fill: none; stroke: #495057; stroke-width: 0.9375; stroke-linecap: round"/>
      </g>
      <g id="line2d_2"/>
      <g id="text_4">
@@ -75,7 +75,7 @@ L 176.99976 74.765906
      <g id="line2d_3">
       <path d="M 25.507115 45.542208
 L 176.99976 45.542208
-" clip-path="url(#p0af89847bd)" style="fill: none; stroke: #495057; stroke-width: 0.9375; stroke-linecap: round"/>
+" clip-path="url(#pcdc7a72d08)" style="fill: none; stroke: #495057; stroke-width: 0.9375; stroke-linecap: round"/>
      </g>
      <g id="line2d_4"/>
      <g id="text_5">
@@ -86,7 +86,7 @@ L 176.99976 45.542208
      <g id="line2d_5">
       <path d="M 25.507115 16.31851
 L 176.99976 16.31851
-" clip-path="url(#p0af89847bd)" style="fill: none; stroke: #495057; stroke-width: 0.9375; stroke-linecap: round"/>
+" clip-path="url(#pcdc7a72d08)" style="fill: none; stroke: #495057; stroke-width: 0.9375; stroke-linecap: round"/>
      </g>
      <g id="line2d_6"/>
      <g id="text_6">
@@ -100,7 +100,7 @@ L 70.954908 103.989604
 L 70.954908 50.670681
 L 30.55687 50.670681
 z
-" clip-path="url(#p0af89847bd)" style="fill: #bc5e77; stroke: #adb5bd; stroke-width: 0.9375; stroke-linejoin: miter"/>
+" clip-path="url(#pcdc7a72d08)" style="fill: #bc5e77; stroke: #adb5bd; stroke-width: 0.9375; stroke-linejoin: miter"/>
    </g>
    <g id="patch_4">
     <path d="M 81.054418 103.989604
@@ -108,7 +108,7 @@ L 121.452457 103.989604
 L 121.452457 58.664222
 L 81.054418 58.664222
 z
-" clip-path="url(#p0af89847bd)" style="fill: #784021; stroke: #adb5bd; stroke-width: 0.9375; stroke-linejoin: miter"/>
+" clip-path="url(#pcdc7a72d08)" style="fill: #784021; stroke: #adb5bd; stroke-width: 0.9375; stroke-linejoin: miter"/>
    </g>
    <g id="patch_5">
     <path d="M 131.551966 103.989604
@@ -116,17 +116,26 @@ L 171.950005 103.989604
 L 171.950005 7.809257
 L 131.551966 7.809257
 z
-" clip-path="url(#p0af89847bd)" style="fill: #2b56b5; stroke: #adb5bd; stroke-width: 0.9375; stroke-linejoin: miter"/>
+" clip-path="url(#pcdc7a72d08)" style="fill: #2b56b5; stroke: #adb5bd; stroke-width: 0.9375; stroke-linejoin: miter"/>
    </g>
    <g id="patch_6">
     <path d="M 25.507115 103.989604
 L 176.99976 103.989604
 " style="fill: none; stroke: #adb5bd; stroke-width: 1.25; stroke-linejoin: miter; stroke-linecap: square"/>
    </g>
+   <g id="text_7">
+    <text style="fill: #adb5bd; font: 10.125px 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Noto Sans', 'Liberation Sans', 'Arial', sans-serif; text-anchor: middle" x="50.755889" y="79.947613" transform="rotate(-0 50.755889 79.947613)">27%</text>
+   </g>
+   <g id="text_8">
+    <text style="fill: #adb5bd; font: 10.125px 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Noto Sans', 'Liberation Sans', 'Arial', sans-serif; text-anchor: middle" x="101.253437" y="83.944383" transform="rotate(-0 101.253437 83.944383)">23%</text>
+   </g>
+   <g id="text_9">
+    <text style="fill: #adb5bd; font: 10.125px 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Noto Sans', 'Liberation Sans', 'Arial', sans-serif; text-anchor: middle" x="151.750986" y="58.516901" transform="rotate(-0 151.750986 58.516901)">49%</text>
+   </g>
   </g>
  </g>
  <defs>
-  <clipPath id="p0af89847bd">
+  <clipPath id="pcdc7a72d08">
    <rect x="25.507115" y="3.00024" width="151.492645" height="100.989364"/>
   </clipPath>
  </defs>
