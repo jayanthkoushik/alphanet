@@ -9,17 +9,17 @@ classes after AlphaNet training. First, we plotted the sorted accuracy
 changes, grouped by split. These are shown in the following figures:
 
 * ImageNet‑LT:
-  * cRT baseline: @fig:rhos_cls_deltas_imagenetlt_crt,
-  * LWS baseline: @fig:rhos_cls_deltas_imagenetlt_lws,
-  * RIDE baseline: @fig:rhos_cls_deltas_imagenetlt_ride,
+    * cRT baseline: @fig:rhos_cls_deltas_imagenetlt_crt.
+    * LWS baseline: @fig:rhos_cls_deltas_imagenetlt_lws.
+    * RIDE baseline: @fig:rhos_cls_deltas_imagenetlt_ride.
 
 * Places‑LT:
-  * cRT baseline: @fig:rhos_cls_deltas_placeslt_crt,
-  * LWS baseline: @fig:rhos_cls_deltas_placeslt_lws,
+    * cRT baseline: @fig:rhos_cls_deltas_placeslt_crt.
+    * LWS baseline: @fig:rhos_cls_deltas_placeslt_lws.
 
 * CIFAR‑100‑LT:
-  * RIDE baseline: @fig:rhos_cls_deltas_cifarlt_ride,
-  * LTR baseline: @fig:rhos_cls_deltas_cifarlt_ltr,
+    * RIDE baseline: @fig:rhos_cls_deltas_cifarlt_ride.
+    * LTR baseline: @fig:rhos_cls_deltas_cifarlt_ltr.
 
 We also plotted the accuracy changes against the average distance to a
 class' nearest neighbors. The nearest neighbors were chosen using the
@@ -29,20 +29,17 @@ distance). For 'few' split classes, we selected neighbors from the
 from the 'few' split. These results are shown in the following figures:
 
 * ImageNet‑LT:
-
-  * cRT baseline: @fig:rhos_cls_delta_vs_nndist_imagenetlt:crt.
-  * LWS baseline: @fig:rhos_cls_delta_vs_nndist_imagenetlt:lws.
-  * RIDE baseline: @fig:rhos_cls_delta_vs_nndist_imagenetlt:ride.
+    * cRT baseline: @fig:rhos_cls_delta_vs_nndist_imagenetlt:crt.
+    * LWS baseline: @fig:rhos_cls_delta_vs_nndist_imagenetlt:lws.
+    * RIDE baseline: @fig:rhos_cls_delta_vs_nndist_imagenetlt:ride.
 
 * Places‑LT:
-
-  * cRT baseline: @fig:rhos_cls_delta_vs_nndist_placeslt:crt.
-  * LWS baseline: @fig:rhos_cls_delta_vs_nndist_placeslt:lws.
+    * cRT baseline: @fig:rhos_cls_delta_vs_nndist_placeslt:crt.
+    * LWS baseline: @fig:rhos_cls_delta_vs_nndist_placeslt:lws.
 
 * CIFAR‑100‑LT:
-
-  * RIDE baseline: @fig:rhos_cls_delta_vs_nndist_cifarlt:ride.
-  * LTR baseline: @fig:rhos_cls_delta_vs_nndist_cifarlt:ltr.
+    * RIDE baseline: @fig:rhos_cls_delta_vs_nndist_cifarlt:ride.
+    * LTR baseline: @fig:rhos_cls_delta_vs_nndist_cifarlt:ltr.
 
 \clearpage
 
@@ -163,3 +160,5 @@ from 'base' split for the 'few' split classes, and vice-versa for the
 Pearson correlations.
 
 </div>
+
+\clearpage

@@ -4,42 +4,42 @@ title: "AlphaNet: Improving Long-Tail Classification By Combining Classifiers"
 author:
 - name: Nadine Chang
   affiliation:
-  - 1
+  - $\bm{\dag}$
   email: "nchang1@cs.cmu.edu"
   equalcontrib: true
 
 - name: Jayanth Koushik
   affiliation:
-  - 1
+  - $\bm{\dag}$
   email: "jkoushik@andrew.cmu.edu"
   equalcontrib: true
   corresponding: true
 
 - name: Aarti Singh
   affiliation:
-  - 1
+  - $\bm{\dag}$
   email: "aartisingh@cmu.edu"
 
 - name: Martial Hebert
   affiliation:
-  - 1
+  - $\bm{\dag}$
   email: "hebert@cs.cmu.edu"
 
 - name: Yu-Xiong Wang
   affiliation:
-  - 2
+  - $\bm{\ddag}$
   email: "yxw@illinois.edu"
 
 - name: Michael J. Tarr
   affiliation:
-  - 1
+  - $\bm{\dag}$
   email: "michaeltarr@cmu.edu"
 
 institute:
-- id: 1
+- id: $\bm{\dag}$
   name: Carnegie Mellon University
 
-- id: 2
+- id: $\bm{\ddag}$
   name: University of Illinois Urbana-Champaign
 
 abstract: Methods in long-tail learning focus on improving performance
@@ -54,11 +54,11 @@ abstract: Methods in long-tail learning focus on improving performance
   find frequent classes that are closest to rare classes in the model's
   representation space and learn weights to update rare class
   classifiers with a linear combination of frequent class classifiers.
-  AlphaNet, applied on several different models, greatly improves test
-  accuracy for rare classes in multiple long-tailed datasets, with very
-  little change to the overall accuracy. Our method also provides a way
-  to control the trade-off between rare class and overall accuracy,
-  making it practical for long-tail classification problems in the wild.
+  AlphaNet, applied on several models, greatly improves test accuracy
+  for rare classes in multiple long-tailed datasets, with very little
+  change to the overall accuracy. Our method also provides a way to
+  control the trade-off between rare class and overall accuracy, making
+  it practical for long-tail classification in the wild.
 
 bibliography: references.bib
 
@@ -72,6 +72,7 @@ sections:
 - sections/3_method.md
 - sections/4_experiments.md
 - sections/5_conclusion.md
+- sections/6_acknowledgements.md
 
 # cSpell: ignore rhosweep, ksweep, perclsdels
 
@@ -87,3 +88,5 @@ url: https://jkoushik.me/alphanet
 {% raw %}
 \graphicspath{{figures/}}
 {% endraw %}
+
+\raggedbottom

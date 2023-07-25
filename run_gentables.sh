@@ -88,18 +88,24 @@ done
 sfile="paper/tables/datasets_split_accs_vs_rho_ltr.md"
 
 if check_does_not_exist "${sfile}"; then
+    (set -x; echo "Method                        Few            Med.            Many         Overall" >> "${sfile}")
+    (set -x; echo "-----------------  --------------  --------------  --------------  --------------" >> "${sfile}")
+
+    datasrc="cifarlt"
+    datasrcdir="CIFARLT"
+    datasrcname="CIFAR‑100‑LT"
+
+    (set -x; echo "**${datasrcname}**" >> "${sfile}")
+
     model="resnet34_ltr"
     modelname="LTR"
     rhos=(rho_0.5 rho_1 rho_1.5)
     rhostrs=(0.5 1 1.5)
 
-    datasrc="cifarlt"
-    datasrcdir="CIFARLT"
-    datasrcname="CIFAR‑100‑LT"
-    (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --exp-str Model >> "${sfile}")
+    (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --no-show-hdr >> "${sfile}")
     (set -x; echo "\$\\\\alpha\$‑${modelname}" >> "${sfile}")
     (set -x; python run_printres.py --base-res-dir "results/main/${datasrc}_${model}" --rel-exp-paths "${rhos[@]}" --exp-names "${rhostrs[@]}" --res-files-pattern "rep_*/result.pth" --exp-prefix "\$\\rho=" --exp-suffix "\$" --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 14 --name-col-width 17 --no-show-hdr >> "${sfile}")
-    (set -x; echo "\n: Mean split accuracy in percents (standard deviation in superscript) on ${datasrcname} using the ${modelname} model[@2022.Kong.Alshammari]. {#tbl:datasets_split_accs_vs_rho_ltr}" >> "${sfile}")
+    (set -x; echo "\n: Mean split accuracy in percents (standard deviation in superscript) on ${datasrcname} using the ${modelname} model. {#tbl:datasets_split_accs_vs_rho_ltr}" >> "${sfile}")
 fi
 
 ################################################
@@ -135,7 +141,7 @@ if check_does_not_exist "${sfile}"; then
         fi
     done
 
-    (set -x; echo "\n: Mean split accuracy in percents (standard deviation in superscript) on ImageNet‑LT and CIFAR‑100‑LT using the ensemble RIDE model[@2020.Yu.Wang]. \$\\\\alpha\$‑RIDE applies AlphaNet on average features from the ensemble. {#tbl:datasets_split_accs_vs_rho_ride}" >> "${sfile}")
+    (set -x; echo "\n: Mean split accuracy in percents (standard deviation in superscript) on ImageNet‑LT and CIFAR‑100‑LT using the ensemble RIDE model. \$\\\\alpha\$‑RIDE applies AlphaNet on average features from the ensemble. {#tbl:datasets_split_accs_vs_rho_ride}" >> "${sfile}")
 fi
 
 ################################################

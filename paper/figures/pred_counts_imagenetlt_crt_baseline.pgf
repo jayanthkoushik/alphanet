@@ -245,6 +245,24 @@
 \pgfpathlineto{\pgfqpoint{1.876905in}{0.517657in}}%
 \pgfusepath{stroke}%
 \end{pgfscope}%
+\begin{pgfscope}%
+\definecolor{textcolor}{rgb}{0.000000,0.000000,0.000000}%
+\pgfsetstrokecolor{textcolor}%
+\pgfsetfillcolor{textcolor}%
+\pgftext[x=0.593853in,y=0.792377in,,]{\color{textcolor}\rmfamily\fontsize{9.000000}{10.800000}\selectfont 27\%}%
+\end{pgfscope}%
+\begin{pgfscope}%
+\definecolor{textcolor}{rgb}{0.000000,0.000000,0.000000}%
+\pgfsetstrokecolor{textcolor}%
+\pgfsetfillcolor{textcolor}%
+\pgftext[x=1.107074in,y=0.751191in,,]{\color{textcolor}\rmfamily\fontsize{9.000000}{10.800000}\selectfont 23\%}%
+\end{pgfscope}%
+\begin{pgfscope}%
+\definecolor{textcolor}{rgb}{0.000000,0.000000,0.000000}%
+\pgfsetstrokecolor{textcolor}%
+\pgfsetfillcolor{textcolor}%
+\pgftext[x=1.620295in,y=1.013216in,,]{\color{textcolor}\rmfamily\fontsize{9.000000}{10.800000}\selectfont 49\%}%
+\end{pgfscope}%
 \end{pgfpicture}%
 \makeatother%
 \endgroup%

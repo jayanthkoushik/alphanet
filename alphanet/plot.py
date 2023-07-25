@@ -25,6 +25,7 @@ from matplotlib import (
     patheffects as pe,
     pyplot as plt,
 )
+from matplotlib.container import BarContainer
 from matplotlib.ticker import (
     FixedFormatter,
     FixedLocator,
@@ -817,6 +818,7 @@ class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
     xlabel: str = ""
     legend_loc: str = "upper right"
     legend_bbox_to_anchor: Optional[Tuple[float, float]] = None
+    show_titles: bool = True
 
     @staticmethod
     def _get_metric_desc(metric: Literal["euclidean", "cosine", "random"]) -> str:
@@ -891,8 +893,10 @@ class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
                     fig=_fig, ax=_ax, left=True, right=True, bottom=False, top=True
                 )
 
-                if self.col is not None and len(cols) > 1:
+                if self.col is not None and len(cols) > 1 and self.show_titles:
                     _ax.set_title(_col)
+                else:
+                    _ax.set_title("")
 
                 _legend = _ax.legend()
                 if _i == 0:
@@ -1872,8 +1876,16 @@ class PlotPredCounts(_BaseMultiExpPlotCmd, BasePlotCmd):
             g.set_titles("")
         for facet_name, ax in g.axes_dict.items():
             ax_df = df[df["Dataset"] == facet_name]
-            ax.yaxis.set_major_formatter(PercentFormatter(xmax=len(ax_df)))
+            fmtr = PercentFormatter(xmax=len(ax_df))
+            ax.yaxis.set_major_formatter(fmtr)
             ax.set_yticks([int(len(ax_df) * _p / 100) for _p in [15, 30, 45]])
+            bar_containers = [
+                _con for _con in ax.containers if isinstance(_con, BarContainer)
+            ]
+            assert len(bar_containers) == 1
+            bar_container = bar_containers[0]
+            # pylint: disable=cell-var-from-loop,unnecessary-lambda
+            ax.bar_label(bar_container, fmt=lambda _n: fmtr(_n), label_type="center")
         g.set_xlabels("")
         g.set_ylabels("")
         g.despine(top=True, left=True, right=True, bottom=False, trim=False)

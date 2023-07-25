@@ -285,6 +285,22 @@ class TrainCmd(Corgy):
             self.training.pred_scale,
         ).to(DEFAULT_DEVICE)
 
+        # # Initialize weights.
+        # _hact = self.alphanet.hact
+        # if _hact == "relu" or _hact == "leaky_relu":
+        #     _a = 0.01 if _hact == "leaky_relu" else 0
+
+        #     def _w_init_fn(_w):
+        #         torch.nn.init.kaiming_normal_(_w, a=_a, nonlinearity=_hact)
+
+        # else:
+        #     _w_init_fn = torch.nn.init.xavier_normal_
+        # _b_init_fn = torch.nn.init.zeros_
+
+        # for _param in self.alphanet.linear_layer__seq + [self.alphanet.conv_layer]:
+        #     _w_init_fn(_param.weight)
+        #     _b_init_fn(_param.bias)
+
         self.training.ptopt.set_weights(alphanet_classifier.parameters())
         loss_fn = torch.nn.CrossEntropyLoss()
         logging.info("setting up model...done")

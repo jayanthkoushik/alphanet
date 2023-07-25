@@ -14,4 +14,4 @@ $\rho=0.5$          $32.3^{1.24}$   $45.9^{0.87}$   $64.6^{0.78}$   $48.4^{0.43}
 $\rho=1$            $27.6^{1.41}$   $49.5^{0.83}$   $67.4^{0.70}$   $49.2^{0.16}$
 $\rho=1.5$          $25.2^{1.11}$   $50.2^{0.57}$   $68.3^{0.34}$   $49.0^{0.26}$
 
-: Mean split accuracy in percents (standard deviation in superscript) on ImageNet‑LT and CIFAR‑100‑LT using the ensemble RIDE model.[@2020.Yu.Wang] $\alpha$‑RIDE applies AlphaNet on average features from the ensemble. {#tbl:datasets_split_accs_vs_rho_ride}
+: Mean split accuracy in percents (standard deviation in superscript) on ImageNet‑LT and CIFAR‑100‑LT using the ensemble RIDE model. $\alpha$‑RIDE applies AlphaNet on average features from the ensemble. {#tbl:datasets_split_accs_vs_rho_ride}

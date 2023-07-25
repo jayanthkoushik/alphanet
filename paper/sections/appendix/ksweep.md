@@ -12,7 +12,7 @@ metrics: cosine distance ($\mu(z_1, z_2) = 1 - z_1^T z_2 / \norm{z_1}_2
 z_2}_2$). For each distance metric, we performed 4 sets of experiments,
 with $\rho$ in $\set{0.25, 0.5, 1, 2}$. For each $\rho$, we varied $k$
 from 2 to 10; all other hyper-parameters were kept the same as described
-in @sec:impl_details.
+in @sec:impl.
 
 The results are summarized in @fig:ksweep, which shows per-split top‑1
 accuracies against $k$ for different values of $\rho$ ($\rho=2$ is
@@ -24,16 +24,16 @@ The full set of top‑1 and top‑5 accuracies is shown in the following
 tables:
 
 * Euclidean distance:
-  * Top‑1 accuracy:
-    @tbl:rhos_split_top1_accs_vs_k_imagenetlt_crt_euclidean.
-  * Top‑5 accuracy:
-    @tbl:rhos_split_top5_accs_vs_k_imagenetlt_crt_euclidean.
+    * Top‑1 accuracy:
+      @tbl:rhos_split_top1_accs_vs_k_imagenetlt_crt_euclidean.
+    * Top‑5 accuracy:
+      @tbl:rhos_split_top5_accs_vs_k_imagenetlt_crt_euclidean.
 
 * Cosine distance:
-  * Top‑1 accuracy:
-    @tbl:rhos_split_top1_accs_vs_k_imagenetlt_crt_cosine.
-  * Top‑5 accuracy:
-    @tbl:rhos_split_top5_accs_vs_k_imagenetlt_crt_cosine.
+    * Top‑1 accuracy:
+      @tbl:rhos_split_top1_accs_vs_k_imagenetlt_crt_cosine.
+    * Top‑5 accuracy:
+      @tbl:rhos_split_top5_accs_vs_k_imagenetlt_crt_cosine.
 
 \clearpage
 
@@ -59,3 +59,5 @@ neighbors, for AlphaNet with cRT.
 
 {% include tables/appendix/rhos_split_top1_accs_vs_k_imagenetlt_crt_cosine.md %}
 {% include tables/appendix/rhos_split_top5_accs_vs_k_imagenetlt_crt_cosine.md %}
+
+\clearpage

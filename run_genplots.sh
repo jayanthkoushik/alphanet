@@ -129,22 +129,28 @@ done
 
 ################################################
 
-for rho in "0.25" "0.5" "1" "2"; do
+for rho in "0.25" "0.5" "1"; do
     case $rho in
         0.25)
             rhostr="025"
+            legendloc=""
+            xxargs=()
             ;;
         0.5)
             rhostr="05"
+            legendloc=""
+            xxargs=("--no-show-titles")
             ;;
         *)
             rhostr="${rho}"
+            legendloc="upper right"
+            xxargs=("--no-show-titles")
             ;;
     esac
 
     sfile="${save_dir}/appendix/euclidean_cosine_split_accs_vs_k_imagenetlt_crt_rho_${rhostr}${ext}"
     if check_does_not_exist "${sfile}"; then
-        (set -x; python run_makeplot.py PlotSplitAccVsExp --base-res-dir "results" --exp-sub-dirs "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_1" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_2" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_3" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_4" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_5" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_6" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_7" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_8" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_9" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_10" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_1" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_2" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_3" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_4" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_5" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_6" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_7" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_8" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_9" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_10" --exp-names "\$1\$" "\$2\$" "\$3\$" "\$4\$" "\$5\$" "\$6\$" "\$7\$" "\$8\$" "\$9\$" "\$10\$" "\$1\$" "\$2\$" "\$3\$" "\$4\$" "\$5\$" "\$6\$" "\$7\$" "\$8\$" "\$9\$" "\$10\$" --res-files-pattern "rep_${rep}/result.pth" --n-boot ${n_boot} --col "metric" --y "acc" --xlabel "\$k$" --plot:width "full" --plot:aspect 3 --legend-loc "upper right" --legend-bbox-to-anchor 0.99 0.85 --plot:file "${sfile}" "${mainargs[@]}" "${xargs[@]}";)
+        (set -x; python run_makeplot.py PlotSplitAccVsExp --base-res-dir "results" --exp-sub-dirs "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_1" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_2" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_3" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_4" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_5" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_6" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_7" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_8" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_9" "nnsweep_euclidean/imagenetlt_resnext50_crt/rho_${rho}/k_10" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_1" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_2" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_3" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_4" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_5" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_6" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_7" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_8" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_9" "nnsweep_cosine/imagenetlt_resnext50_crt/rho_${rho}/k_10" --exp-names "\$1\$" "\$2\$" "\$3\$" "\$4\$" "\$5\$" "\$6\$" "\$7\$" "\$8\$" "\$9\$" "\$10\$" "\$1\$" "\$2\$" "\$3\$" "\$4\$" "\$5\$" "\$6\$" "\$7\$" "\$8\$" "\$9\$" "\$10\$" --res-files-pattern "rep_${rep}/result.pth" --n-boot ${n_boot} --col "metric" --y "acc" --xlabel "\$k$" --plot:width "full" --plot:aspect 3 --legend-loc "${legendloc}" --legend-bbox-to-anchor 0.99 0.85 --plot:file "${sfile}" "${mainargs[@]}" "${xargs[@]}" "${xxargs[@]}";)
     fi
 done
 

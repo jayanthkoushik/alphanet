@@ -1,128 +1,98 @@
-<!-- cSpell:ignore Torralba -->
+<!-- cSpell:ignore Torralba, Alshammari, Mensink, Changpinyo, Aytar -->
 
 # Related work {#sec:relwork}
 
-Combining, creating, modifying, and learning model weights are concepts
-that have been implemented in many earlier models. As we review below,
-these concepts appear frequently in transfer learning, meta-learning,
-zero-shot/low-shot learning, and long-tail learning.
+Our work falls in the domain of long-tail learning, where the
+distribution of class sizes (number of training samples) models that of
+the visual world; many classes have only a few samples, while a few
+classes have many samples[@2023.Feng.Zhang]. Kang
+et\ al.[@2020.Kalantidis.Kang] established strong baselines on
+long-tailed datasets by decoupling classifiers and representations. We
+apply AlphaNet on two of their proposed baseline methods: (1) the cRT
+(classifier re-training) model, which fixes representations, and trains
+classifiers from scratch; and (2) the LWS (learnable weight scaling)
+model, which also fixes representations, and only _rescales_
+classifiers, with scales learned from the training data.
 
-## Classifier creation {#sec:relwork:creation}
+In contrast to the above simple methods, many complex methods have been
+proposed, and have continued to push the state-of-the-art for long-tail
+recognition[@2019.Yu.Liu; @2021.Yu.Wang; @2021.Wu.Li; @2021.Hwang.Cai;
+@2022.Kong.Alshammari]. We used two of these methods as starting points
+for AlphaNet: (1) the RIDE (RoutIng Diverse Experts) model of Wang
+et\ al.[@2021.Yu.Wang], which achieves low bias by training with a
+"distribution-aware diversity loss", and low variance by using multiple
+experts; and (2) the LTR (long-tail recognition) model of Alshammari
+et\ al.[@2022.Kong.Alshammari], which uses a combination of
+class-balanced loss, weight decay, and max-norm regularization -- in
+this work we will refer to this model simply as the LTR model.
 
-The process of creating new classifiers is captured within meta-learning
-concepts such as learning-to-learn, transfer learning, and multi-task
-learning.[@1998.Thrun.Thrun; @1997.Wiering.Schmidhuber;
-@2009.Yang.Pandzsm; @1997.Caruana.Caruana; @2016.Lillicrap.Santoro]
-These approaches generalize to novel tasks by learning shared
-information from a set of related tasks. Many studies find that shared
-information is embedded within model weights, and, thus aim to learn
-structure within learned models to directly modify the weights of a
-different network.[@1993.Schmidhuber.Schmidhuber;
-@1992.Schmidhuber.Schmidhuber; @2016.Vedaldi.Bertinetto; @2016.Le.Ha;
-@2018.Levine.Finn; @2017.Vedaldi.Rebuffi; @2017.Krishnamurthy.Sinha;
-@2017.Yu.Munkhdalai] Other studies go even further and instead of
-modifying networks, they create entirely new networks exclusively from
-training samples.[@2013.Ng.Socher; @2015.Salakhutdinov.Ba;
-@2016.Han.Noh] In contrast, AlphaNet only combines existing classifiers,
-without having to create new classifiers or train networks from scratch.
+In the rest of this section, we discuss some works that make use of
+similar ideas as AlphaNet.
 
-## Classifier or feature composition {#sec:relwork:composition}
+## Knowledge transfer {#sec:relwork:transfer}
 
-There have been works that learn better embedding spaces for image
-annotation,[@2010.Usunier.Weston] or use classification scores as useful
-features.[@2012.Forsyth.Wang] However, these approaches do not attempt
-to compose classifiers nor do they address the long-tail problem. For
-transfer learning with non-deep methods, there have been attempts to use
-and combine support vector machines (SVMs). In one
-method,[@2005.Singer.Tsochantaridis] SVMs are trained per object
-instance, and a hierarchical structure is required for combination in
-the datasets of interest. However, such a structure is typically neither
-guaranteed nor provided in long-tailed datasets. Another SVM method uses
-regularized minimization to learn the coefficients necessary to combine
-patches from other classifiers.[@2012.Zisserman.Aytar]
+AlphaNet bears resemblance to methods that create new classifiers by
+transferring knowledge from existing classifiers. These methods appear
+in a number of domains, such as transfer learning, meta-learning, and
+multi-task learning[@2012.Lorien.Thrun; @1997.Caruana;
+@1997.Wiering.Schmidhuber; @2010.Yang.Pan]. It should be noted, however,
+that AlphaNet does not create new classifiers -- it only _modifies_
+existing classifiers by combining them with others.
 
-While these approaches are conceptually similar to our method, AlphaNet
-has the additional advantage of _learning_ the compositional
-coefficients. Specifically, different novel classes will have their own
-set of coefficients, and similar novel classes will naturally have
-similar coefficients. Finally, in zero-shot learning there exist methods
-which compose classifiers of known visual concepts to learn a completely
-new classifier.[@2013.Elgammal.Elhoseiny; @2017.Hebert.Misra;
-@2015.Salakhutdinov.Ba; @2016.Sha.Changpinyo] However, such composition
-is often guided by supervision from additional attributes or textual
-descriptions, which are not needed by AlphaNet.
+Pertinent to our problem setting is the work by Wang
+et\ al.[@2016.Hebert.Wang], who showed that a "generic, category agnostic
+transformation" can be learned from models trained on few samples, to
+models trained on many samples. In our work, we implicitly learn a
+similar transformation, but with the source and target classifiers
+within the same model. Additionally, the transformation is constrained
+to be a linear combination. A similar paradigm was analyzed by Du
+et\ al.[@2016.Poczos.Du], who showed that for cases where the target
+function is generated by a simple transformation of the source function,
+there are theoretical performance guarantees for a large class of
+functions.
+
+## Classifier composition {#sec:relwork:composition}
+
+In low-shot[^note:low_shot] and zero-shot classification, new
+classifiers are learned using few or zero training
+examples[@2006.Perona.Fei-Fei; @2008.Bengio.Larochelle]. Some methods
+have done this by directly combining existing classifiers. For example,
+Mensink et\ al.[@2014.Snoek.Mensink] learned new classifiers as linear
+combinations of existing classifiers, with weights determined by
+co-occurrence statistics. Changpinyo et\ al.[@2016.Sha.Changpinyo]
+introduced "phantom classes" and used their classifiers as bases to
+compose new classifiers through convex combination.
+
+The idea of combining existing classifiers was also used by Aytar
+et\ al.[@2015.Zisserman.Aytar], in their work on enhancing single
+exemplar support vector machines (SVMs). In their method, an extra
+regularization term is added to the SVM loss function, which encourages
+the learned classifier to be close to a linear combination of previously
+learned classifiers. Classifiers trained on image patches are used to
+transfer knowledge to a classifier trained on a single positive
+exemplar.
 
 ### Boosting {#sec:relwork:composition:boosting}
 
-The idea of composing weak classifiers to build strong classifiers bears
-resemblance to the idea of boosting.[@schapire1990strength] The popular
-AdaBoost[@freund1995desicion] linearly combines classifiers based on a
-single feature (e.g., decision stumps), and iteratively re-weights
-training samples based on their error. For the case of multi-class
-classification, Torralba et\ al. (2007)[@torralba2007sharing] build a
-classifier that combines several binary classifiers, each designed to
-separate a single class from the others. Their method identifies common
-features that be shared across classifiers, which reduces the
-computational load, and the amount of training data required.
+Composing weak classifiers to build strong classifiers also bears
+resemblance to the idea of boosting[@1990.Schapire]. The popular
+AdaBoost[@1997.Schapire.Freund] algorithm linearly combines classifiers
+based on a single feature (e.g., decision stumps), and iteratively
+re-weights training samples based on their error. For the case of
+multi-class classification, Torralba et\ al.[@2007.Freeman.Torralba]
+built a classifier that combines several binary classifiers, each
+designed to separate a single class from the others. Their method
+identifies common features that be shared across classifiers, which
+reduces the computational load, and the amount of training data
+required.
 
 It is important to note that boosting methods employ a different form of
 composition that our methods. Specifically, our focus is on
-classification methods where the _performance on a subset of classes_ is
+classification methods where the performance on a _subset of classes_ is
 poor. Unlike boosting methods, we do not incorporate additional features
 -- improvements are made by adjusting classifiers within the learned
 representation space.
 
-## Learning transformations between models and classes {#sec:relwork:transformation}
-
-Some studies have attempted to learn transformations of model weights
-with gradient based optimization.[@2016.Freitas.Andrychowicz;
-@2017.Larochelle.Ravi] Additionally, there is empirical
-evidence[@2016.Hebert.Wang] showing the existence of a generic nonlinear
-transformation from small-sample to large-sample models for different
-types of feature spaces and classifier models. Finally, in the case
-where one learns the transformation from the source function to a
-related target function, there are theoretical guarantees on
-performance.[@2016.Poczos.Du] AlphaNet is similar in that we likewise
-infer that our target classifier is a transformation from a set of
-source classifiers.
-
-## Zero-shot/low-shot learning {#sec:relwork:lowshot}
-
-Meta-learning, transfer learning, and learning-to-learn are frequently
-applied to the domain of low-shot learning.[@2006.Perona.Fei-Fei;
-@2015.Salakhutdinov.Koch; @2015.Tenenbaum.Lake; @2016.Lillicrap.Santoro;
-@2016.Hebert.Wang; @2016.Hoiem.Li; @2017.Girshick.Hariharan;
-@1993.Shah.Bromley; @2017.Zemel.Snell; @2017.Phoenix.George;
-@2017.Hebert.Wangpln; @2015.Schmid.Akata] A wide variety of prior
-studies have attempted to transfer knowledge from tasks with abundant
-data to completely novel tasks.[@2016.Wierstra.Vinyals;
-@2017.Larochelle.Ravi; @2016.Vedaldi.Bertinetto] However, due to the
-nature of low-shot learning, these approaches are limited to a small
-number of tasks, which is problematic since the visual world involves a
-large number of tasks with varying amounts of information.
-
-## Long-tail learning {#sec:relwork:longtail}
-
-The restrictions of low-shot learning have been addressed by the
-paradigm referred to as long-tail learning, where the distribution of
-class sizes (number of training samples) closely models that of the
-visual world; many classes have only a few samples, while a few classes
-have many samples. Recent work achieves state-of-the-art performance on
-long-tail recognition by learning multiple experts.[@2021.Hwang.Cai;
-@2020.Yu.Wang] Both of these complex ensemble methods require a
-two-stage training method. Other approaches re-balance the class sizes
-at different stages of model training,[@2019.Ma.Cao] transfer features
-from common classes to rare classes,[@2019.Yu.Liu] or transfer
-intra-class variance.[@2019.Chandraker.Yin] However, approaches for
-knowledge transfer require complex architectures, such as a specialized
-attention mechanism with memory.[@2019.Yu.Liu] While recent studies have
-largely focused on representation space transferability or complex
-ensembles, strong baselines have been established by exploring the
-potential of operating in classifier space.[@2019.Kalantidis.Kang]
-Results suggest that decoupling model representation learning and
-classifier learning is a more efficient way to approach long-tail
-learning. Specifically, methods normalizing classifiers and adjusting
-classifiers using only re-sampling strategies achieve good
-performance.[@2019.Kalantidis.Kang] These strong baselines support our
-approach of operating in classifier space -- AlphaNet combines strong
-classifiers to improve weak classifiers.
+[^note:low_shot]: Low-shot learning is also referred to as few-shot
+    learning, and as one-shot learning if only a single training example
+    is available per class.
