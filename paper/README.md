@@ -10,6 +10,6 @@ following command, from the `paper` directory:
 
 <!-- cSpell: disable -->
 ```bash
-shinymdc -i main.md -o main.pdf -t stylish -m smalltabs=true
+shinymdc -i main.md -o main.pdf -t stylish -m smalltabs=true,nonidan=true
 ```
 <!-- cSpell: enable -->

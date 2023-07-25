@@ -51,4 +51,4 @@ $k=8$              $60.6^{01.15}$  $72.6^{00.21}$   $81.2^{0.20}$   $74.3^{0.06}
 $k=9$              $60.9^{00.99}$  $72.6^{00.19}$   $81.2^{0.13}$   $74.3^{0.04}$
 $k=10$             $60.9^{01.34}$  $72.6^{00.23}$   $81.2^{0.16}$   $74.3^{0.08}$
 
-: Top‑5 accuracy for AlphaNet using varying number of nearest neighbors ($k$) based on Euclidean distance, with cRT baseline on ImageNet‑LT. {#tbl:rhos_split_top5_accs_vs_k_imagenetlt_crt_euclidean}
+: Per-split test top‑5 accuracies for $\alpha$‑cRT on ImageNet‑LT using $k$ nearest neighbors based on Euclidean distance. {#tbl:rhos_split_top5_accs_vs_k_imagenetlt_crt_euclidean}

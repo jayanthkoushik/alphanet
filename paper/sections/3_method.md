@@ -3,9 +3,9 @@
 Our problem setting is multi-class classification with $C$ classes,
 where each input has a corresponding class label in $\set{0, \dots, C -
 1}$, and the goal is to learn a mapping from inputs to labels. We are
-specifically interested in visual recognition -- inputs are images, and
-classes are object categories. AlphaNet is applied over a pre-trained
-classification model. We assume that this model can be decoupled into
+specifically interested in visual recognition; so inputs are images, and
+classes are object categories. AlphaNet is applied to a pre-trained
+classification model; we assume that this model can be decoupled into
 two parts: the first part maps images to feature vectors, and the second
 part maps feature vectors to "scores", one for each of the $C$ classes.
 The prediction for an image is the class index with largest
@@ -27,10 +27,10 @@ function $\mu: \R^d \times \R^d \to \R$, we define the distance between
 two classes $c_1$ and $c_2$ as $m_\mu(c_1, c_2) \equiv \mu(\v{z}^{c_1},
 \v{z}^{c_2})$.
 
-Given a long-tailed dataset, the 'few' split, $C^F$, is defined as the
+Given a long-tailed dataset, the 'few' split ($C^F$), is defined as the
 set of classes with fewer than $T$ training samples, for some constant
 $T$ (equal to 20 for the datasets used in this work). The remaining
-classes form the 'base' split, $C^B$. AlphaNet is applied to update the
+classes form the 'base' split ($C^B$). AlphaNet is used to update the
 'few' split classifiers using nearest neighbors from the 'base' split.
 
 ## AlphaNet implementation {#sec:method:impl}
@@ -46,11 +46,11 @@ width=7.25in}
 class $c$ with classifier $\v{w}^c$, we find its $k$ nearest 'base'
 split neighbors based on $m_\mu$. Let these neighbors have classifiers
 $\v{v}^c_1, \dots, \v{v}^c_k$, which are concatenated together into a
-vector $\c{\v{v}}^c$. AlphaNet maps $\c{\v{v}}^c$ to a set of
+vector $\c{\v{v}}^c$. AlphaNet maps $(\v{w}^c, \c{\v{v}}^c)$ to a set of
 coefficients $\alpha^c_1, \dots, \alpha^c_k$. The $\alpha$ coefficients
 (denoted together as a vector $\v{\alpha}^c$), are then scaled to unit
-1-norm -- the reasoning behind this will be explained later -- to obtain
-$\tilde{\v{\alpha}}^c$:
+1-norm to obtain $\tilde{\v{\alpha}}^c$ (the justification for this will
+be presented shortly):
 $$
        \tilde{\v{\alpha}}^c
 \equiv \v{\alpha}^c / \norm{\v{\alpha}^c}_1.
@@ -59,13 +59,13 @@ The scaled coefficients are used to update the 'few' split classifier
 ($\v{w}^c \to \shat{\v{w}}^c$) through a linear combination:
 $$
        \shat{\v{w}}^c
-\equiv \v{w}^c + \suml_{i=1}^k \tilde{\alpha}^c_i \v{v}^c_i
+\equiv \v{w}^c + \suml_{i=1}^k \tilde{\alpha}^c_i \v{v}^c_i.
 $$ {#eq:alphanet_update}
 Due to the 1-norm scaling, we have
 $$
 \begin{aligned}
        \norm{\shat{\v{w}}^c - \v{w}^c}_2
-&\le   \suml_{i=1}^k \abs{\tilde{\alpha}^c_i}\norm{\v{v}^c_i}_2
+&\le   \suml_{i=1}^k \abs{\tilde{\alpha}^c_i} \cdot \norm{\v{v}^c_i}_2
  \quad \text{(Cauchy-Schwarz inequality)} \\
 %
 &\le \max_{i=1,\dots,k} \norm{\v{v}^c_i}_2 \suml_{i=1}^k \abs{\tilde{\alpha}^c_i} \\
@@ -73,19 +73,19 @@ $$
 &=   \max_{i=1,\dots,k} \norm{v^c_i}_2,
 \end{aligned}
 $$ {#eq:wdelta_norm_bound}
-that is, a classifier's change is bound by the norm of its class'
-nearest neighbors. Thanks to this, we do not need to update or rescale
-'base' split classifiers, which may not be possible in certain domains.
+that is, a classifier's change is bound by its nearest neighbors.
+Thanks to this, we do not need to rescale 'base' split classifiers,
+which may not be possible in certain domains.
 
-A single network is used to generate coefficients for every 'few' split
-class. So, once trained, AlphaNet can be applied even to classes not
-seen during training. This will be further explored in future work.
+Note that a single network is used to generate coefficients for every
+'few' split class. So, once trained, AlphaNet can be applied even to
+classes not seen during training. This will be explored in future work.
 
 ## Training {#sec:method:training}
 
-The trainable component of AlphaNet is a network (with parameters
-$\v{\theta}$) which maps $\c{\v{v}}^c$ to $\v{\alpha}^c$. We use the
-original classifier biases, $\v{b}$ (one per class). So, given a
+The trainable component of AlphaNet is a network with parameters
+$\v{\theta}$, which maps $(\v{w}^c, \c{\v{v}}^c)$ to $\v{\alpha}^c$. We
+use the original classifier biases, $\v{b}$ (one per class). So, given a
 training image $I$, the per-class prediction scores are given by
 $$
 s(c; I) = \begin{cases}
@@ -96,6 +96,6 @@ $$ {#eq:pred_scores}
 That is, class scores are unchanged for 'base' split classes, and are
 computed using updated classifiers for 'few' split classes. These scores
 are used to compute the sample loss (softmax cross-entropy in our
-experiments); $\v{\theta}$ can then be updated iteratively using a
-gradient based optimizer to reduce average sample loss estimated using
-mini-batches of samples.
+experiments), a differentiable function of $\v{\theta}$. So,
+$\v{\theta}$ can be learned using a gradient based optimizer, from
+mini-batches of training samples.

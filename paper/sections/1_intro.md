@@ -20,9 +20,9 @@ balancing, and norm thresholding[@2022.Kong.Alshammari].
 
 Despite these advances, accuracy on rare classes continues to be
 significantly lower than overall accuracy. For example, on ImageNet‑LT
--- a long-tailed dataset sampled from ImageNet[@2009.Fei-Fei.Deng], the
-6-expert ensemble RIDE model[@2021.Yu.Wang] has an average accuracy of
-68.9% on frequent classes, but an average accuracy of 36.5% on rare
+-- a long-tailed dataset sampled from ImageNet[@2009.Fei-Fei.Deng] --
+the 6-expert ensemble RIDE model[@2021.Yu.Wang] has an average accuracy
+of 68.9% on frequent classes, but an average accuracy of 36.5% on rare
 classes.[^note:ride_results] In addition to reducing overall accuracy,
 such performance imbalances raise ethical concerns in contexts where
 unequal accuracy leads to biased outcomes, such as medical
@@ -50,7 +50,7 @@ misclassifications.](figures/doggies){#fig:analysis:egs}
 versus the mean Euclidean distance to 5 nearest neighbor (NN) 'base'
 split classes. The line is a bootstrapped linear regression fit, and $r$
 (top right) is Pearson correlation. There is a high correlation, i.e.,
-'few' split classes with close nearest neighbors are more likely to be
+'few' split classes with close 'base' split NNs are more likely to be
 misclassified.](figures/cls_acc_vs_nndist_imagenetlt_crt_baseline){#fig:analysis:acc_vs_dist}
 
 Analysis of 'few' split predictions on ImageNet‑LT.
@@ -59,25 +59,25 @@ Analysis of 'few' split predictions on ImageNet‑LT.
 
 To understand the poor rare class performance of long-tail models, we
 analyzed predictions of the cRT model[@2020.Kalantidis.Kang] on test
-samples from 'few' split classes (i.e., classes with limited training
-samples) in ImageNet‑LT. @fig:analysis:bins shows predictions binned
-into three groups: (1) samples classified correctly; (2) samples
-incorrectly classified as a visually similar class (e.g., predicting
-'husky' instead of 'malamute'); and (3) samples incorrectly classified
-as a visually dissimilar class (e.g., predicting 'goldfish' instead of
+samples from ImageNet‑LT's 'few' split (i.e., classes with limited
+training samples). @fig:analysis:bins shows predictions binned into
+three groups: (1) samples classified correctly; (2) samples incorrectly
+classified as a visually similar 'base' split[^note:base_split] class
+(e.g., 'husky' instead of 'malamute'); and (3) samples incorrectly
+classified as a visually dissimilar class (e.g., 'goldfish' instead of
 'malamute'). A significant portion of the misclassifications (about 23%)
-are to visually similar classes. @fig:analysis:egs highlights the reason
-behind this issue, with samples from one pair of visually similar
-classes; the differences are subtle, and can be hard even for humans to
-identify. To get a quantitative understanding, we analyzed the
+are to visually similar frequent classes. @fig:analysis:egs highlights
+the reason behind this issue, with samples from one pair of visually
+similar classes; the differences are subtle, and can be hard even for
+humans to identify. To get a quantitative understanding, we analyzed the
 relationship between per-class test accuracy and mean distance of a
 class to its nearest neighbors (see @sec:method for details).
 @fig:analysis:acc_vs_dist shows a strong positive correlation between
-accuracy and mean distance, that is, 'few' split classes with close
+accuracy and mean distance, meaning that rare classes with close
 neighbors have lower test accuracy than classes with distant neighbors.
 
 Based on these analyses, we designed a method to directly improve the
-accuracy of rare classes in long-tail classification. Our method,
+accuracy on rare classes in long-tail classification. Our method,
 AlphaNet, uses information from visually similar frequent classes to
 improve classifiers for rare classes. @fig:alphanet illustrates the
 pipeline of our method. At a high level, AlphaNet can be seen as moving
@@ -89,10 +89,13 @@ such, is applicable to use cases where existing base classifiers are
 either unavailable or fixed (e.g., due to commercial interests or data
 privacy protections). The simplicity of our method lends to
 computational advantages -- AlphaNet can be trained rapidly, and on top
-of any classification model. We will demonstrate that AlphaNet
-significantly improves the accuracy of rare classes for a variety of
-long-tail classification models across multiple datasets.
+of any classification model. We will demonstrate that AlphaNet, applied
+to a variety of long-tail classification models, significantly improves
+rare class accuracy on multiple datasets.
 
 [^note:ride_results]: Results for the 6-expert model are presented in
     the GitHub repository for the original paper at
     [`github.com/frank-xwang/RIDE-LongTailRecognition/blob/main/MODEL_ZOO.md`](https://github.com/frank-xwang/RIDE-LongTailRecognition/blob/main/MODEL_ZOO.md).
+
+[^note:base_split]: The 'base' split is the complement of the 'few'
+    split, composed of classes with many training samples.

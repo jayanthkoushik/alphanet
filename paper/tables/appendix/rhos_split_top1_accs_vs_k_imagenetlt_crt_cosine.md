@@ -51,4 +51,4 @@ $k=8$              $31.5^{01.52}$  $45.0^{00.27}$  $60.7^{00.21}$  $49.2^{00.13}
 $k=9$              $32.9^{01.41}$  $44.8^{00.25}$  $60.6^{00.22}$  $49.3^{00.10}$
 $k=10$             $31.9^{02.16}$  $45.0^{00.42}$  $60.7^{00.33}$  $49.3^{00.08}$
 
-: Top‑1 accuracy for AlphaNet using varying number of nearest neighbors ($k$) based on cosine distance, with cRT baseline on ImageNet‑LT. {#tbl:rhos_split_top1_accs_vs_k_imagenetlt_crt_cosine}
+: Per-split test top‑1 accuracies for $\alpha$‑cRT on ImageNet‑LT using $k$ nearest neighbors based on cosine distance. {#tbl:rhos_split_top1_accs_vs_k_imagenetlt_crt_cosine}

@@ -5,14 +5,16 @@
 # Analysis of nearest neighbor selection {#sec:ksweep}
 
 We analyzed the effect of the number of nearest neighbors $k$, and the
-distance metric ($\mu$), on the performance of AlphaNet, using the
-ImageNet‑LT dataset with the cRT model. We compared two distance
-metrics: cosine distance ($\mu(z_1, z_2) = 1 - z_1^T z_2 / \norm{z_1}_2
-\norm{z_2}_2$), and Euclidean distance ($\mu(z_1, z_2) = \norm{z_1 -
-z_2}_2$). For each distance metric, we performed 4 sets of experiments,
-with $\rho$ in $\set{0.25, 0.5, 1, 2}$. For each $\rho$, we varied $k$
-from 2 to 10; all other hyper-parameters were kept the same as described
-in @sec:impl.
+distance metric ($\mu$), on the performance of AlphaNet, using the cRT
+model on ImageNet‑LT. We compared two distance metrics:
+
+* Cosine distance: $\mu(z_1, z_2) = 1 - z_1^T z_2$.
+* Euclidean distance: $\mu(z_1, z_2) = \norm{z_1 - z_2}_2$.
+
+For each distance metric, we performed 4 sets of experiments, with
+$\rho$ in $\set{0.25, 0.5, 1, 2}$. For each $\rho$, we varied $k$ from 2
+to 10; all other hyper-parameters were kept the same as described in
+@sec:impl.
 
 The results are summarized in @fig:ksweep, which shows per-split top‑1
 accuracies against $k$ for different values of $\rho$ ($\rho=2$ is
@@ -45,8 +47,8 @@ tables:
 
 ![$\rho=1$](figures/appendix/euclidean_cosine_split_accs_vs_k_imagenetlt_crt_rho_1){#fig:ksweep:1}
 
-Per-split accuracies on ImageNet‑LT with varying number of nearest
-neighbors, for AlphaNet with cRT.
+Per-split test accuracies for $\alpha$‑cRT on ImageNet‑LT versus the
+number of nearest neighbors $k$.
 
 </div>
 

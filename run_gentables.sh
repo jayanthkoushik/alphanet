@@ -235,7 +235,7 @@ for acck in 1 5; do
             if [ "${datasrc}" = "inat" ]; then
                 rhos=(rho_0.01 rho_0.02 rho_0.03 rho_0.04 rho_0.05)
                 rhostrs=(0.01 0.02 0.03 0.04 0.05)
-                modelsdesc="AlphaNet with different $\\\\rho\$s"
+                modelsdesc="AlphaNet applied to cRT"
             else
                 rhos=(rho_0.1 rho_0.2 rho_0.3 rho_0.4 rho_0.5 rho_0.75 rho_1 rho_1.25 rho_1.5 rho_1.75 rho_2 rho_3)
                 rhostrs=(0.1 0.2 0.3 0.4 0.5 0.75 1 1.25 1.5 1.75 2 3)
@@ -334,7 +334,8 @@ for dist in "euclidean" "cosine"; do
                     (set -x; echo "<!--  -->" >> "${sfile}")
                 fi
             done
-            (set -x; echo "\n: Top‑${acck} accuracy for AlphaNet using varying number of nearest neighbors (\$k\$) based on ${dist_desc}, with cRT baseline on ImageNet‑LT. {#tbl:rhos_split_top${acck}_accs_vs_k_imagenetlt_crt_${dist}}" >> "${sfile}")
+
+            (set -x; echo "\n: Per-split test top‑${acck} accuracies for $\alpha$‑cRT on ImageNet‑LT using \$k\$ nearest neighbors based on ${dist_desc}. {#tbl:rhos_split_top1_accs_vs_k_imagenetlt_crt_cosine}" >> "${sfile}")
         fi
     done
 done

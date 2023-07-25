@@ -3,12 +3,12 @@
 # Related work {#sec:relwork}
 
 Our work falls in the domain of long-tail learning, where the
-distribution of class sizes (number of training samples) models that of
-the visual world; many classes have only a few samples, while a few
-classes have many samples[@2023.Feng.Zhang]. Kang
+distribution of class sizes -- measured via number of training samples
+-- models that of the visual world; many classes have only a few
+samples, while a small number have many[@2023.Feng.Zhang]. Kang
 et\ al.[@2020.Kalantidis.Kang] established strong baselines on
 long-tailed datasets by decoupling classifiers and representations. We
-apply AlphaNet on two of their proposed baseline methods: (1) the cRT
+apply AlphaNet to of their proposed baseline methods: (1) the cRT
 (classifier re-training) model, which fixes representations, and trains
 classifiers from scratch; and (2) the LWS (learnable weight scaling)
 model, which also fixes representations, and only _rescales_
@@ -17,12 +17,12 @@ classifiers, with scales learned from the training data.
 In contrast to the above simple methods, many complex methods have been
 proposed, and have continued to push the state-of-the-art for long-tail
 recognition[@2019.Yu.Liu; @2021.Yu.Wang; @2021.Wu.Li; @2021.Hwang.Cai;
-@2022.Kong.Alshammari]. We used two of these methods as starting points
-for AlphaNet: (1) the RIDE (RoutIng Diverse Experts) model of Wang
-et\ al.[@2021.Yu.Wang], which achieves low bias by training with a
-"distribution-aware diversity loss", and low variance by using multiple
-experts; and (2) the LTR (long-tail recognition) model of Alshammari
-et\ al.[@2022.Kong.Alshammari], which uses a combination of
+@2022.Kong.Alshammari]. We used two of these methods to evaluate
+AlphaNet: (1) the RIDE (RoutIng Diverse Experts) model of Wang
+et\ al.[@2021.Yu.Wang], which achieves low bias and variance, by
+training with a "distribution-aware diversity loss" and using multiple
+experts, respectively; and (2) the LTR (long-tail recognition) model of
+Alshammari et\ al.[@2022.Kong.Alshammari], which uses a combination of
 class-balanced loss, weight decay, and max-norm regularization -- in
 this work we will refer to this model simply as the LTR model.
 
@@ -77,7 +77,7 @@ exemplar.
 Composing weak classifiers to build strong classifiers also bears
 resemblance to the idea of boosting[@1990.Schapire]. The popular
 AdaBoost[@1997.Schapire.Freund] algorithm linearly combines classifiers
-based on a single feature (e.g., decision stumps), and iteratively
+based on single features (e.g., decision stumps), and iteratively
 re-weights training samples based on their error. For the case of
 multi-class classification, Torralba et\ al.[@2007.Freeman.Torralba]
 built a classifier that combines several binary classifiers, each

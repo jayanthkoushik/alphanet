@@ -8,4 +8,4 @@ $\rho=0.03$         $89.2^{0.27}$   $84.4^{0.55}$   $87.9^{0.32}$   $86.7^{0.28}
 $\rho=0.04$         $89.2^{0.25}$   $84.4^{0.79}$   $87.9^{0.51}$   $86.7^{0.40}$
 $\rho=0.05$         $88.7^{0.33}$   $84.7^{0.67}$   $88.1^{0.41}$   $86.6^{0.32}$
 
-: Top‑5 accuracy on iNaturalist, using AlphaNet with different $\rho$s. {#tbl:models_split_top5_accs_vs_rho_inat}
+: Top‑5 accuracy on iNaturalist, using AlphaNet applied to cRT. {#tbl:models_split_top5_accs_vs_rho_inat}

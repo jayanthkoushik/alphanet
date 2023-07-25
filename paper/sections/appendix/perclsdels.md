@@ -5,8 +5,9 @@
 # Change in per-class accuracies {#sec:perclsdels}
 
 In this section, we analyze the change in accuracy for individual
-classes after AlphaNet training. First, we plotted the sorted accuracy
-changes, grouped by split. These are shown in the following figures:
+classes after applying AlphaNet (following the training process
+described in @sec:impl). First, we plotted the sorted accuracy changes,
+grouped by split. These are shown in the following figures:
 
 * ImageNet‑LT:
     * cRT baseline: @fig:rhos_cls_deltas_imagenetlt_crt.
@@ -21,12 +22,12 @@ changes, grouped by split. These are shown in the following figures:
     * RIDE baseline: @fig:rhos_cls_deltas_cifarlt_ride.
     * LTR baseline: @fig:rhos_cls_deltas_cifarlt_ltr.
 
-We also plotted the accuracy changes against the average distance to a
-class' nearest neighbors. The nearest neighbors were chosen using the
-same process as during AlphaNet training (5 neighbors based on Euclidean
-distance). For 'few' split classes, we selected neighbors from the
-'base' split, and for the 'base' split classes, we selected neighbors
-from the 'few' split. These results are shown in the following figures:
+We also plotted accuracy change for classes against the average distance
+to their 5 nearest neighbors by Euclidean distance. For 'few' split
+classes, we selected neighbors from the 'base' split, and for the 'base'
+split classes, we selected neighbors from the 'few' split. Recall that
+classifiers for the 'few' split were updated using classifiers from
+these neighbors. Results are shown in the following figures:
 
 * ImageNet‑LT:
     * cRT baseline: @fig:rhos_cls_delta_vs_nndist_imagenetlt:crt.
@@ -45,63 +46,63 @@ from the 'few' split. These results are shown in the following figures:
 
 ![Change in per-class test accuracy on ImageNet‑LT after AlphaNet
 training with cRT baseline. Each bar shows the change the change in
-accuracy after AlphaNet training for one class. The solid lines in each
-split show the average per-class change for the split, and the dotted
-line shows the overall average per-class
+accuracy for one class. The solid lines in each split show the average
+per-class change for the split, and the dotted line shows the overall
+average per-class
 change.](figures/appendix/rhos_cls_deltas_imagenetlt_crt){#fig:rhos_cls_deltas_imagenetlt_crt}
 
 \clearpage
 
 ![Change in per-class test accuracy on ImageNet‑LT after AlphaNet
 training with LWS baseline. Each bar shows the change the change in
-accuracy after AlphaNet training for one class. The solid lines in each
-split show the average per-class change for the split, and the dotted
-line shows the overall average per-class
+accuracy for one class. The solid lines in each split show the average
+per-class change for the split, and the dotted line shows the overall
+average per-class
 change.](figures/appendix/rhos_cls_deltas_imagenetlt_lws){#fig:rhos_cls_deltas_imagenetlt_lws}
 
 \clearpage
 
 ![Change in per-class test accuracy on ImageNet‑LT after AlphaNet
 training with RIDE baseline. Each bar shows the change the change in
-accuracy after AlphaNet training for one class. The solid lines in each
-split show the average per-class change for the split, and the dotted
-line shows the overall average per-class
+accuracy for one class. The solid lines in each split show the average
+per-class change for the split, and the dotted line shows the overall
+average per-class
 change.](figures/appendix/rhos_cls_deltas_imagenetlt_ride){#fig:rhos_cls_deltas_imagenetlt_ride}
 
 \clearpage
 
 ![Change in per-class test accuracy on Places‑LT after AlphaNet training
-with cRT baseline. Each bar shows the change the change in accuracy
-after AlphaNet training for one class. The solid lines in each split
-show the average per-class change for the split, and the dotted line
-shows the overall average per-class
+with cRT baseline. Each bar shows the change the change in accuracy for
+one class. The solid lines in each split show the average per-class
+change for the split, and the dotted line shows the overall average
+per-class
 change.](figures/appendix/rhos_cls_deltas_placeslt_crt){#fig:rhos_cls_deltas_placeslt_crt}
 
 \clearpage
 
 ![Change in per-class test accuracy on Places‑LT after AlphaNet training
-with LWS baseline. Each bar shows the change the change in accuracy
-after AlphaNet training for one class. The solid lines in each split
-show the average per-class change for the split, and the dotted line
-shows the overall average per-class
+with LWS baseline. Each bar shows the change the change in accuracy for
+one class. The solid lines in each split show the average per-class
+change for the split, and the dotted line shows the overall average
+per-class
 change.](figures/appendix/rhos_cls_deltas_placeslt_lws){#fig:rhos_cls_deltas_placeslt_lws}
 
 \clearpage
 
 ![Change in per-class test accuracy on CIFAR‑100‑LT after AlphaNet
 training with RIDE baseline. Each bar shows the change the change in
-accuracy after AlphaNet training for one class. The solid lines in each
-split show the average per-class change for the split, and the dotted
-line shows the overall average per-class
+accuracy for one class. The solid lines in each split show the average
+per-class change for the split, and the dotted line shows the overall
+average per-class
 change.](figures/appendix/rhos_cls_deltas_cifarlt_ride){#fig:rhos_cls_deltas_cifarlt_ride}
 
 \clearpage
 
 ![Change in per-class test accuracy on CIFAR‑100‑LT after AlphaNet
 training with LTR baseline. Each bar shows the change the change in
-accuracy after AlphaNet training for one class. The solid lines in each
-split show the average per-class change for the split, and the dotted
-line shows the overall average per-class
+accuracy for one class. The solid lines in each split show the average
+per-class change for the split, and the dotted line shows the overall
+average per-class
 change.](figures/appendix/rhos_cls_deltas_cifarlt_ltr){#fig:rhos_cls_deltas_cifarlt_ltr}
 
 \clearpage
@@ -120,7 +121,7 @@ baseline](figures/appendix/rhos_cls_delta_vs_nndist_imagenetlt_ride){#fig:rhos_c
 Change in per-class test accuracy on ImageNet‑LT, versus mean distance
 to 5 nearest neighbors based on Euclidean distance. The neighbors are
 from 'base' split for the 'few' split classes, and vice-versa for the
-'base' split classes. The lines are regression fits, and the $r$s are
+'base' split classes. The lines are regression fits, and the '$r$'s are
 Pearson correlations.
 
 </div>
@@ -138,7 +139,7 @@ baseline](figures/appendix/rhos_cls_delta_vs_nndist_placeslt_lws){#fig:rhos_cls_
 Change in per-class test accuracy on Places‑LT, versus mean distance to
 5 nearest neighbors based on Euclidean distance. The neighbors are from
 'base' split for the 'few' split classes, and vice-versa for the 'base'
-split classes. The lines are regression fits, and the $r$s are Pearson
+split classes. The lines are regression fits, and the '$r$'s are Pearson
 correlations.
 
 </div>
@@ -156,7 +157,7 @@ baseline](figures/appendix/rhos_cls_delta_vs_nndist_cifarlt_ltr){#fig:rhos_cls_d
 Change in per-class test accuracy on CIFAR‑100‑LT, versus mean distance
 to 5 nearest neighbors based on Euclidean distance. The neighbors are
 from 'base' split for the 'few' split classes, and vice-versa for the
-'base' split classes. The lines are regression fits, and the $r$s are
+'base' split classes. The lines are regression fits, and the '$r$'s are
 Pearson correlations.
 
 </div>

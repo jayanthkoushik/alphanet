@@ -5,12 +5,12 @@
 This section contains results for AlphaNet training with a range of
 $\rho$ values. Training was performed following the same procedure as
 described in @sec:impl. We also include results for the iNaturalist
-dataset using the cRT baseline. For iNaturalist, we used smaller values
+dataset using the cRT model. For iNaturalist, we used smaller values
 of $\rho$ given the much smaller differences in per-split accuracy.
 
-The results are summarized in @fig:models_split_top1_deltas_vs_rho and
-@fig:models_split_top5_deltas_vs_rho, which show change in per-split
-top‑1 and top‑5 accuracy (respectively), versus $\rho$ (iNaturalist
+The results are summarized in [@fig:models_split_top1_deltas_vs_rho;
+@fig:models_split_top5_deltas_vs_rho], which show change in per-split
+top‑1 and top‑5 accuracy respectively, versus $\rho$ (iNaturalist
 results are omitted from these figures due to the different set of
 $\rho$s used).
 
@@ -46,15 +46,15 @@ correct. We used $l=4$, and these results are shown in
 
 \clearpage
 
-![Change in per-split top‑1 accuracy vs. $\rho$ for alphanet training
-with different baseline models, and on different
-datasets](figures/appendix/models_split_top1_deltas_vs_rho){#fig:models_split_top1_deltas_vs_rho}
+![Change in per-split top‑1 accuracy vs. $\rho$ for AlphaNet training
+with different models and
+datasets.](figures/appendix/models_split_top1_deltas_vs_rho){#fig:models_split_top1_deltas_vs_rho}
 
 \clearpage
 
-![Change in per-split top‑5 accuracy vs. $\rho$ for alphanet training
-with different baseline models, and on different
-datasets](figures/appendix/models_split_top5_deltas_vs_rho){#fig:models_split_top5_deltas_vs_rho}
+![Change in per-split top‑5 accuracy vs. $\rho$ for AlphaNet training
+with different models and
+datasets.](figures/appendix/models_split_top5_deltas_vs_rho){#fig:models_split_top5_deltas_vs_rho}
 
 \clearpage
 

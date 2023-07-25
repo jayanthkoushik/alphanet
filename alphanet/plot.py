@@ -906,7 +906,10 @@ class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
                 if _i % ncols:
                     _ax.set_ylabel("")
 
-                _ax.set_xlabel(self.xlabel)
+                if self.show_titles:
+                    _ax.set_xlabel(self.xlabel)
+                else:
+                    _ax.set_xlabel("")
                 _ax.xaxis.set_tick_params(direction="in")
 
                 if self.y == "acc":
