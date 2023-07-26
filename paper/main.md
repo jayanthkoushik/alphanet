@@ -54,11 +54,11 @@ abstract: Methods in long-tail learning focus on improving performance
   find frequent classes that are closest to rare classes in the model's
   representation space and learn weights to update rare class
   classifiers with a linear combination of frequent class classifiers.
-  AlphaNet, applied on several models, greatly improves test accuracy
+  AlphaNet, applied to several models, greatly improves test accuracy
   for rare classes in multiple long-tailed datasets, with very little
-  change to the overall accuracy. Our method also provides a way to
-  control the trade-off between rare class and overall accuracy, making
-  it practical for long-tail classification in the wild.
+  change to overall accuracy. Our method also provides a way to control
+  the trade-off between rare class and overall accuracy, making it
+  practical for long-tail classification in the wild.
 
 bibliography: references.bib
 

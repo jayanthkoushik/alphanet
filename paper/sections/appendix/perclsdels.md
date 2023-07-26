@@ -121,7 +121,7 @@ baseline](figures/appendix/rhos_cls_delta_vs_nndist_imagenetlt_ride){#fig:rhos_c
 Change in per-class test accuracy on ImageNet‑LT, versus mean distance
 to 5 nearest neighbors based on Euclidean distance. The neighbors are
 from 'base' split for the 'few' split classes, and vice-versa for the
-'base' split classes. The lines are regression fits, and the '$r$'s are
+'base' split classes. The lines are regression fits, and the `$r$'s are
 Pearson correlations.
 
 </div>
@@ -139,7 +139,7 @@ baseline](figures/appendix/rhos_cls_delta_vs_nndist_placeslt_lws){#fig:rhos_cls_
 Change in per-class test accuracy on Places‑LT, versus mean distance to
 5 nearest neighbors based on Euclidean distance. The neighbors are from
 'base' split for the 'few' split classes, and vice-versa for the 'base'
-split classes. The lines are regression fits, and the '$r$'s are Pearson
+split classes. The lines are regression fits, and the `$r$'s are Pearson
 correlations.
 
 </div>
@@ -157,7 +157,7 @@ baseline](figures/appendix/rhos_cls_delta_vs_nndist_cifarlt_ltr){#fig:rhos_cls_d
 Change in per-class test accuracy on CIFAR‑100‑LT, versus mean distance
 to 5 nearest neighbors based on Euclidean distance. The neighbors are
 from 'base' split for the 'few' split classes, and vice-versa for the
-'base' split classes. The lines are regression fits, and the '$r$'s are
+'base' split classes. The lines are regression fits, and the `$r$'s are
 Pearson correlations.
 
 </div>

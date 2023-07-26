@@ -20,7 +20,15 @@ PROFILES = {
     "paper": PlottingConfig(
         theme="light",
         context="paper",
-        font=PlotFont(default="serif", math="cm"),
+        font=PlotFont(default="serif", math="stix"),
+        bg="#ffffff",
+        fg_primary="#000000",
+        fg_secondary="#bbbbbb",
+    ),
+    "arxiv": PlottingConfig(
+        theme="light",
+        context="paper",
+        font=PlotFont(default="Times", math="stix"),
         bg="#ffffff",
         fg_primary="#000000",
         fg_secondary="#bbbbbb",
@@ -240,7 +248,12 @@ def plot(profile, save=True):
         )
         save_file = f"models_split_top{args.acc_k}_deltas_vs_rho"
         save_file += "_dark" if cfg.theme == "dark" else ""
-        ext = ".pgf" if cfg.context == "paper" else ".svg"
+        if cfg.context == "paper":
+            ext = ".pgf"
+        elif cfg.context == "arxiv":
+            ext = ".pdf"
+        else:
+            ext = ".svg"
         save_file += ext
         save_path = save_root / save_file
         g.figure.savefig(save_path, format=ext[1:], bbox_inches="tight")

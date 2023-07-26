@@ -1,0 +1,385 @@
+\documentclass[%
+  letterpaper,%
+  twocolumn,%
+  english%
+]{article}
+
+\usepackage[%
+  textwidth=492pt,%
+  textheight=624pt,%
+  columnsep=12pt,%
+  footskip=48pt,%
+  footnotesep=36pt%
+]{geometry}
+\usepackage[big,raggedright,compact]{titlesec}
+\usepackage{fancyhdr}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage[p]{newtx}
+\usepackage{etoolbox}
+\usepackage[super,comma,sort]{natbib}
+
+\usepackage[hidelinks]{hyperref}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{pgf}
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepackage{tikzscale}
+\usepackage{svg}
+
+% Define the tightlist command used by pandoc.
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}%
+}
+
+% Modify footnotes inside captions to use '\protect'.
+\let\oldfootnote\footnote
+\renewcommand{\footnote}[1]{\ifx\caption@checkhyp\caption@refhypmode\else\protect\oldfootnote{#1}\fi}
+
+\usepackage[Export]{adjustbox}
+\usepackage{environ}
+\usepackage{framed}
+
+\setcounter{topnumber}{2}
+\setcounter{bottomnumber}{1}
+\setcounter{totalnumber}{3}
+
+\renewcommand{\topfraction}{0.8}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.2}
+\renewcommand{\floatpagefraction}{0.8}
+
+\setlength{\textfloatsep}{2em plus 1ex minus 1ex}
+\setlength{\floatsep}{2em plus 1ex minus 1ex}
+\setlength{\intextsep}{2em plus 1ex minus 1ex}
+
+\makeatletter
+\setlength{\@fptop}{0pt}
+\setlength{\@fpbot}{0pt plus 1fil}
+\makeatother
+
+% Set maximum width/height for figures and tables.
+\newcommand{\maxfigwidth}{\textwidth}
+\newcommand{\maxfigheight}{\textheight}
+\newcommand{\maxtabwidth}{\textwidth}
+\newcommand{\maxtabheight}{\textheight}
+
+% Maintain aspect ratio of figures.
+\let\origincgfx\includegraphics
+\renewcommand{\includegraphics}[2][]{%
+\origincgfx[%
+  #1,keepaspectratio,max width=\maxfigwidth,max height=\maxfigheight%
+]{#2}%
+}
+
+% Global placeholder variables.
+\def\mdccap{CAPTION}
+\def\mdclab{LABEL}
+
+% Automatically adjust figure layout based on width.
+\let\oldfigure\figure
+\let\endoldfigure\endfigure
+\RenewEnviron{figure}{
+  % Save old caption/label commands.
+  \let\oldcaption\caption
+  \let\oldsetcaptionsubtype\setcaptionsubtype
+  \let\oldlabel\label
+
+  \renewcommand{\setcaptionsubtype}{}
+  % Update caption/label commands to save the values to a global variable.
+  \renewcommand{\caption}[2][]{\global\def\mdccap{##2}}
+  % Label command is updated conditionally based on if 'insubfloat' is defined.
+  \renewcommand{\label}[1]{%
+    \ifdefined\insubfloat
+      \oldlabel{##1}
+    \else
+      \global\def\mdclab{##1}
+    \fi
+  }
+
+  % Update \subfloat to define 'insubfloat' so that labels within sub-floats still work.
+  \let\oldsubfloat\subfloat
+  \renewcommand{\subfloat}[2][]{\def\insubfloat{}\oldsubfloat[##1]{##2}\let\insubfloat\undefined}
+
+  % Render the body inside a box.
+  \sbox{0}{\BODY}
+
+  \let\setcaptionsubtype\oldsetcaptionsubtype
+
+  % Save the linewidth to a constant (the macro will change depending on environment).
+  \xdef\thelinew{\the\linewidth}
+
+  \ifdim\wd0>\thelinew
+    \begin{figure*}
+  \else
+    \begin{oldfigure}
+  \fi
+
+      \setlength{\FrameRule}{0pt}
+      \setlength{\FrameSep}{0pt}
+
+      \begin{framed}
+      \begin{adjustbox}{center}
+      \begin{adjustbox}{max totalheight=\maxfigheight}
+        \begin{minipage}{\maxfigwidth}
+          \centering
+          \BODY
+        \end{minipage}
+      \end{adjustbox}
+      \end{adjustbox}
+      \end{framed}
+
+      \oldcaption{\mdccap}
+      \oldlabel{\mdclab}
+
+  \ifdim\wd0>\thelinew
+    \end{figure*}
+  \else
+    \end{oldfigure}
+  \fi
+
+  % Restore caption/label commands.
+  \let\caption\oldcaption
+  \let\label\oldlabel
+}
+
+% Automatically adjust table layout based on width.
+\let\oldtable\table
+\let\endoldtable\endtable
+\RenewEnviron{table}{
+  \let\oldcaption\caption
+  \renewcommand{\caption}[2][]{\global\def\mdccap{##2}}
+
+  \sbox{0}{\BODY}
+
+  \xdef\thelinew{\the\linewidth}
+
+  \ifdim\wd0>\thelinew
+    \begin{table*}
+  \else
+    \begin{oldtable}
+  \fi
+
+      \begin{adjustbox}{center}
+        \maxsizebox{\maxtabwidth}{\maxtabheight}{\BODY}
+      \end{adjustbox}
+
+      \oldcaption{\mdccap}
+
+  \ifdim\wd0>\thelinew
+    \end{table*}
+  \else
+    \end{oldtable}
+  \fi
+}
+
+\usepackage{stfloats}
+
+% Configure double column floats.
+\setcounter{topnumber}{4}
+\setcounter{dbltopnumber}{2}
+\setcounter{bottomnumber}{4}
+\setcounter{dblbotnumber}{2}
+\setcounter{totalnumber}{8}
+\renewcommand{\topfraction}{0.85}
+\renewcommand{\dbltopfraction}{0.8}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.15}
+\renewcommand{\floatpagefraction}{0.85}
+\renewcommand{\dblfloatpagefraction}{0.8}
+\makeatletter
+\setlength{\@dblfptop}{0pt}
+\setlength{\@dblfpbot}{0pt plus 1fil}
+\makeatother
+
+\usepackage{mathtools}
+\usepackage{mleftright}
+\usepackage{bm}
+\usepackage{array}
+
+% Use 'mleft'/'mright' instead of 'left/right'.
+\renewcommand\left\mleft
+\renewcommand\right\mright
+
+% Automatically use '\left' and '\right' with parentheses.
+\makeatletter
+\def\resetMathstrut@{%
+  \setbox\z@\hbox{%
+    \mathchardef\@tempa\mathcode`\[\relax
+    \mathchardef\@tempc\mathcode`\]\relax
+    \def\@tempb##1"##2##3{\the\textfont"##3\char"}%
+    \expandafter\@tempb\meaning\@tempa \relax
+  }%
+  \ht\Mathstrutbox@\ht\z@ \dp\Mathstrutbox@\dp\z@}
+\makeatother
+\begingroup
+  \catcode`(\active \xdef({\left\string(}
+  \catcode`)\active \xdef){\right\string)}
+\endgroup
+\mathcode`(="8000 \mathcode`)="8000
+
+\usepackage{xparse}
+\usepackage{letltxmacro}
+
+\usepackage[T1]{fontenc}
+\usepackage[babel=true,tracking=true]{microtype}
+\usepackage{babel}
+\usepackage[title]{appendix}
+\usepackage{footnote}
+\usepackage[hang,bottom,ragged]{footmisc}
+\usepackage{acronym}
+\usepackage{relsize}
+\usepackage{xcolor}
+\usepackage{fancyvrb}
+\usepackage[defaultlines=2,all]{nowidow}
+
+% Remove footnote indentation.
+\setlength{\footnotemargin}{0em}
+
+% Handle footnotes inside tables, figures.
+\makesavenoteenv{table}
+\makesavenoteenv{table*}
+\makesavenoteenv{figure}
+\makesavenoteenv{figure*}
+
+% Add small space after footnote label.
+\makeatletter
+\renewcommand\@makefnmark{\mbox{\textsuperscript{\@thefnmark}\,}}
+\makeatother
+
+% Create command for footnote without marker.
+\makeatletter
+\def\blfootnote{\gdef\@thefnmark{}\@footnotetext}
+\makeatother
+
+% Set up pdf metadata.
+\hypersetup{
+  pdfinfo={
+    Title={$title$},
+    Author={$for(author)$$author.name$$sep$, $endfor$}
+  }
+}
+
+% Use small font for tables.
+\AtBeginEnvironment{tabular}{\smaller}
+
+% Use alphabets for footnote markers.
+\renewcommand*{\thefootnote}{\alph{footnote}}
+
+% Configure captions.
+\captionsetup{justification=raggedright,font={small}}
+\renewcommand\thesubfigure{(\alph{subfigure})}
+\captionsetup[subfigure]{labelformat=simple}
+
+% Add periods after section numbers.
+\titlelabel{\thetitle.\enskip}
+
+% Configure page no.
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[R]{{\normalfont\scriptsize\thepage}}
+
+% Configure title format.
+\makeatletter
+\def\@maketitle{%
+  \newpage
+  \begin{flushleft}%
+    \normalfont%
+    {\LARGE \@title \par}%
+    \vskip 1.5em%
+    {\large
+      \lineskip .5em%
+      \begin{tabular}[t]{@{}l@{}}%
+          \@author
+      \end{tabular}\par}%
+    {\normalsize \@date}%
+  \end{flushleft}%
+  \par
+  \vskip 1.5em}
+\makeatother
+
+% Change '\and' to left align contents.
+\makeatletter
+\def\and{%
+  \end{tabular}%
+  \hskip 1em \@plus.17fil%
+  \begin{tabular}[t]{@{}l@{}}}%
+\makeatother
+
+\title{$title$}
+\date{$if(date)$\vspace*{1em} $date$$endif$}
+
+\author{%
+  $for(author)$
+    \mbox{$it.name$\textsuperscript{$for(it.affiliation)$$it$$sep$,$endfor$$if(it.equalcontrib)$$if(skipequal)$$else$$if(it.affiliation)$,$else$$endif$*$endif$$endif$}}$if(it.email)$\\%
+    \mbox{\href{mailto:$it.email$}{\texttt{\textsmaller{$it.email$}}}}$endif$
+  $sep$\and
+  $endfor$%
+}
+
+$for(includes)$
+$it$
+$endfor$
+
+\begin{document}
+
+\maketitle
+
+\thispagestyle{fancy}
+\parindent=2em
+
+% Add author-info footnote.
+\blfootnote{%
+  {%
+    \normalfont\scriptsize%
+    $if(url)$This document can be read online at \href{$url$}{\texttt{$url$}}.\\$endif$%
+    $if(skipequal)$$else$\mbox{\textsuperscript{*}\,Equal contribution.}\enskip$endif$%
+    $for(institute)$\mbox{\textsuperscript{$institute.id$}\,$institute.name$.}\enskip$endfor$%
+  }%
+}
+
+$if(abstract)$
+\hrule height 1pt
+\vspace{1ex}%
+{\parindent=0pt \normalfont\normalsize $abstract$}
+\vspace{1ex}%
+\hrule height 1pt
+\vspace{1ex}
+$endif$
+
+$if(body)$
+$body$
+$endif$
+
+$for(sections)$
+$it$
+$endfor$
+
+$if(bibliography)$
+\footnotesize
+\bibliographystyle{naturemag}
+\bibliography{$bibliography$}
+\normalsize
+$endif$
+
+$if(appendices)$
+$for(appendices/pairs)$
+\clearpage
+\begin{appendices}
+  \renewcommand{\thefigure}{$it.key/alpha/uppercase$\arabic{figure}}
+  \renewcommand{\thetable}{$it.key/alpha/uppercase$\arabic{table}}
+  \renewcommand{\thefootnote}{$it.key/alpha/uppercase$\arabic{footnote}}
+  \setcounter{table}{0}
+  \setcounter{figure}{0}
+  \setcounter{footnote}{0}
+  $it.value$
+\end{appendices}
+$sep$
+
+$endfor$
+$endif$
+
+\end{document}

@@ -28,7 +28,7 @@ while getopts "hc:t:r:n:" opt; do
         h) echo "usage: run_genplots.sh [-h] [-c context] [-t theme] [-r res_rep] [-n n_boot]"
            echo "options:"
            echo "  -h: display this help message and exit"
-           echo "  -c: context (['${CONTEXT_DEFAULT}'] or 'notebook')"
+           echo "  -c: context (['${CONTEXT_DEFAULT}'] or 'notebook' or 'arxiv')"
            echo "  -t: theme (['${THEME_DEFAULT}'] or 'dark')"
            echo "  -r: result repetition to use (default: '${REP_DEFAULT}', all repetitions)"
            echo "  -n: number of bootstraps (default: ${N_BOOT_DEFAULT})"
@@ -48,18 +48,16 @@ n_boot=${N_BOOT:-${N_BOOT_DEFAULT}}
 if [ "${context}" = "paper" ]; then
     dfont="serif"
     mfont="stix"
-    if [ "${theme}" = "light" ]; then
-        ext=".pgf"
-        xargs=("--plot:bg" "#ffffff" "--plot:fg-primary" "#000000" "--plot:fg-secondary" "#bbbbbb")
-    else
-        ext="_dark.pgf"
-        xargs=("--plot:bg" "#000000" "--plot:fg-primary" "#ffffff" "--plot:fg-secondary" "#444444")
-    fi
+    ext=".pgf"
     save_dir="${BASE_SAVE_DIR}"
+elif [ "${context}" = "arxiv" ]; then
+    dfont="Times"
+    mfont="stix"
+    ext=".pdf"
+    save_dir="${BASE_SAVE_DIR}/_arxiv"
 else
     dfont="sans-serif"
     mfont="stixsans"
-    xargs=("--plot:font:sans-serif" "system-ui" " -apple-system" "Segoe UI" "Roboto" "Helvetica Neue" "Noto Sans" "Liberation Sans" "Arial" "sans-serif")
     if [ "${theme}" = "light" ]; then
         ext=".svg"
     else
@@ -68,6 +66,13 @@ else
     save_dir="${BASE_SAVE_DIR}/_www"
 fi
 
+if [ "${context}" == "notebook" ]; then
+    xargs=("--plot:font:sans-serif" "system-ui" " -apple-system" "Segoe UI" "Roboto" "Helvetica Neue" "Noto Sans" "Liberation Sans" "Arial" "sans-serif")
+elif [ "${theme}" == "light" ]; then
+    xargs=("--plot:bg" "#ffffff" "--plot:fg-primary" "#000000" "--plot:fg-secondary" "#bbbbbb")
+else
+    xargs=("--plot:bg" "#000000" "--plot:fg-primary" "#ffffff" "--plot:fg-secondary" "#444444")
+fi
 mainargs=("--plot:theme" "${theme}" "--plot:context" "${context}" "--plot:font:default" "${dfont}" "--plot:font:math" "${mfont}")
 
 ################################################

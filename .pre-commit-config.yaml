@@ -48,4 +48,4 @@ repos:
     language: system
     files: "paper/.*"
     pass_filenames: false
-    entry: sh -c "(cd paper && pipx run --spec git+https://github.com/jayanthkoushik/shiny-mdc shinymdc -i main.md -o main.pdf -t stylish -m smalltabs=true,nonidan=true)"
+    entry: sh -c "(cd paper && pipx run --spec git+https://github.com/jayanthkoushik/shiny-mdc shinymdc -i main.md -o main.pdf -t template.tex --pdf-engine pdflatex)"

@@ -48,10 +48,10 @@ misclassifications.](figures/doggies){#fig:analysis:egs}
 
 ![Per-class test accuracy of cRT model on 'few' split of ImageNet‑LT,
 versus the mean Euclidean distance to 5 nearest neighbor (NN) 'base'
-split classes. The line is a bootstrapped linear regression fit, and $r$
-(top right) is Pearson correlation. There is a high correlation, i.e.,
-'few' split classes with close 'base' split NNs are more likely to be
-misclassified.](figures/cls_acc_vs_nndist_imagenetlt_crt_baseline){#fig:analysis:acc_vs_dist}
+split classes. The line is a bootstrapped linear regression fit, and
+'$r$' (top right) is Pearson correlation. There is a high correlation,
+i.e., 'few' split classes with close 'base' split NNs are more likely to
+be misclassified.](figures/cls_acc_vs_nndist_imagenetlt_crt_baseline){#fig:analysis:acc_vs_dist}
 
 Analysis of 'few' split predictions on ImageNet‑LT.
 
@@ -95,7 +95,8 @@ rare class accuracy on multiple datasets.
 
 [^note:ride_results]: Results for the 6-expert model are presented in
     the GitHub repository for the original paper at
-    [`github.com/frank-xwang/RIDE-LongTailRecognition/blob/main/MODEL_ZOO.md`](https://github.com/frank-xwang/RIDE-LongTailRecognition/blob/main/MODEL_ZOO.md).
+    [`github.com/frank-xwang/
+    RIDE-LongTailRecognition/blob/main/MODEL_ZOO.md`](https://github.com/frank-xwang/RIDE-LongTailRecognition/blob/main/MODEL_ZOO.md).
 
 [^note:base_split]: The 'base' split is the complement of the 'few'
     split, composed of classes with many training samples.
