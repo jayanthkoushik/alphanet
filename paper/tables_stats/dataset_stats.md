@@ -1,10 +1,26 @@
-Dataset                \ \ \ \ \ Samples                                     \ \ \ \ \ Classes                                    \ \ \ \ \ \ \ \ \ Train samples
-------------  -------------------------------------------  ------------------------------------------------------------------  --------------------------------------------------
-              $\qq \train      \qq    \val    \qq  \test$  $\q\ \total       \q  \many\ \ \q   \medium        \q        \few$  $\qq \many\ \     \q   \medium     \q    \ \ \few$
-<!--  -->
-ImageNet‑LT   $\qq 115,846      \q   20,000    \q 50,000$  $\qq 1,000        \q  385      \q   \ph{,0}479     \q  136\ph{,0}$  $\qq \ph{0}88,693 \q   25,510      \q 1,643\ph{0}$
-Places‑LT     $\qq \ph{0}62,500 \q \ph{0}7,300 \q 36,500$  $\qq 365\ph{,0}   \q  131      \q   \ph{,0}163     \q  71\ph{0,0}$  $\qq \ph{0}52,762 \q \ph{0}8,934   \q 804\ph{0,0}$
-CIFAR‑100‑LT  $\qq \ph{0}10,847 \q \ph{00,000} \q 10,000$  $\qq 100\ph{,0}   \q  \ph{0}35 \q   \ph{0,0}35     \q  30\ph{0,0}$  $\qq \ph{00}8,824 \q \ph{0}1,718   \q 305\ph{0,0}$
-iNaturalist   $\qq 437,513      \q \ph{00,000} \q 24,426$  $\qq 8,142        \q  842      \q   4,076          \q       3,224$  $\qq 258,340      \q   133,061     \q      46,112$
+\hypertarget{tbl:dataset_stats}{}
+\begin{table}
+  \centering
+  \begin{tabular}{@{}lrrrclrrrcrrr@{}}
+    \toprule
 
-: Statistics of long-tailed datasets. {#tbl:dataset_stats}
+    \multirow{2}*{Dataset} &
+    \multicolumn{3}{c}{Samples} &&
+    \multicolumn{4}{c}{Classes} &&
+    \multicolumn{3}{c}{Train samples} \\
+
+    \cmidrule{2-4} \cmidrule{6-9} \cmidrule{11-13}
+
+    & train & val & test && total & many & med. & few && many & med. & few \\
+
+    \midrule
+
+    ImageNet‑LT & 115,846 & 20,000 & 50,000 && 1,000 & 385 & 479 & 136 && 88,693 & 25,510 & 1,643 \\
+    Places‑LT & 62,500 & 7,300 & 36,500 && 365 & 131 & 163 & 71 && 52,762 & 8,934 & 804 \\
+    CIFAR‑100‑LT & 10,847 & - & 10,000 && 100 & 35 & 35 & 30 && 8,824 & 1,718 & 305 \\
+    iNaturalist & 437,513 & - & 24,426 && 8,142 & 842 & 4,076 & 3,224 && 258,340 & 133,061 & 46,112 \\
+
+    \bottomrule
+  \end{tabular}
+  \caption{Statistics of long-tailed datasets.\label{tbl:dataset_stats}}
+\end{table}

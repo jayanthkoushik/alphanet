@@ -1,10 +1,25 @@
-Dataset                  Min. per-class samples                 Max. per-class samples
-------------  ---------------------------------------  -------------------------------------------
-              $\ \ \many  \ \   \medium   \ \ \few\ $  $\ \ \ \many \ \ \    \medium \ \ \ \few\ $
-<!--  -->
-ImageNet‑LT   $\     101    \q       20     \q   5\ $  $1,280           \q       100     \q  19\ $
-Places‑LT     $\     103    \q       20     \q   5\ $  $4,980           \q       100     \q  19\ $
-CIFAR‑100‑LT  $\     102    \q       20     \q   5\ $  $\ph{,0}500      \q  \ph{0}98     \q  19\ $
-iNaturalist   $\     101    \q       20     \q   2\ $  $1,000           \q       100     \q  19\ $
+\hypertarget{tbl:dataset_splits}{}
+\begin{table}
+  \centering
+  \begin{tabular}{@{}lrrrcrrr@{}}
+    \toprule
 
-: Minimum and maximum per-class training samples for long-tailed datasets. {#tbl:dataset_splits}
+    \multirow{2}*{Dataset} &
+    \multicolumn{3}{c}{Min. class samples} &&
+    \multicolumn{3}{c}{Max. class samples} \\
+
+    \cmidrule{2-4} \cmidrule{6-8}
+
+    & many & med. & few && many & med. & few \\
+
+    \midrule
+
+    ImageNet‑LT & 101 & 20 & 5 && 1,280 & 100 & 19 \\
+    Places‑LT & 103 & 20 & 5 && 4,980 & 100 & 19 \\
+    CIFAR‑100‑LT & 102 & 20 & 5 && 500 & 98 & 19 \\
+    iNaturalist & 101 & 20 & 2 && 1,000 & 100 & 19 \\
+
+    \bottomrule
+  \end{tabular}
+  \caption{Minimum and maximum per-class training samples for long-tailed datasets.\label{tbl:dataset_splits}}
+\end{table}
