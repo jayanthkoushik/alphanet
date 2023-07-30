@@ -1,4 +1,4 @@
-Dataset                             Samples                           Classes                  Train samples
+Dataset                             Samples                           Classes                   Train samples
 ------------  -----------------------------  --------------------------------  ------------------------------
                      train\ /\ val\ /\ test  total\ (many\ /\ medium\ /\ few)         many\ /\ medium\ /\ few
 <!--  -->
