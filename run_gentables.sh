@@ -12,11 +12,53 @@ function check_does_not_exist() {
     fi
 }
 
+BASE_SAVE_DIR="paper/tables"
+CONTEXT_DEFAULT="paper"
+
+################################################
+
+while getopts "hc:" opt; do
+    case ${opt} in
+        c) CONTEXT="${OPTARG}";;
+        h) echo "usage: run_gentables.sh [-h] [-c context]"
+           echo "options:"
+           echo "  -h: display this help message and exit"
+           echo "  -c: context (['${CONTEXT_DEFAULT}'] or 'notebook')"
+           exit;;
+        \?) echo "usage: run_genplots.sh [-h] [-c context]"
+            exit 1;;
+    esac
+done
+
+context=${CONTEXT:-"${CONTEXT_DEFAULT}"}
+if [ "${context}" = "paper" ]; then
+    save_dir="${BASE_SAVE_DIR}"
+    xxargs=()
+    alpha="\$\\\\alpha\$"
+    balph="\$\\\\balph\$"
+    rho_prefix="\$\\\\rho"
+    rho_suffix="\$"
+    kprefix="\$k"
+    ksuffix="\$"
+elif [ "${context}" = "notebook" ]; then
+    save_dir="${BASE_SAVE_DIR}/_www"
+    xxargs=("--for-web")
+    alpha="_α_"
+    balph="**_α_**"
+    rho_prefix="_ρ_"
+    rho_suffix=""
+    kprefix="_k_"
+    ksuffix=""
+else
+    echo "unknown context: ${context}"
+    exit 1
+fi
+
 ################################################
 # SKIP
 
 for acck in 1 5; do
-    sfile="paper/tables/datasets_split_top${acck}_accs_vs_model_tworho.md"
+    sfile="${save_dir}/datasets_split_top${acck}_accs_vs_model_tworho.md"
 
     # NOTE: SKIPPING
     # if check_does_not_exist "${sfile}"; then
@@ -69,8 +111,8 @@ for acck in 1 5; do
                         ;;
                 esac
 
-                (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --no-show-hdr >> "${sfile}")
-                (set -x; python run_printres.py --base-res-dir "results/tworho/${datasrc}_${model}/rho1_0.5_rho2_0.1" --rel-exp-paths "" --exp-names "\$\\alpha\$-${modelname}" --res-files-pattern "rep_*/result.pth" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --no-show-hdr >> "${sfile}")
+                (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --no-show-hdr "${xxargs[@]}" >> "${sfile}")
+                (set -x; python run_printres.py --base-res-dir "results/tworho/${datasrc}_${model}/rho1_0.5_rho2_0.1" --rel-exp-paths "" --exp-names `echo "${alpha}‑${modelname}"` --res-files-pattern "rep_*/result.pth" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --no-show-hdr "${xxargs[@]}" >> "${sfile}")
                 (set -x; echo "<!-- -->" >> "${sfile}")
             done
 
@@ -85,7 +127,7 @@ done
 
 ################################################
 
-sfile="paper/tables/datasets_split_accs_vs_rho_ltr.md"
+sfile="${save_dir}/datasets_split_accs_vs_rho_ltr.md"
 
 if check_does_not_exist "${sfile}"; then
     (set -x; echo "Method                        Few            Med.            Many         Overall" >> "${sfile}")
@@ -102,15 +144,15 @@ if check_does_not_exist "${sfile}"; then
     rhos=(rho_0.5 rho_1 rho_1.5)
     rhostrs=(0.5 1 1.5)
 
-    (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --no-show-hdr >> "${sfile}")
-    (set -x; echo "\$\\\\alpha\$‑${modelname}" >> "${sfile}")
-    (set -x; python run_printres.py --base-res-dir "results/main/${datasrc}_${model}" --rel-exp-paths "${rhos[@]}" --exp-names "${rhostrs[@]}" --res-files-pattern "rep_*/result.pth" --exp-prefix "\$\\rho=" --exp-suffix "\$" --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 14 --name-col-width 17 --no-show-hdr >> "${sfile}")
+    (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --no-show-hdr "${xxargs[@]}" >> "${sfile}")
+    (set -x; echo "${alpha}‑${modelname}" >> "${sfile}")
+    (set -x; python run_printres.py --base-res-dir "results/main/${datasrc}_${model}" --rel-exp-paths "${rhos[@]}" --exp-names "${rhostrs[@]}" --res-files-pattern "rep_*/result.pth" --exp-prefix `echo "${rho_prefix}="` --exp-suffix "${rho_suffix}" --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 14 --name-col-width 17 "${xxargs[@]}" >> "${sfile}")
     (set -x; echo "\n: Mean split accuracy in percents (standard deviation in superscript) on ${datasrcname} using the ${modelname} model. {#tbl:datasets_split_accs_vs_rho_ltr}" >> "${sfile}")
 fi
 
 ################################################
 
-sfile="paper/tables/datasets_split_accs_vs_rho_ride.md"
+sfile="${save_dir}/datasets_split_accs_vs_rho_ride.md"
 
 if check_does_not_exist "${sfile}"; then
     (set -x; echo "Method                        Few            Med.            Many         Overall" >> "${sfile}")
@@ -132,21 +174,21 @@ if check_does_not_exist "${sfile}"; then
         fi
 
         (set -x; echo "**${datasrcname}**" >> "${sfile}")
-        (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --no-show-hdr >> "${sfile}")
-        (set -x; echo "\$\\\\alpha\$‑${modelname}" >> "${sfile}")
-        (set -x; python run_printres.py --base-res-dir "results/main/${datasrc}_${model}" --rel-exp-paths "${rhos[@]}" --exp-names "${rhostrs[@]}" --res-files-pattern "rep_*/result.pth" --exp-prefix "\$\\rho=" --exp-suffix "\$" --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 14 --name-col-width 17 --no-show-hdr >> "${sfile}")
+        (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --no-show-hdr "${xxargs[@]}" >> "${sfile}")
+        (set -x; echo "${alpha}‑${modelname}" >> "${sfile}")
+        (set -x; python run_printres.py --base-res-dir "results/main/${datasrc}_${model}" --rel-exp-paths "${rhos[@]}" --exp-names "${rhostrs[@]}" --res-files-pattern "rep_*/result.pth" --exp-prefix `echo "${rho_prefix}="` --exp-suffix "${rho_suffix}" --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 14 --name-col-width 17 "${xxargs[@]}" >> "${sfile}")
 
         if [ "${datasrc}" = "imagenetlt" ]; then
             (set -x; echo "<!--  -->" >> "${sfile}")
         fi
     done
 
-    (set -x; echo "\n: Mean split accuracy in percents (standard deviation in superscript) on ImageNet‑LT and CIFAR‑100‑LT using the ensemble RIDE model. \$\\\\alpha\$‑RIDE applies AlphaNet on average features from the ensemble. {#tbl:datasets_split_accs_vs_rho_ride}" >> "${sfile}")
+    (set -x; echo "\n: Mean split accuracy in percents (standard deviation in superscript) on ImageNet‑LT and CIFAR‑100‑LT using the ensemble RIDE model. ${alpha}‑RIDE applies AlphaNet on average features from the ensemble. {#tbl:datasets_split_accs_vs_rho_ride}" >> "${sfile}")
 fi
 
 ################################################
 
-sfile="paper/tables/datasets_baselines_split_accs_vs_rho.md"
+sfile="${save_dir}/datasets_baselines_split_accs_vs_rho.md"
 
 if check_does_not_exist "${sfile}"; then
     (set -x; echo "Method                        Few            Med.            Many         Overall" >> "${sfile}")
@@ -169,11 +211,21 @@ if check_does_not_exist "${sfile}"; then
         (set -x; echo "**${datasrcname}**" >> "${sfile}")
 
         if [ "${datasrc}" = "imagenetlt" ]; then
-            (set -x; echo "NCM                        \$28.1\$          \$45.3\$          \$56.6\$          \$47.3\$" >> "${sfile}")
-            (set -x; echo "\$\\\\tau\$‑normalized          \$30.7\$          \$46.9\$          \$59.1\$          \$49.4\$" >> "${sfile}")
+            if [ "${context}" = "paper" ]; then
+                (set -x; echo "NCM                        \$28.1\$          \$45.3\$          \$56.6\$          \$47.3\$" >> "${sfile}")
+                (set -x; echo "\$\\\\tau\$‑normalized          \$30.7\$          \$46.9\$          \$59.1\$          \$49.4\$" >> "${sfile}")
+            else
+                (set -x; echo "NCM                          28.1            45.3            56.6            47.3" >> "${sfile}")
+                (set -x; echo "_τ_‑normalized               30.7            46.9            59.1            49.4" >> "${sfile}")
+            fi
         else
-            (set -x; echo "NCM                        \$27.3\$          \$37.1\$          \$40.4\$          \$36.4\$" >> "${sfile}")
-            (set -x; echo "\$\\\\tau\$‑normalized          \$31.8\$          \$40.7\$          \$37.8\$          \$37.9\$" >> "${sfile}")
+            if [ "${context}" = "paper" ]; then
+                (set -x; echo "NCM                        \$27.3\$          \$37.1\$          \$40.4\$          \$36.4\$" >> "${sfile}")
+                (set -x; echo "\$\\\\tau\$‑normalized          \$31.8\$          \$40.7\$          \$37.8\$          \$37.9\$" >> "${sfile}")
+            else
+                (set -x; echo "NCM                          27.3            37.1            40.4            36.4" >> "${sfile}")
+                (set -x; echo "_τ_‑normalized               30.7            46.9            59.1            49.4" >> "${sfile}")
+            fi
         fi
 
         for model in ${models[@]}; do
@@ -191,9 +243,9 @@ if check_does_not_exist "${sfile}"; then
             esac
 
             (set -x; echo "<!--  -->" >> "${sfile}")
-            (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --no-show-hdr >> "${sfile}")
-            (set -x; echo "\$\\\\alpha\$‑${modelname}" >> "${sfile}")
-            (set -x; python run_printres.py --base-res-dir "results/main/${datasrc}_${model}" --rel-exp-paths "${rhos[@]}" --exp-names "${rhostrs[@]}" --res-files-pattern "rep_*/result.pth" --exp-prefix "\$\\rho=" --exp-suffix "\$" --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 14 --name-col-width 17 --no-show-hdr >> "${sfile}")
+            (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --no-show-hdr "${xxargs[@]}" >> "${sfile}")
+            (set -x; echo "${alpha}‑${modelname}" >> "${sfile}")
+            (set -x; python run_printres.py --base-res-dir "results/main/${datasrc}_${model}" --rel-exp-paths "${rhos[@]}" --exp-names "${rhostrs[@]}" --res-files-pattern "rep_*/result.pth" --exp-prefix `echo "${rho_prefix}="` --exp-suffix "${rho_suffix}" --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 14 --name-col-width 17 "${xxargs[@]}" >> "${sfile}")
         done
 
         if [ "${datasrc}" = "imagenetlt" ]; then
@@ -202,14 +254,14 @@ if check_does_not_exist "${sfile}"; then
         fi
     done
 
-    (set -x; echo "\n: Mean split accuracy in percents (standard deviation in superscript) of AlphaNet and various baseline methods on ImageNet‑LT and Places‑LT. \$\\\\alpha\$‑cRT and \$\\\\alpha\$‑LWS are AlphaNet models applied over cRT and LWS features respectively. {#tbl:datasets_baselines_split_accs_vs_rhos}" >> "${sfile}")
+    (set -x; echo "\n: Mean split accuracy in percents (standard deviation in superscript) of AlphaNet and various baseline methods on ImageNet‑LT and Places‑LT. ${alpha}‑cRT and ${alpha}‑LWS are AlphaNet models applied over cRT and LWS features respectively. {#tbl:datasets_baselines_split_accs_vs_rhos}" >> "${sfile}")
 fi
 
 ################################################
 
 for acck in 1 5; do
     for datasrc in "imagenetlt" "cifarlt" "placeslt" "inat"; do
-        sfile="paper/tables/appendix/models_split_top${acck}_accs_vs_rho_${datasrc}.md"
+        sfile="${save_dir}/appendix/models_split_top${acck}_accs_vs_rho_${datasrc}.md"
         if check_does_not_exist "${sfile}"; then
             if [ "${datasrc}" = "imagenetlt" ]; then
                 datasrcdir="ImageNetLT"
@@ -263,9 +315,9 @@ for acck in 1 5; do
                         ;;
                 esac
 
-                (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --acc-k ${acck} --num-col-width 14 --name-col-width 17 --exp-str Model "${xargs[@]}" >> "${sfile}")
-                (set -x; echo "\$\\\\balph\$**‑${modelname}**" >> "${sfile}")
-                (set -x; python run_printres.py --base-res-dir "results/main/${datasrc}_${model}" --rel-exp-paths "${rhos[@]}" --exp-names "${rhostrs[@]}" --res-files-pattern "rep_*/result.pth" --exp-prefix "\$\\rho=" --exp-suffix "\$" --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 14 --name-col-width 17 --acc-k ${acck} >> "${sfile}")
+                (set -x; python run_printres.py --base-res-dir "data/${datasrcdir}/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "${model}.pkl" --no-print-csv --no-show-baselines --acc-k ${acck} --num-col-width 14 --name-col-width 17 --exp-str Model "${xargs[@]}" "${xxargs[@]}" >> "${sfile}")
+                (set -x; echo "${balph}**‑${modelname}**" >> "${sfile}")
+                (set -x; python run_printres.py --base-res-dir "results/main/${datasrc}_${model}" --rel-exp-paths "${rhos[@]}" --exp-names "${rhostrs[@]}" --res-files-pattern "rep_*/result.pth" --exp-prefix `echo "${rho_prefix}="` --exp-suffix "${rho_suffix}" --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 14 --name-col-width 17 --acc-k ${acck} "${xxargs[@]}" >> "${sfile}")
                 (set -x; echo "<!--  -->" >> "${sfile}")
 
                 xargs=("--no-show-hdr")
@@ -282,7 +334,7 @@ done
 
 rhos=(rho_0.1 rho_0.2 rho_0.3 rho_0.4 rho_0.5 rho_0.75 rho_1 rho_1.25 rho_1.5 rho_1.75 rho_2 rho_3)
 rhostrs=(0.1 0.2 0.3 0.4 0.5 0.75 1 1.25 1.5 1.75 2 3)
-sfile="paper/tables/appendix/models_split_semantic4_accs_vs_rho_imagenetlt.md"
+sfile="${save_dir}/appendix/models_split_semantic4_accs_vs_rho_imagenetlt.md"
 if check_does_not_exist "${sfile}"; then
     xargs=()
     for model in crt lws ride; do
@@ -298,10 +350,10 @@ if check_does_not_exist "${sfile}"; then
                 ;;
         esac
 
-        (set -x; python run_printres.py --base-res-dir "data/ImageNetLT/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "resnext50_${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --exp-str Model --show-adjusted-acc --adjusted-acc-semantic --adjusted-acc-semantic-nns-level 4 --imagenet-data-root "data/ImageNetLT" "${xargs[@]}" >> "${sfile}")
+        (set -x; python run_printres.py --base-res-dir "data/ImageNetLT/baselines" --rel-exp-paths "" --exp-names "${modelname}" --res-files-pattern "resnext50_${model}.pkl" --no-print-csv --no-show-baselines --num-col-width 14 --name-col-width 17 --exp-str Model --show-adjusted-acc --adjusted-acc-semantic --adjusted-acc-semantic-nns-level 4 --imagenet-data-root "data/ImageNetLT" "${xargs[@]}" "${xxargs[@]}" >> "${sfile}")
 
-        (set -x; echo "\$\\\\balph\$**‑${modelname}**" >> "${sfile}")
-        (set -x; python run_printres.py --base-res-dir "results/main/imagenetlt_resnext50_${model}" --rel-exp-paths "${rhos[@]}" --exp-names "${rhostrs[@]}" --res-files-pattern "rep_*/result.pth" --exp-prefix "\$\\rho=" --exp-suffix "\$" --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 14 --name-col-width 17 --show-adjusted-acc --adjusted-acc-semantic --adjusted-acc-semantic-nns-level 4 --imagenet-data-root "data/ImageNetLT" >> "${sfile}")
+        (set -x; echo "${balph}**‑${modelname}**" >> "${sfile}")
+        (set -x; python run_printres.py --base-res-dir "results/main/imagenetlt_resnext50_${model}" --rel-exp-paths "${rhos[@]}" --exp-names "${rhostrs[@]}" --res-files-pattern "rep_*/result.pth" --exp-prefix `echo "${rho_prefix}="` --exp-suffix "${rho_suffix}" --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 14 --name-col-width 17 --show-adjusted-acc --adjusted-acc-semantic --adjusted-acc-semantic-nns-level 4 --imagenet-data-root "data/ImageNetLT" "${xxargs[@]}" >> "${sfile}")
         (set -x; echo "<!--  -->" >> "${sfile}")
 
         xargs=("--no-show-hdr")
@@ -322,20 +374,20 @@ for dist in "euclidean" "cosine"; do
     fi
 
     for acck in 1 5; do
-        sfile="paper/tables/appendix/rhos_split_top${acck}_accs_vs_k_imagenetlt_crt_${dist}.md"
+        sfile="${save_dir}/appendix/rhos_split_top${acck}_accs_vs_k_imagenetlt_crt_${dist}.md"
         if check_does_not_exist "${sfile}"; then
-            (set -x; python run_printres.py --base-res-dir "data/ImageNetLT/baselines" --rel-exp-paths "" --exp-names "cRT" --res-files-pattern "resnext50_crt.pkl" --no-print-csv --no-show-baselines --acc-k ${acck} --num-col-width 14 --name-col-width 17 --exp-str Model > "${sfile}")
+            (set -x; python run_printres.py --base-res-dir "data/ImageNetLT/baselines" --rel-exp-paths "" --exp-names "cRT" --res-files-pattern "resnext50_crt.pkl" --no-print-csv --no-show-baselines --acc-k ${acck} --num-col-width 14 --name-col-width 17 --exp-str Model "${xxargs[@]}" > "${sfile}")
             (set -x; echo "<!--  -->" >> "${sfile}")
-            (set -x; echo "\$\\\\balph\$**‑cRT**" >> "${sfile}")
+            (set -x; echo "${balph}**‑cRT**" >> "${sfile}")
             for rho in "0.25" "0.5" "1" "2"; do
-                (set -x; echo "\$\\\\rho=${rho}\$" >> "${sfile}")
-                (set -x; python run_printres.py --base-res-dir "results/nnsweep_${dist}/imagenetlt_resnext50_crt/rho_${rho}" --rel-exp-paths "k_1" "k_2" "k_3" "k_4" "k_5" "k_6" "k_7" "k_8" "k_9" "k_10" --exp-names "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" --res-files-pattern "rep_*/result.pth" --exp-prefix "\$k=" --exp-suffix "\$" --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 14 --name-col-width 17 --acc-k ${acck} >> "${sfile}")
+                (set -x; echo "${rho_prefix}=${rho}${rho_suffix}" >> "${sfile}")
+                (set -x; python run_printres.py --base-res-dir "results/nnsweep_${dist}/imagenetlt_resnext50_crt/rho_${rho}" --rel-exp-paths "k_1" "k_2" "k_3" "k_4" "k_5" "k_6" "k_7" "k_8" "k_9" "k_10" --exp-names "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" --res-files-pattern "rep_*/result.pth" --exp-prefix "${kprefix}=" --exp-suffix "${ksuffix}" --no-print-csv --no-show-baselines --no-show-hdr --num-col-width 14 --name-col-width 17 --acc-k ${acck} "${xxargs[@]}" >> "${sfile}")
                 if [ "${rho}" != "2" ]; then
                     (set -x; echo "<!--  -->" >> "${sfile}")
                 fi
             done
 
-            (set -x; echo "\n: Per-split test top‑${acck} accuracies for $\alpha$‑cRT on ImageNet‑LT using \$k\$ nearest neighbors based on ${dist_desc}. {#tbl:rhos_split_top1_accs_vs_k_imagenetlt_crt_cosine}" >> "${sfile}")
+            (set -x; echo "\n: Per-split test top‑${acck} accuracies for ${alpha}‑cRT on ImageNet‑LT using ${kprefix}${ksuffix} nearest neighbors based on ${dist_desc}. {#tbl:rhos_split_top1_accs_vs_k_imagenetlt_crt_cosine}" >> "${sfile}")
         fi
     done
 done

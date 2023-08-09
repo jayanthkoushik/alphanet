@@ -33,6 +33,18 @@ PROFILES = {
         fg_primary="#000000",
         fg_secondary="#bbbbbb",
     ),
+    "book": PlottingConfig(
+        theme="light",
+        context="paper",
+        font=PlotFont(default="Latin Modern Roman", math="cm"),
+        bg="#ffffff",
+        fg_primary="#000000",
+        fg_secondary="#bbbbbb",
+        font_size=10,
+        small_font_size=8,
+        default_full_width=6,
+        default_half_width=3,
+    ),
     "web_light": PlottingConfig(
         theme="light",
         context="notebook",
@@ -72,10 +84,35 @@ PROFILES = {
         ),
     ),
 }
-WIDTH_PER_CONTEXT = {"paper": 6, "notebook": 6 * 1.25}
-HEIGHT_PER_CONTEXT = {"paper": 7.5, "notebook": 7.5 * 1.25}
+EXT_PER_PROFILE = {
+    "paper": ".pgf",
+    "arxiv": ".pdf",
+    "book": ".pdf",
+    "web_light": ".svg",
+    "web_dark": ".svg",
+}
+SAVE_DIR_PER_PROFILE = {
+    "paper": ".",
+    "arxiv": "_arxiv",
+    "book": "_book",
+    "web_light": "_www",
+    "web_dark": "_www",
+}
+WIDTH_PER_PROFILE = {
+    "paper": 6,
+    "arxiv": 6,
+    "book": 6,
+    "web_light": 6 * 1.25,
+    "web_dark": 6 * 1.25,
+}
+HEIGHT_PER_PROFILE = {
+    "paper": 7.5,
+    "arxiv": 7.5,
+    "book": 7.5,
+    "web_light": 7.5 * 1.25,
+    "web_dark": 7.5 * 1.25,
+}
 FACET_ASPECT = 1.25
-
 
 # %%
 class Args(Corgy):
@@ -120,9 +157,13 @@ def _get_accs(_res):
     return _accs
 
 
+dataset_names = []
 for dataset in datasets:
     baseline_res = _load_baseline_res(dataset, batch_size=1024)
     baseline_accs = _get_accs(baseline_res)
+    dataset_name = dataset.proper_name.replace("‑", "-")
+    assert "‑" not in dataset_name
+    dataset_names.append(dataset_name)
 
     for rho_str in rho_strs:
         for res_file in tqdm(
@@ -150,7 +191,7 @@ for dataset in datasets:
             for split in ["Many", "Medium", "Few", "Overall"]:
                 df_rows.append(
                     {
-                        "Dataset": dataset.proper_name,
+                        "Dataset": dataset_name,
                         "$\\rho$": rho,
                         "Split": split,
                         "Accuracy change": accs[split] - baseline_accs[split],
@@ -174,7 +215,7 @@ def plot(profile, save=True):
         style="Split",
         col="Dataset",
         col_wrap=2,
-        col_order=[_d.proper_name for _d in datasets],
+        col_order=dataset_names,
         hue_order=["Overall", "Few", "Medium", "Many"],
         n_boot=args.n_boot,
         dashes=False,
@@ -222,7 +263,15 @@ def plot(profile, save=True):
             color=cfg.palette[0],
             transform=_ax.transAxes,
         )
-    _ax.text(0.5, 0, "$\\rho$", transform=_ax.transAxes, va="top", ha="center")
+    _ax.text(
+        0.5,
+        0,
+        "ρ" if profile.startswith("web") else "$\\rho$",
+        transform=_ax.transAxes,
+        va="top",
+        ha="center",
+        fontstyle=("oblique" if profile.startswith("web") else "normal"),
+    )
     _ax.text(
         0,
         0.5,
@@ -237,23 +286,15 @@ def plot(profile, save=True):
     sns.despine(ax=_ax, left=True, right=True, top=True, bottom=True)
 
     g.figure.tight_layout(h_pad=8, w_pad=3)
-    width, height = WIDTH_PER_CONTEXT[cfg.context], HEIGHT_PER_CONTEXT[cfg.context]
+    width, height = WIDTH_PER_PROFILE[profile], HEIGHT_PER_PROFILE[profile]
     g.figure.set_size_inches(width, height)
 
     if save:
-        save_root = (
-            Path("paper/figures/appendix")
-            if cfg.context == "paper"
-            else Path("paper/figures/_www/appendix")
-        )
+        rel_save_dir = SAVE_DIR_PER_PROFILE[profile]
+        save_root = Path(f"paper/figures/{rel_save_dir}/appendix")
         save_file = f"models_split_top{args.acc_k}_deltas_vs_rho"
         save_file += "_dark" if cfg.theme == "dark" else ""
-        if cfg.context == "paper":
-            ext = ".pgf"
-        elif cfg.context == "arxiv":
-            ext = ".pdf"
-        else:
-            ext = ".svg"
+        ext = EXT_PER_PROFILE[profile]
         save_file += ext
         save_path = save_root / save_file
         g.figure.savefig(save_path, format=ext[1:], bbox_inches="tight")
@@ -263,6 +304,12 @@ def plot(profile, save=True):
 
 # %%
 _ = plot("paper")
+
+# %%
+_ = plot("arxiv")
+
+# %%
+_ = plot("book")
 
 # %%
 _ = plot("web_light")

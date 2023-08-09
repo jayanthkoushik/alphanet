@@ -9,7 +9,7 @@ available on GitHub.[^note:self_repo]
 
 ## Datasets {#sec:impl:datasets}
 
-{% include tables_stats/dataset_stats.md %}
+{% include tables/appendix/static/dataset_stats.md %}
 
 Details about the long-tailed datasets used in our experiments are shown
 in @tbl:dataset_stats. For ImageNet‑LT and Places‑LT, we used splits
@@ -43,7 +43,7 @@ the RIDE model, and (2) we performed second stage training --
 fine-tuning with weight decay and norm thresholding -- for a fixed 10
 epochs.
 
-{% include tables_stats/dataset_splits.md %}
+{% include tables/appendix/static/dataset_splits.md %}
 
 ### Feature and classifier extraction {#sec:impl:baselines:extract}
 

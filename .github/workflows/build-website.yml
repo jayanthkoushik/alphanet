@@ -22,10 +22,9 @@ jobs:
           cp paper/main.md /www/index.md
           cp paper/references.bib /www/_includes/
           cp -r paper/sections /www/_includes/
-          cp -r paper/tables /www/_includes/
-          cp -r paper/tables_stats/_www /www/_includes/tables_stats
           cp -r paper/utils /www/_includes/
           cp -r paper/figures/_www /www/figures
+          cp -r paper/tables/_www /www/_includes/tables
         targetbranch: gh-pages
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

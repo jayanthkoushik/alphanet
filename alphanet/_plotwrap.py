@@ -161,6 +161,17 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
         Optional[str], "plot secondary foreground color override"
     ] = None
     transparent: Annotated[bool, "save with transparent background"] = False
+    scale: Annotated[Optional[float], "override for context scale"] = None
+    font_size: Annotated[Optional[float], "override for context font size"] = None
+    small_font_size: Annotated[
+        Optional[float], "override for context small font size"
+    ] = None
+    default_full_width: Annotated[
+        Optional[float], "override for context full width"
+    ] = None
+    default_half_width: Annotated[
+        Optional[float], "override for context half width"
+    ] = None
 
     DEFAULT_ASPECT_RATIO = 2.0
     _scale_per_context = {"paper": 1, "notebook": 1.25, "poster": 2, "talk": 3.5}
@@ -189,9 +200,17 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
     def config(self):
         """Apply configurations globally."""
         _font_scale = self._font_scale_per_context[self.context]
-        _font_size = 9 * _font_scale
-        _small_font_size = 8 * _font_scale
-        _scale = self._scale_per_context[self.context]
+        _font_size = self.font_size if self.font_size is not None else 9 * _font_scale
+        _small_font_size = (
+            self.small_font_size
+            if self.small_font_size is not None
+            else 8 * _font_scale
+        )
+        _scale = (
+            self.scale
+            if self.scale is not None
+            else self._scale_per_context[self.context]
+        )
         _lw = 1.25 * _scale
         _maj_tickw = 1 * _scale
         _min_tickw = 0.75 * _scale
@@ -225,7 +244,11 @@ class PlottingConfig(Corgy, corgy_make_slots=False):
         if self.backend is not None:
             _mpl_rc["backend"] = self.backend
         self.font.config(_mpl_rc)
-        _default_width = self._default_full_width_per_context[self.context]
+        _default_width = (
+            self.default_full_width
+            if self.default_full_width is not None
+            else self._default_full_width_per_context[self.context]
+        )
         _default_height = _default_width / self.DEFAULT_ASPECT_RATIO
         _mpl_rc["figure.figsize"] = (_default_width, _default_height)
         _mpl_rc["figure.dpi"] = self.dpi
@@ -486,9 +509,17 @@ class ContextPlot(Plot, PlottingConfig):
 
     def get_width(self) -> float:
         if self.width.value == "half":
-            return self._default_half_width_per_context[self.context]
+            return (
+                self.default_half_width
+                if self.default_half_width is not None
+                else self._default_half_width_per_context[self.context]
+            )
         if self.width.value == "full":
-            return self._default_full_width_per_context[self.context]
+            return (
+                self.default_full_width
+                if self.default_full_width is not None
+                else self._default_full_width_per_context[self.context]
+            )
         return self.width.value
 
     @contextmanager

@@ -747,7 +747,7 @@ class PlotSplitAccVsRhosSingle(BasePlotCmd):
                 for _split in ["Many", "Medium", "Few", "Overall"]:
                     df_rows.append(
                         {
-                            "$\\rho$": _rho,
+                            "Rho": _rho,
                             "Split": _split,
                             "Accuracy": _get_split_test_acc(_res, _split),
                             "Accuracy change": (
@@ -763,7 +763,7 @@ class PlotSplitAccVsRhosSingle(BasePlotCmd):
         with self.plot.open() as (_fig, _ax):
             sns.lineplot(
                 df,
-                x="$\\rho$",
+                x="Rho",
                 y=("Accuracy change" if self.y == "acc_delta" else "Accuracy"),
                 hue="Split",
                 style="Split",
@@ -777,6 +777,11 @@ class PlotSplitAccVsRhosSingle(BasePlotCmd):
                 legend=True,
             )
             sns.despine(fig=_fig, ax=_ax, left=True, right=True, bottom=False, top=True)
+
+            if self.plot.context == "paper":
+                _ax.set_xlabel("$\\rho$")
+            else:
+                _ax.set_xlabel("ρ", fontstyle="oblique")
 
             if self.y == "acc":
                 _ax.set_ylim(0, 1.01)
@@ -816,9 +821,11 @@ class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
     col_wrap: Optional[int] = None
     y: Literal["acc", "acc_delta"]
     xlabel: str = ""
+    xlabel_style: Literal["normal", "italic", "oblique"] = "normal"
     legend_loc: str = "upper right"
     legend_bbox_to_anchor: Optional[Tuple[float, float]] = None
     show_titles: bool = True
+    show_xlabels: bool = True
 
     @staticmethod
     def _get_metric_desc(metric: Literal["euclidean", "cosine", "random"]) -> str:
@@ -906,8 +913,8 @@ class PlotSplitAccVsExp(_BaseMultiExpPlotCmd, BasePlotCmd):
                 if _i % ncols:
                     _ax.set_ylabel("")
 
-                if self.show_titles:
-                    _ax.set_xlabel(self.xlabel)
+                if self.show_xlabels:
+                    _ax.set_xlabel(self.xlabel, fontstyle=self.xlabel_style)
                 else:
                     _ax.set_xlabel("")
                 _ax.xaxis.set_tick_params(direction="in")
@@ -1029,7 +1036,11 @@ class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
                         ],
                     )
                     _ano = _ax.annotate(
-                        f"$\\Delta={_acc_del:+.2f}$",
+                        (
+                            f"$\\Delta={_acc_del:+.2f}$"
+                            if self.plot.context == "paper"
+                            else f"Δ={_acc_del:+.2f}"
+                        ),
                         xy=(
                             _xticks[-1] * 0.98 if _acc_del > 0 else _xticks[-2] * 1.02,
                             _acc_del + 0.02 if _acc_del > 0 else _acc_del - 0.02,
@@ -1078,8 +1089,11 @@ class PlotClsAccDeltaBySplit(_BaseMultiExpPlotCmd, BasePlotCmd):
                 )
 
                 _title_text = _exp + "\n" if _n_exps > 1 else ""
+                _title_text += "Change in overall accuracy, "
                 _title_text += (
-                    f"Change in overall accuracy, $\\Delta={_overall_del:+.2f}$"
+                    f"$\\Delta={_overall_del:+.2f}$"
+                    if self.plot.context == "paper"
+                    else f"Δ={_overall_del:+.2f}"
                 )
                 _ax.text(
                     0.95,

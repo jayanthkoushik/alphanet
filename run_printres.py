@@ -44,6 +44,7 @@ class Args(Corgy):
     name_col_width: Optional[int] = None
     show_hdr: bool = True
     exp_str: str = "Experiment"
+    for_web: bool = False
 
 
 args = Args.parse_from_cmdline(usage=SUPPRESS)
@@ -191,7 +192,11 @@ if args.name_col_width is not None:
         )
     max_exp_name_len = args.name_col_width
 
-_fmt_chrs = "$^{}$"
+if args.for_web:
+    _fmt_chrs = "^^"
+else:
+    _fmt_chrs = "$^{}$"
+
 full_table = pd.DataFrame(table_rows)
 for _dataset_name in seen_datasets:
     table = full_table[full_table["Dataset"] == _dataset_name]
@@ -216,7 +221,7 @@ for _dataset_name in seen_datasets:
             _split_hdr_size = (
                 4  # mean value (xx.x)
                 + _sig_width__per__split[_split]  # std value (x.xx or xx.xx)
-                + len(_fmt_chrs)  # format characters ($<mean>^{<std>}$)
+                + len(_fmt_chrs)  # format characters
             )
         _split_title = "Med." if _split == "Medium" else _split
         hdr_str += f"{_split_title:>{_split_hdr_size}}  "  # 2 spaces between columns
@@ -242,12 +247,17 @@ for _dataset_name in seen_datasets:
             _mu, _sig = _mrow[_split], _srow[_split]
             _mu_str = f"{_mu:4.1f}"
             if not isnan(_sig):
-                num_str = f"${_mu_str}^{{{_sig:0{_sig_width__per__split[_split]}.2f}}}$"
+                _sig_str = f"{_sig:0{_sig_width__per__split[_split]}.2f}"
+                if args.for_web:
+                    _sig_str = f"^{_sig_str}^"
+                    num_str = _mu_str + _sig_str
+                else:
+                    _sig_str = "^{" + _sig_str + "}"
+                    num_str = f"${_mu_str}{_sig_str}$"
             else:
-                num_str = (
-                    " " * (_sig_width__per__split[_split] + len(_fmt_chrs) - 2)
-                    + f"${_mu_str}$"
-                )
+                num_str = " " * (
+                    _sig_width__per__split[_split] + len(_fmt_chrs) - 2
+                ) + (f"  {_mu_str}" if args.for_web else f"${_mu_str}$")
             if args.num_col_width is not None:
                 if args.num_col_width < len(num_str):
                     raise RuntimeError(

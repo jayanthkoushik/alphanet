@@ -41,7 +41,7 @@ repos:
   - id: fixhyphens
     name: replace hyphens with non-breaking versions
     language: system
-    files: "paper/.*\\.(md|svg|pgf)|run_gentables.sh|config/datasets.toml.template"
+    files: "paper/.*\\.md|run_gentables.sh|config/datasets.toml.template"
     entry: paper/fixhyphens.sh
   - id: mdc
     name: build paper pdf
